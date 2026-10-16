@@ -3,7 +3,11 @@ import { z } from 'zod'
 // Falla al arrancar si falta alguna variable, en vez de fallar a mitad de una petición.
 const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  // Uno o varios orígenes separados por comas (p. ej. producción y localhost).
+  CORS_ORIGIN: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((v) => v.split(',').map((o) => o.trim()).filter(Boolean)),
   DATABASE_URL: z.url(),
   SUPABASE_URL: z.url(),
   // Detrás de un proxy (Render, etc.) la IP real viene en X-Forwarded-For: nº de proxies de confianza.
