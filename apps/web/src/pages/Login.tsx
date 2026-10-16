@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router'
+import { Navigate, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
-import { Field } from '../components/Field'
+import { AuthCard, AuthLink } from '../components/AuthCard'
+import { ErrorText, Field } from '../components/Field'
+import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 
 export function Login() {
@@ -32,20 +34,26 @@ export function Login() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <h1 className="text-xl font-semibold">Entrar</h1>
-      <Field label="Email" name="email" type="email" autoComplete="email" required />
-      <Field label="Contraseña" name="password" type="password" autoComplete="current-password" required />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
-        {submitting ? 'Entrando…' : 'Entrar'}
-      </button>
-      <p className="text-sm">
-        <Link to="/recuperar" className="underline">¿Has olvidado tu contraseña?</Link>
-      </p>
-      <p className="text-sm">
-        ¿No tienes cuenta? <Link to="/registro" className="underline">Crea una</Link>
-      </p>
-    </form>
+    <AuthCard
+      title="Entrar"
+      subtitle="Para publicar avisos y avisar si ves a alguna mascota."
+      footer={
+        <p>
+          ¿No tienes cuenta? <AuthLink to="/registro">Crea una</AuthLink>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Email" name="email" type="email" autoComplete="email" required />
+        <Field label="Contraseña" name="password" type="password" autoComplete="current-password" required />
+        <p className="text-right text-sm">
+          <AuthLink to="/recuperar">¿Has olvidado tu contraseña?</AuthLink>
+        </p>
+        {error && <ErrorText>{error}</ErrorText>}
+        <Button type="submit" variant="dark" disabled={submitting} className="w-full">
+          {submitting ? 'Entrando…' : 'Entrar'}
+        </Button>
+      </form>
+    </AuthCard>
   )
 }

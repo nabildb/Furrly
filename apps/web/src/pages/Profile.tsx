@@ -1,15 +1,29 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { Field, SelectField, TextAreaField } from '../components/Field'
+import { ErrorText, Field, SelectField, TextAreaField } from '../components/Field'
 import { LocationPicker } from '../components/LocationPicker'
+import { Loading, Page } from '../components/Page'
 import { PhotosInput } from '../components/PhotosInput'
+import { Button } from '../components/ui/Button'
+import { Card, SectionTitle } from '../components/ui/Card'
+import { ArrowRightIcon, CheckIcon, ListIcon, LogoutIcon, UserIcon } from '../components/ui/icons'
 import { api } from '../lib/api'
-import { supabase } from '../lib/supabase'
 import type { LatLng } from '../lib/reports'
 import { removeImage } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 import type { Me } from '../lib/users'
 
 const radiusOptions = { '1': '1 km', '2': '2 km', '5': '5 km', '10': '10 km', '25': '25 km', '50': '50 km' }
+
+function MenuLink({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) {
+  return (
+    <Link to={to} className="flex h-14 items-center gap-3 px-4 text-[15px] font-extrabold transition hover:bg-subtle">
+      {icon}
+      <span className="flex-1">{children}</span>
+      <ArrowRightIcon size={18} className="text-muted" />
+    </Link>
+  )
+}
 
 export function Profile() {
   const [me, setMe] = useState<Me | null>(null)
@@ -29,8 +43,14 @@ export function Profile() {
       .catch((e: Error) => setError(e.message))
   }, [])
 
-  if (error && !me) return <p className="text-red-600">{error}</p>
-  if (!me) return <p>Cargando…</p>
+  if (error && !me) {
+    return (
+      <Page title="Mi perfil">
+        <ErrorText>{error}</ErrorText>
+      </Page>
+    )
+  }
+  if (!me) return <Loading />
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -61,44 +81,72 @@ export function Profile() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Mi perfil</h1>
-        <Link to={`/u/${me.username}`} className="text-sm underline">
+    <Page title="Mi perfil">
+      <p className="-mt-4 mb-5 text-[15px] font-semibold text-muted">@{me.username}</p>
+
+      <Card className="mb-6 divide-y divide-card-line overflow-hidden p-0">
+        <MenuLink to="/avisos/mios" icon={<ListIcon />}>
+          Mis avisos
+        </MenuLink>
+        <MenuLink to={`/u/${me.username}`} icon={<UserIcon />}>
           Ver mi perfil público
-        </Link>
-      </div>
+        </MenuLink>
+      </Card>
 
-      <PhotosInput value={avatar} onChange={setAvatar} max={1} folder="avatars" keep={me.avatarUrl ? [me.avatarUrl] : []} />
-      <Field label="Nombre visible" name="displayName" required maxLength={60} defaultValue={me.displayName} />
-      <TextAreaField label="Sobre ti" name="bio" maxLength={300} rows={3} defaultValue={me.bio ?? ''} />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="space-y-4">
+          <SectionTitle>Tus datos</SectionTitle>
+          <PhotosInput
+            label="Foto de perfil"
+            value={avatar}
+            onChange={setAvatar}
+            max={1}
+            folder="avatars"
+            keep={me.avatarUrl ? [me.avatarUrl] : []}
+          />
+          <Field label="Nombre visible" name="displayName" required maxLength={60} defaultValue={me.displayName} />
+          <TextAreaField label="Sobre ti" name="bio" maxLength={300} rows={3} defaultValue={me.bio ?? ''} />
+        </Card>
 
-      <fieldset className="space-y-2 rounded border border-gray-200 p-4">
-        <legend className="px-1 text-sm font-medium">Zona de alertas</legend>
-        <p className="text-xs text-gray-500">
-          Marca tu barrio para enterarte de las mascotas perdidas cerca. Es privada: nunca se muestra en tu perfil.
-        </p>
-        <LocationPicker value={alertLocation} onChange={setAlertLocation} />
-        <div className="flex items-end gap-4">
-          <div className="w-32">
-            <SelectField label="Radio" name="alertRadiusKm" options={radiusOptions} defaultValue={String(me.alertRadiusKm)} />
+        <Card className="space-y-3">
+          <div>
+            <SectionTitle>Zona de alertas</SectionTitle>
+            <p className="mt-1 text-sm font-semibold text-muted">
+              Marca tu barrio para enterarte de las mascotas perdidas cerca. Es privada: nunca se muestra en tu perfil.
+            </p>
           </div>
-          {alertLocation && (
-            <button type="button" onClick={() => setAlertLocation(null)} className="pb-2 text-sm underline">
-              Quitar zona
-            </button>
+          {!alertLocation && (
+            <p className="rounded-[14px] bg-lost-soft px-3.5 py-2.5 text-sm font-bold text-lost-text">
+              Aún no la has configurado.
+            </p>
           )}
-        </div>
-      </fieldset>
+          <LocationPicker value={alertLocation} onChange={setAlertLocation} className="h-60" />
+          <div className="flex items-end gap-3">
+            <div className="w-32">
+              <SelectField label="Radio" name="alertRadiusKm" options={radiusOptions} defaultValue={String(me.alertRadiusKm)} />
+            </div>
+            {alertLocation && (
+              <Button variant="secondary" size="md" onClick={() => setAlertLocation(null)} className="mb-px h-[50px]">
+                Quitar zona
+              </Button>
+            )}
+          </div>
+        </Card>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {saved && <p className="text-sm text-green-700">Cambios guardados.</p>}
-      <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
-        {submitting ? 'Guardando…' : 'Guardar cambios'}
-      </button>
-      <button type="button" onClick={() => supabase.auth.signOut()} className="block text-sm underline">
-        Cerrar sesión
-      </button>
-    </form>
+        {error && <ErrorText>{error}</ErrorText>}
+        {saved && (
+          <p role="status" className="flex items-center gap-2 rounded-[14px] bg-resolved-soft px-3.5 py-2.5 text-sm font-bold text-resolved-text">
+            <CheckIcon size={18} /> Cambios guardados.
+          </p>
+        )}
+        <Button type="submit" variant="dark" disabled={submitting} className="w-full">
+          {submitting ? 'Guardando…' : 'Guardar cambios'}
+        </Button>
+      </form>
+
+      <Button variant="secondary" size="md" onClick={() => supabase.auth.signOut()} className="mt-4 w-full">
+        <LogoutIcon size={20} /> Cerrar sesión
+      </Button>
+    </Page>
   )
 }

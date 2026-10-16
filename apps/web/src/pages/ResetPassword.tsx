@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
-import { Field } from '../components/Field'
+import { AuthCard, AuthLink } from '../components/AuthCard'
+import { ErrorText, Field } from '../components/Field'
+import { Loading } from '../components/Page'
+import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 
 /** Destino del enlace del email: Supabase ya ha abierto una sesión temporal de recuperación. */
@@ -11,13 +14,12 @@ export function ResetPassword() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (loading) return <p>Cargando…</p>
+  if (loading) return <Loading />
   if (!session) {
     return (
-      <p>
-        El enlace no es válido o ha caducado.{' '}
-        <Link to="/recuperar" className="underline">Pide uno nuevo</Link>.
-      </p>
+      <AuthCard title="Enlace caducado" footer={<AuthLink to="/recuperar">Pide uno nuevo</AuthLink>}>
+        <p className="text-[15px] leading-relaxed text-body">El enlace no es válido o ha caducado.</p>
+      </AuthCard>
     )
   }
 
@@ -41,14 +43,15 @@ export function ResetPassword() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <h1 className="text-xl font-semibold">Elige una contraseña nueva</h1>
-      <Field label="Contraseña nueva" name="password" type="password" required minLength={8} autoComplete="new-password" />
-      <Field label="Repítela" name="confirm" type="password" required minLength={8} autoComplete="new-password" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
-        {submitting ? 'Guardando…' : 'Guardar contraseña'}
-      </button>
-    </form>
+    <AuthCard title="Elige una contraseña nueva">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Contraseña nueva" name="password" type="password" required minLength={8} autoComplete="new-password" />
+        <Field label="Repítela" name="confirm" type="password" required minLength={8} autoComplete="new-password" />
+        {error && <ErrorText>{error}</ErrorText>}
+        <Button type="submit" variant="dark" disabled={submitting} className="w-full">
+          {submitting ? 'Guardando…' : 'Guardar contraseña'}
+        </Button>
+      </form>
+    </AuthCard>
   )
 }

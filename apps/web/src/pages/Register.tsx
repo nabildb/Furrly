@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router'
+import { Navigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
-import { Field } from '../components/Field'
+import { AuthCard, AuthLink } from '../components/AuthCard'
+import { ErrorText, Field } from '../components/Field'
+import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
 
@@ -17,10 +19,12 @@ export function Register() {
 
   if (sentTo) {
     return (
-      <p>
-        Te hemos enviado un email a <strong>{sentTo}</strong>. Confírmalo y después{' '}
-        <Link to="/login" className="underline">entra</Link>.
-      </p>
+      <AuthCard title="Revisa tu email" footer={<AuthLink to="/login">Ir a entrar</AuthLink>}>
+        <p className="text-[15px] leading-relaxed text-body">
+          Te hemos enviado un email a <strong className="font-extrabold">{sentTo}</strong>. Confírmalo y después podrás
+          entrar.
+        </p>
+      </AuthCard>
     )
   }
 
@@ -62,26 +66,41 @@ export function Register() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <h1 className="text-xl font-semibold">Crear cuenta</h1>
-      <Field
-        label="Nombre de usuario"
-        name="username"
-        required
-        pattern={USERNAME_PATTERN}
-        autoComplete="username"
-        hint="3-30 caracteres: minúsculas, números o _"
-      />
-      <Field label="Nombre visible" name="displayName" required maxLength={60} autoComplete="name" />
-      <Field label="Email" name="email" type="email" required autoComplete="email" />
-      <Field label="Contraseña" name="password" type="password" required minLength={8} autoComplete="new-password" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
-        {submitting ? 'Creando…' : 'Crear cuenta'}
-      </button>
-      <p className="text-sm">
-        ¿Ya tienes cuenta? <Link to="/login" className="underline">Entra</Link>
-      </p>
-    </form>
+    <AuthCard
+      title="Crear cuenta"
+      subtitle="Únete a los vecinos que ayudan a que vuelvan a casa."
+      footer={
+        <p>
+          ¿Ya tienes cuenta? <AuthLink to="/login">Entra</AuthLink>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field
+          label="Nombre de usuario"
+          name="username"
+          required
+          pattern={USERNAME_PATTERN}
+          autoComplete="username"
+          autoCapitalize="none"
+          hint="3-30 caracteres: minúsculas, números o _"
+        />
+        <Field label="Nombre visible" name="displayName" required maxLength={60} autoComplete="name" />
+        <Field label="Email" name="email" type="email" required autoComplete="email" />
+        <Field
+          label="Contraseña"
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          hint="Mínimo 8 caracteres."
+        />
+        {error && <ErrorText>{error}</ErrorText>}
+        <Button type="submit" disabled={submitting} className="w-full">
+          {submitting ? 'Creando…' : 'Crear cuenta'}
+        </Button>
+      </form>
+    </AuthCard>
   )
 }

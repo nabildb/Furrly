@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
-import { Field } from '../components/Field'
+import { AuthCard, AuthLink } from '../components/AuthCard'
+import { ErrorText, Field } from '../components/Field'
+import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 
 export function ForgotPassword() {
@@ -22,27 +23,28 @@ export function ForgotPassword() {
     else setSentTo(email)
   }
 
+  const footer = <AuthLink to="/login">Volver a entrar</AuthLink>
+
   if (sentTo) {
     return (
-      <p>
-        Si existe una cuenta con <strong>{sentTo}</strong>, te llegará un email con un enlace para elegir una contraseña
-        nueva.
-      </p>
+      <AuthCard title="Revisa tu email" footer={footer}>
+        <p className="text-[15px] leading-relaxed text-body">
+          Si existe una cuenta con <strong className="font-extrabold">{sentTo}</strong>, te llegará un enlace para elegir
+          una contraseña nueva.
+        </p>
+      </AuthCard>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <h1 className="text-xl font-semibold">Recuperar contraseña</h1>
-      <p className="text-sm text-gray-600">Te enviaremos un enlace para elegir una contraseña nueva.</p>
-      <Field label="Email" name="email" type="email" autoComplete="email" required />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
-        {submitting ? 'Enviando…' : 'Enviar enlace'}
-      </button>
-      <p className="text-sm">
-        <Link to="/login" className="underline">Volver a entrar</Link>
-      </p>
-    </form>
+    <AuthCard title="Recuperar contraseña" subtitle="Te enviaremos un enlace para elegir una nueva." footer={footer}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Email" name="email" type="email" autoComplete="email" required />
+        {error && <ErrorText>{error}</ErrorText>}
+        <Button type="submit" variant="dark" disabled={submitting} className="w-full">
+          {submitting ? 'Enviando…' : 'Enviar enlace'}
+        </Button>
+      </form>
+    </AuthCard>
   )
 }

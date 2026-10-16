@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 import { cx } from '../../lib/cx'
 import { MapIcon, PawOutlineIcon, PlusIcon, UserIcon } from './icons'
 
@@ -9,32 +9,37 @@ interface Item {
   icon: ReactNode
   /** /avisos no debe quedar activo en /avisos/123 (la ficha no es "el mapa"). */
   end?: boolean
+  /** Otras rutas que cuelgan de esta pestaña (Mis avisos se abre desde el perfil). */
+  also?: string[]
 }
 
 const items: Item[] = [
   { to: '/avisos', label: 'Mapa', icon: <MapIcon />, end: true },
   { to: '/mascotas', label: 'Mascotas', icon: <PawOutlineIcon size={24} /> },
-  { to: '/perfil', label: 'Perfil', icon: <UserIcon size={24} /> },
+  { to: '/perfil', label: 'Perfil', icon: <UserIcon size={24} />, also: ['/avisos/mios'] },
 ]
 
-function Tab({ to, label, icon, end }: Item) {
+function Tab({ to, label, icon, end, also = [] }: Item) {
+  const { pathname } = useLocation()
+  const inSubpage = also.some((path) => pathname.startsWith(path))
   return (
     <NavLink
       to={to}
       end={end}
       aria-label={label}
-      className={({ isActive }) =>
-        cx(
+      className={({ isActive: matches }) => {
+        const isActive = matches || inSubpage
+        return cx(
           'flex h-12 items-center gap-2 rounded-2xl text-sm font-extrabold transition',
           // La pestaña activa se convierte en pastilla blanca con texto; las demás son solo icono.
           isActive ? 'bg-white px-4 text-ink' : 'w-12 justify-center text-white hover:bg-white/10',
         )
-      }
+      }}
     >
       {({ isActive }) => (
         <>
           {icon}
-          {isActive && <span>{label}</span>}
+          {(isActive || inSubpage) && <span>{label}</span>}
         </>
       )}
     </NavLink>
