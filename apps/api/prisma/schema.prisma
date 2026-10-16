@@ -178,7 +178,7 @@ model Report {
   createdAt   DateTime                              @default(now()) @map("created_at") @db.Timestamptz
 
   reporter      User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-  pet           Pet?           @relation(fields: [petId], references: [id], onDelete: SetNull)
+  pet           Pet?           @relation(fields: [petId], references: [id], onDelete: Cascade)
   photos        ReportPhoto[]
   sightings     Sighting[]
   notifications Notification[]
