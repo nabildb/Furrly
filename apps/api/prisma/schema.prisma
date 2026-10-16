@@ -1,0 +1,241 @@
+// Modelo de datos de Furrly — ver docs/modelo-datos.md
+// Lo que Prisma no sabe expresar (PostGIS, CHECKs, triggers, RLS) va en SQL
+// dentro de las migraciones.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Species {
+  dog
+  cat
+  rabbit
+  bird
+  other
+
+  @@map("species")
+}
+
+enum PetSex {
+  male
+  female
+  unknown
+
+  @@map("pet_sex")
+}
+
+enum ReportType {
+  lost
+  found
+
+  @@map("report_type")
+}
+
+enum ReportStatus {
+  active
+  resolved
+  cancelled
+
+  @@map("report_status")
+}
+
+enum NotificationType {
+  new_report_nearby
+  new_sighting
+  report_resolved
+  new_follower
+  new_comment
+  new_like
+
+  @@map("notification_type")
+}
+
+/// Perfil público. El id es el de auth.users (Supabase Auth); la fila la crea un trigger.
+model User {
+  id            String                                 @id @db.Uuid
+  username      String                                 @unique @db.VarChar(30)
+  displayName   String                                 @map("display_name") @db.VarChar(60)
+  avatarUrl     String?                                @map("avatar_url")
+  bio           String?                                @db.VarChar(300)
+  alertLocation Unsupported("geography(Point, 4326)")? @map("alert_location")
+  alertRadiusKm Int                                    @default(5) @map("alert_radius_km") @db.SmallInt
+  createdAt     DateTime                               @default(now()) @map("created_at") @db.Timestamptz
+
+  pets                   Pet[]
+  follows                Follow[]
+  likes                  Like[]
+  comments               Comment[]
+  reports                Report[]
+  sightings              Sighting[]
+  notifications          Notification[] @relation("NotificationRecipient")
+  triggeredNotifications Notification[] @relation("NotificationActor")
+
+  @@index([alertLocation], type: Gist)
+  @@map("users")
+}
+
+model Pet {
+  id          String    @id @default(uuid()) @db.Uuid
+  ownerId     String    @map("owner_id") @db.Uuid
+  name        String    @db.VarChar(40)
+  species     Species
+  breed       String?   @db.VarChar(60)
+  sex         PetSex    @default(unknown)
+  birthDate   DateTime? @map("birth_date") @db.Date
+  color       String?   @db.VarChar(60)
+  description String?   @db.VarChar(500)
+  photoUrl    String?   @map("photo_url")
+  /// Privado: nunca se devuelve en la API pública.
+  microchip   String?   @db.VarChar(20)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  followers     Follow[]
+  posts         Post[]
+  reports       Report[]
+  notifications Notification[]
+
+  @@index([ownerId])
+  @@map("pets")
+}
+
+model Follow {
+  followerId String   @map("follower_id") @db.Uuid
+  petId      String   @map("pet_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  follower User @relation(fields: [followerId], references: [id], onDelete: Cascade)
+  pet      Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, petId])
+  @@index([petId])
+  @@map("follows")
+}
+
+model Post {
+  id        String   @id @default(uuid()) @db.Uuid
+  petId     String   @map("pet_id") @db.Uuid
+  imageUrl  String   @map("image_url")
+  caption   String?  @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  pet           Pet            @relation(fields: [petId], references: [id], onDelete: Cascade)
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[]
+
+  @@index([petId, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+model Like {
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  body      String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+/// Aviso de mascota perdida o encontrada.
+model Report {
+  id          String                                @id @default(uuid()) @db.Uuid
+  type        ReportType
+  status      ReportStatus                          @default(active)
+  reporterId  String                                @map("reporter_id") @db.Uuid
+  /// Obligatorio si type = lost (CHECK en SQL); NULL en un "found" de una mascota desconocida.
+  petId       String?                               @map("pet_id") @db.Uuid
+  species     Species
+  title       String                                @db.VarChar(100)
+  description String
+  location    Unsupported("geography(Point, 4326)")
+  addressText String?                               @map("address_text") @db.VarChar(200)
+  happenedAt  DateTime                              @map("happened_at") @db.Timestamptz
+  resolvedAt  DateTime?                             @map("resolved_at") @db.Timestamptz
+  createdAt   DateTime                              @default(now()) @map("created_at") @db.Timestamptz
+
+  reporter      User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  pet           Pet?           @relation(fields: [petId], references: [id], onDelete: SetNull)
+  photos        ReportPhoto[]
+  sightings     Sighting[]
+  notifications Notification[]
+
+  @@index([location], type: Gist)
+  @@index([status, happenedAt(sort: Desc)])
+  @@index([reporterId])
+  @@map("reports")
+}
+
+model ReportPhoto {
+  id       String @id @default(uuid()) @db.Uuid
+  reportId String @map("report_id") @db.Uuid
+  url      String
+  position Int    @default(0) @db.SmallInt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, position])
+  @@map("report_photos")
+}
+
+/// "Creo que la he visto aquí."
+model Sighting {
+  id        String                                @id @default(uuid()) @db.Uuid
+  reportId  String                                @map("report_id") @db.Uuid
+  userId    String                                @map("user_id") @db.Uuid
+  location  Unsupported("geography(Point, 4326)")
+  seenAt    DateTime                              @map("seen_at") @db.Timestamptz
+  note      String?                               @db.VarChar(300)
+  photoUrl  String?                               @map("photo_url")
+  createdAt DateTime                              @default(now()) @map("created_at") @db.Timestamptz
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, seenAt(sort: Desc)])
+  @@map("sightings")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  actorId   String?          @map("actor_id") @db.Uuid
+  reportId  String?          @map("report_id") @db.Uuid
+  postId    String?          @map("post_id") @db.Uuid
+  petId     String?          @map("pet_id") @db.Uuid
+  readAt    DateTime?        @map("read_at") @db.Timestamptz
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User    @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor  User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  report Report? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  pet    Pet?    @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notifications")
+}
