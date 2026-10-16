@@ -13,9 +13,14 @@ export function Layout() {
         </Link>
         <nav className="flex gap-4 text-sm">
           {session ? (
-            <button onClick={() => supabase.auth.signOut()} className="underline">
-              Cerrar sesión
-            </button>
+            <>
+              <Link to="/mascotas" className="underline">
+                Mis mascotas
+              </Link>
+              <button onClick={() => supabase.auth.signOut()} className="underline">
+                Cerrar sesión
+              </button>
+            </>
           ) : (
             <>
               <Link to="/login" className="underline">
