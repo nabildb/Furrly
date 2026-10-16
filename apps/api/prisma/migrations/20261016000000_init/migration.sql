@@ -11,8 +11,6 @@ CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
 SET search_path TO public, extensions;
 
-Loaded Prisma config from prisma.config.ts.
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
@@ -253,17 +251,6 @@ ALTER TABLE "notifications" ADD CONSTRAINT "notifications_post_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_pet_id_fkey" FOREIGN KEY ("pet_id") REFERENCES "pets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-┌─────────────────────────────────────────────────────────┐
-│  Update available 7.10.1 -> 8.0.0-rc.23                 │
-│                                                         │
-│  This is a major update - please follow the guide at    │
-│  https://pris.ly/d/major-version-upgrade                │
-│                                                         │
-│  Run the following to update                            │
-│    npm i --save-dev prisma@latest                       │
-│    npm i @prisma/client@latest                          │
-└─────────────────────────────────────────────────────────┘
-
 
 -- ============================================================
 -- Reglas de negocio (CHECK)
@@ -311,7 +298,8 @@ BEGIN
 END;
 $$;
 
--- El schema auth solo existe en Supabase (no en la shadow database de Prisma).
+-- El schema auth y los roles anon/authenticated solo existen en Supabase
+-- (no en la shadow database de Prisma).
 DO $$
 BEGIN
   IF to_regclass('auth.users') IS NOT NULL THEN
@@ -324,6 +312,10 @@ BEGIN
     CREATE TRIGGER on_auth_user_deleted
       AFTER DELETE ON auth.users
       FOR EACH ROW EXECUTE FUNCTION public.handle_deleted_auth_user();
+
+    -- Son funciones de trigger: nadie debe poder llamarlas vía RPC.
+    REVOKE EXECUTE ON FUNCTION public.handle_new_auth_user() FROM PUBLIC, anon, authenticated;
+    REVOKE EXECUTE ON FUNCTION public.handle_deleted_auth_user() FROM PUBLIC, anon, authenticated;
   END IF;
 END;
 $$;

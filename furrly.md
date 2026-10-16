@@ -29,7 +29,7 @@ Prefiero conversar en español.
 - Frontend: React + Vite + TypeScript + Tailwind
 - Diseño visual (UI): se hará más adelante con **Claude Design**; hasta entonces, el frontend será funcional con estilos mínimos
 - Backend: Node + Express + TypeScript + Prisma (API REST propia)
-- Base de datos: **Supabase** (PostgreSQL + extensión PostGIS)
+- Base de datos: **Supabase** (PostgreSQL + extensión PostGIS) — proyecto `furrly`, región Frankfurt (eu-central-1)
 - Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
 - Imágenes: Supabase Storage
 - Despliegue: Vercel (frontend) + Render/Railway (API); la BD vive en Supabase
