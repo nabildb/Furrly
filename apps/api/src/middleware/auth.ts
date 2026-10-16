@@ -1,11 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
-import { env } from '../lib/env.js'
-
-// Supabase Auth firma los access tokens con claves asimétricas y publica las
-// públicas en este endpoint. jose las cachea y las refresca si rotan.
-const issuer = `${env.SUPABASE_URL}/auth/v1`
-const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`))
+import { jwtVerify } from 'jose'
+import { issuer, jwks } from '../lib/jwks.js'
 
 declare global {
   namespace Express {

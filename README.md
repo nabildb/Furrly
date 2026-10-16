@@ -1,5 +1,7 @@
 # Furrly 🐾
 
+[![CI](https://github.com/nabildb/Furrly/actions/workflows/ci.yml/badge.svg)](https://github.com/nabildb/Furrly/actions/workflows/ci.yml)
+
 Comunidad web para dueños de mascotas, centrada en **mascotas perdidas y encontradas**: avisos geolocalizados, avistamientos y alertas a los vecinos de la zona.
 
 > Proyecto de portfolio — 2.º DAW. En desarrollo.
@@ -51,6 +53,19 @@ npm run db:deploy -w @furrly/api         # aplica las migraciones
 npm run dev:api
 npm run dev:web
 ```
+
+## Tests
+
+La API tiene tests de integración (Vitest + Supertest) contra un PostgreSQL + PostGIS real en Docker:
+reglas de negocio, permisos y búsquedas geoespaciales. Los tokens se firman con una clave ES256
+generada para cada ejecución, igual que hace Supabase Auth.
+
+```bash
+npm run db:test:up   # arranca PostGIS en Docker (puerto 54329)
+npm test
+```
+
+En cada push, GitHub Actions ejecuta lint, typecheck, tests y build.
 
 ## Documentación
 
