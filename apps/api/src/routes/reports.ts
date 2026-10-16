@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { Prisma } from '../generated/prisma/client.js'
 import { ReportType, Species } from '../generated/prisma/enums.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
@@ -34,7 +35,78 @@ const createReportSchema = z
   .refine((r) => r.type !== 'lost' || r.petId, { message: 'Elige cuál de tus mascotas se ha perdido', path: ['petId'] })
   .refine((r) => r.type !== 'found' || r.species, { message: 'Indica la especie', path: ['species'] })
 
+const nearbyQuerySchema = z.object({
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
+  radiusKm: z.coerce.number().min(1).max(50).default(10),
+  type: z.enum(ReportType).optional(),
+  species: z.enum(Species).optional(),
+})
+
+const NEARBY_LIMIT = 100
+
+interface NearbyReportRow {
+  id: string
+  type: ReportType
+  species: Species
+  title: string
+  address_text: string | null
+  happened_at: Date
+  lat: number
+  lng: number
+  distance_m: number
+  photo_url: string | null
+}
+
+const statusBodySchema = z.object({ status: z.enum(['resolved', 'cancelled']) })
+
 export const reportsRouter = Router()
+
+/**
+ * Avisos activos en un radio alrededor de un punto, del más cercano al más lejano.
+ * ST_DWithin sobre geography trabaja en metros y aprovecha el índice GIST de location.
+ */
+reportsRouter.get('/', async (req, res) => {
+  const q = parse(nearbyQuerySchema, req.query)
+  const origin = Prisma.sql`ST_SetSRID(ST_MakePoint(${q.lng}, ${q.lat}), 4326)::geography`
+
+  const filters = [
+    Prisma.sql`r.status = 'active'`,
+    Prisma.sql`ST_DWithin(r.location, ${origin}, ${q.radiusKm * 1000})`,
+  ]
+  if (q.type) filters.push(Prisma.sql`r.type = ${q.type}::report_type`)
+  if (q.species) filters.push(Prisma.sql`r.species = ${q.species}::species`)
+
+  // Foto de portada: la primera del aviso o, si no tiene, la de la mascota.
+  const rows = await prisma.$queryRaw<NearbyReportRow[]>`
+    SELECT r.id, r.type, r.species, r.title, r.address_text, r.happened_at,
+           ST_Y(r.location::geometry) AS lat,
+           ST_X(r.location::geometry) AS lng,
+           ST_Distance(r.location, ${origin}) AS distance_m,
+           coalesce(
+             (SELECT rp.url FROM report_photos rp WHERE rp.report_id = r.id ORDER BY rp.position LIMIT 1),
+             p.photo_url
+           ) AS photo_url
+    FROM reports r
+    LEFT JOIN pets p ON p.id = r.pet_id
+    WHERE ${Prisma.join(filters, ' AND ')}
+    ORDER BY distance_m
+    LIMIT ${NEARBY_LIMIT}`
+
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      species: r.species,
+      title: r.title,
+      addressText: r.address_text,
+      happenedAt: r.happened_at,
+      location: { lat: r.lat, lng: r.lng },
+      distanceM: Math.round(r.distance_m),
+      photoUrl: r.photo_url,
+    })),
+  )
+})
 
 reportsRouter.post('/', requireAuth, async (req, res) => {
   const userId = req.userId!
@@ -90,6 +162,21 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
   })
 
   res.status(201).json(await getReport(reportId))
+})
+
+/** El autor marca el aviso como resuelto ("¡ya está en casa!") o lo cancela. */
+reportsRouter.patch('/:id/status', requireAuth, async (req, res) => {
+  const id = parse(z.uuid(), req.params.id)
+  const { status } = parse(statusBodySchema, req.body)
+
+  // updateMany permite filtrar por dueño y estado en la misma operación atómica.
+  const { count } = await prisma.report.updateMany({
+    where: { id, reporterId: req.userId, status: 'active' },
+    data: { status, resolvedAt: status === 'resolved' ? new Date() : null },
+  })
+  if (count === 0) throw new HttpError(404, 'Aviso no encontrado o ya cerrado')
+
+  res.json(await getReport(id))
 })
 
 reportsRouter.get('/:id', async (req, res) => {

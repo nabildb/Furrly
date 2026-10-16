@@ -12,6 +12,9 @@ export function Layout() {
           Furrly
         </Link>
         <nav className="flex gap-4 text-sm">
+          <Link to="/avisos" className="underline">
+            Avisos cerca
+          </Link>
           {session ? (
             <>
               <Link to="/avisos/nuevo" className="underline">

@@ -1,0 +1,41 @@
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { Layout } from './components/Layout'
+import { RequireAuth } from './components/RequireAuth'
+import { Home } from './pages/Home'
+import { Login } from './pages/Login'
+import { MyPets } from './pages/MyPets'
+import { PetDetail } from './pages/PetDetail'
+import { PetEdit } from './pages/PetEdit'
+import { PetNew } from './pages/PetNew'
+import { Register } from './pages/Register'
+
+// Las páginas con mapa cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
+const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
+const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
+const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<p className="p-6">Cargando…</p>}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="registro" element={<Register />} />
+            <Route path="mascotas/:id" element={<PetDetail />} />
+            <Route path="avisos" element={<Reports />} />
+            <Route path="avisos/:id" element={<ReportDetail />} />
+            <Route element={<RequireAuth />}>
+              <Route path="mascotas" element={<MyPets />} />
+              <Route path="mascotas/nueva" element={<PetNew />} />
+              <Route path="mascotas/:id/editar" element={<PetEdit />} />
+              <Route path="avisos/nuevo" element={<ReportNew />} />
+            </Route>
+          </Route>
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  )
+}

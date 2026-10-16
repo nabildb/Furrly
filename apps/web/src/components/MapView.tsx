@@ -1,10 +1,7 @@
 import 'leaflet/dist/leaflet.css'
 import type { ReactNode } from 'react'
 import { MapContainer, TileLayer } from 'react-leaflet'
-import type { LatLng } from '../lib/reports'
-
-// Puerta del Sol: centro por defecto mientras no sabemos dónde está el usuario.
-const DEFAULT_CENTER: LatLng = { lat: 40.4168, lng: -3.7038 }
+import { DEFAULT_CENTER, type LatLng } from '../lib/reports'
 
 interface MapViewProps {
   center?: LatLng

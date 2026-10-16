@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { CircleMarker } from 'react-leaflet'
+import { useAuth } from '../auth/useAuth'
 import { MapView } from '../components/MapView'
 import { api } from '../lib/api'
 import { speciesLabels } from '../lib/pets'
-import { formatDateTime, reportStatusLabels, reportTypeLabels, type Report } from '../lib/reports'
+import { formatDateTime, reportColors, reportStatusLabels, reportTypeLabels, type Report } from '../lib/reports'
 
 export function ReportDetail() {
   const { id } = useParams()
   const [report, setReport] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [updating, setUpdating] = useState(false)
+  const { session } = useAuth()
 
   useEffect(() => {
     api<Report>(`/reports/${id}`)
@@ -21,6 +24,24 @@ export function ReportDetail() {
   if (!report) return <p>Cargando…</p>
 
   const isLost = report.type === 'lost'
+  // Solo decide si se muestran los botones: quien de verdad lo comprueba es la API.
+  const isReporter = session?.user.user_metadata.username === report.reporter.username
+
+  async function changeStatus(status: 'resolved' | 'cancelled') {
+    const question =
+      status === 'resolved'
+        ? '¿Marcar el aviso como resuelto? Dejará de aparecer en el mapa.'
+        : '¿Cancelar el aviso? Dejará de aparecer en el mapa.'
+    if (!report || !confirm(question)) return
+    setUpdating(true)
+    try {
+      setReport(await api<Report>(`/reports/${report.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }))
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setUpdating(false)
+    }
+  }
   const photos = report.photos.length > 0 ? report.photos : report.pet?.photoUrl ? [report.pet.photoUrl] : []
 
   return (
@@ -58,11 +79,36 @@ export function ReportDetail() {
 
       <p className="whitespace-pre-line">{report.description}</p>
 
+      {report.status === 'resolved' && report.resolvedAt && (
+        <p className="rounded bg-green-50 p-3 text-sm text-green-800">
+          {isLost ? '¡Ya está en casa!' : '¡Ya ha vuelto con su familia!'} Resuelto el {formatDateTime(report.resolvedAt)}.
+        </p>
+      )}
+
+      {isReporter && report.status === 'active' && (
+        <div className="flex gap-3">
+          <button
+            onClick={() => changeStatus('resolved')}
+            disabled={updating}
+            className="rounded bg-green-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          >
+            {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
+          </button>
+          <button
+            onClick={() => changeStatus('cancelled')}
+            disabled={updating}
+            className="rounded border border-gray-300 px-4 py-2 text-sm disabled:opacity-50"
+          >
+            Cancelar aviso
+          </button>
+        </div>
+      )}
+
       <MapView center={report.location} zoom={15}>
         <CircleMarker
           center={report.location}
           radius={10}
-          pathOptions={{ color: isLost ? '#dc2626' : '#16a34a', fillOpacity: 0.6 }}
+          pathOptions={{ color: reportColors[report.type], fillOpacity: 0.6 }}
         />
       </MapView>
     </article>
