@@ -21,13 +21,18 @@ Prefiero conversar en español.
 - **Comunidad + servicios:** dueños, protectoras y profesionales (veterinarios, peluquerías, cuidadores)
 
 ## Decisiones pendientes
-- Enfoque diferenciador (de la lista anterior)
-- Stack tecnológico (frontend, backend, base de datos)
-- Dónde almacenar imágenes y dónde desplegar
+- Autenticación: Supabase Auth (validando su JWT en la API) o auth propia (bcrypt + JWT)
 - Dominio (comprobar disponibilidad de furrly.app, furrly.pet o similares)
 
 ## Decisiones tomadas
 - Nombre: **Furrly**
+- Enfoque: **mascotas perdidas y encontradas** — avisos con ubicación, avistamientos y alertas por zona
+- Frontend: React + Vite + TypeScript + Tailwind
+- Backend: Node + Express + TypeScript + Prisma (API REST propia)
+- Base de datos: **Supabase** (PostgreSQL + extensión PostGIS)
+- Imágenes: Supabase Storage
+- Despliegue: Vercel (frontend) + Render/Railway (API); la BD vive en Supabase
+- Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Cómo quiero trabajar
 - Primero, ayudarme a cerrar las decisiones pendientes y diseñar el modelo de datos
