@@ -2,7 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { sexLabels, speciesLabels, type Pet, type PetInput, type PetSex, type Species } from '../lib/pets'
 import { removeImage, uploadImage } from '../lib/storage'
-import { Field, SelectField, TextAreaField } from './Field'
+import { ErrorText, Field, SelectField, TextAreaField } from './Field'
+import { Button } from './ui/Button'
+import { CameraIcon, PawIcon } from './ui/icons'
 
 interface PetFormProps {
   initial?: Pet
@@ -60,12 +62,13 @@ export function PetForm({ initial, submitLabel, onSubmit }: PetFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex items-center gap-4">
-        <div className="h-24 w-24 overflow-hidden rounded-full bg-gray-100">
-          {photoUrl && <img src={photoUrl} alt="" className="h-full w-full object-cover" />}
+        <div className="flex h-[124px] w-[104px] flex-none items-center justify-center overflow-hidden rounded-[22px] bg-[#F6D9C8] text-lost/40">
+          {photoUrl ? <img src={photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={40} />}
         </div>
-        <label className="text-sm underline">
+        <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[14px] border border-line bg-surface px-4 text-[15px] font-extrabold transition hover:bg-subtle has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lost">
+          <CameraIcon size={20} />
           {uploading ? 'Subiendo…' : photoUrl ? 'Cambiar foto' : 'Subir foto'}
           <input
             type="file"
@@ -93,19 +96,20 @@ export function PetForm({ initial, submitLabel, onSubmit }: PetFormProps) {
         />
         <Field label="Color" name="color" maxLength={60} defaultValue={initial?.color ?? ''} />
       </div>
-      <TextAreaField label="Descripción" name="description" maxLength={500} rows={3} defaultValue={initial?.description ?? ''} />
+      <TextAreaField label="Cómo es" hint="Carácter, señas, si se deja coger…" name="description" maxLength={500} rows={3} defaultValue={initial?.description ?? ''} />
       <Field
         label="Microchip"
         name="microchip"
         maxLength={20}
+        inputMode="numeric"
         defaultValue={initial?.microchip ?? ''}
+        hint="Privado: solo lo ves tú."
       />
-      <p className="-mt-3 text-xs text-gray-500">Privado: solo lo ves tú.</p>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={submitting || uploading} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
+      {error && <ErrorText>{error}</ErrorText>}
+      <Button type="submit" variant="dark" disabled={submitting || uploading} className="w-full">
         {submitting ? 'Guardando…' : submitLabel}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -292,6 +292,8 @@ myReportsRouter.get('/', requireAuth, async (req, res) => {
       addressText: true,
       happenedAt: true,
       createdAt: true,
+      // La web lo usa para saber si una mascota ya tiene un aviso de pérdida activo.
+      petId: true,
       pet: { select: { name: true, photoUrl: true } },
       photos: { select: { url: true }, orderBy: { position: 'asc' }, take: 1 },
       _count: { select: { sightings: true } },

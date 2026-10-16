@@ -122,6 +122,7 @@ export interface MyReport {
   addressText: string | null
   happenedAt: string
   createdAt: string
+  petId: string | null
   petName: string | null
   photoUrl: string | null
   sightingsCount: number

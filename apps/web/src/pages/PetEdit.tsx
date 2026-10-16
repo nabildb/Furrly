@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { ErrorText } from '../components/Field'
+import { Loading, Page, PageError } from '../components/Page'
 import { PetForm } from '../components/PetForm'
+import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
 import type { Pet } from '../lib/pets'
 import { removeImage } from '../lib/storage'
@@ -10,6 +13,7 @@ export function PetEdit() {
   const navigate = useNavigate()
   const [pet, setPet] = useState<Pet | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     // /me/pets incluye el microchip, que la ficha pública no devuelve.
@@ -22,21 +26,37 @@ export function PetEdit() {
       .catch((e: Error) => setError(e.message))
   }, [id])
 
-  if (error) return <p className="text-red-600">{error}</p>
-  if (!pet) return <p>Cargando…</p>
+  if (error) return <PageError message={error} back="/mascotas" />
+  if (!pet) return <Loading />
+
+  async function handleDelete() {
+    if (!pet || !confirm(`¿Seguro que quieres borrar a ${pet.name}? También se borrarán sus avisos. No se puede deshacer.`)) return
+    try {
+      await api(`/pets/${pet.id}`, { method: 'DELETE' })
+      if (pet.photoUrl) await removeImage(pet.photoUrl)
+      navigate('/mascotas', { replace: true })
+    } catch (e) {
+      setDeleteError((e as Error).message)
+    }
+  }
 
   return (
-    <section className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <h1 className="text-xl font-semibold">Editar a {pet.name}</h1>
+    <Page title={`Editar a ${pet.name}`} back={`/mascotas?m=${pet.id}`} bottomSpace={false} className="pb-12">
       <PetForm
         initial={pet}
         submitLabel="Guardar cambios"
         onSubmit={async (data) => {
           await api<Pet>(`/pets/${pet.id}`, { method: 'PATCH', body: JSON.stringify(data) })
           if (pet.photoUrl && pet.photoUrl !== data.photoUrl) await removeImage(pet.photoUrl)
-          navigate(`/mascotas/${pet.id}`)
+          navigate(`/mascotas?m=${pet.id}`, { replace: true })
         }}
       />
-    </section>
+      <div className="mt-8 space-y-3 border-t border-line pt-6">
+        {deleteError && <ErrorText>{deleteError}</ErrorText>}
+        <Button variant="danger" size="md" onClick={handleDelete} className="w-full">
+          Borrar a {pet.name}
+        </Button>
+      </div>
+    </Page>
   )
 }

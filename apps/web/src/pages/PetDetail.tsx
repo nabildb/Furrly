@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { Loading, Page, PageError } from '../components/Page'
+import { LostAlertButton } from '../components/LostAlertButton'
+import { PetCarnet } from '../components/PetCarnet'
+import { Card, SectionTitle } from '../components/ui/Card'
+import { EditIcon } from '../components/ui/icons'
+import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
-import { formatAge, sexLabels, speciesLabels, type Pet } from '../lib/pets'
-import { removeImage } from '../lib/storage'
+import type { Pet } from '../lib/pets'
+import { useActiveLostReports } from '../lib/useActiveLostReports'
 
+/** Carnet público de una mascota (/mascotas/:id). */
 export function PetDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const { session } = useAuth()
   const [pet, setPet] = useState<Pet | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -18,69 +24,35 @@ export function PetDetail() {
       .catch((e: Error) => setError(e.message))
   }, [id])
 
-  if (error) return <p className="text-red-600">{error}</p>
-  if (!pet) return <p>Cargando…</p>
-
   // Solo decide si se muestran los botones: quien de verdad lo comprueba es la API.
-  const isOwner = session?.user.user_metadata.username === pet.owner.username
+  const isOwner = !!pet && session?.user.user_metadata.username === pet.owner.username
+  const activeLost = useActiveLostReports(isOwner)
 
-  async function handleDelete() {
-    if (!pet || !confirm(`¿Seguro que quieres borrar a ${pet.name}? También se borrarán sus avisos. No se puede deshacer.`)) return
-    try {
-      await api(`/pets/${pet.id}`, { method: 'DELETE' })
-      if (pet.photoUrl) await removeImage(pet.photoUrl)
-      navigate('/mascotas')
-    } catch (e) {
-      setError((e as Error).message)
-    }
-  }
-
-  const details = [
-    ['Especie', speciesLabels[pet.species]],
-    ['Raza', pet.breed],
-    ['Sexo', sexLabels[pet.sex]],
-    ['Edad', formatAge(pet.birthDate)],
-    ['Color', pet.color],
-  ].filter(([, value]) => value)
+  if (error) return <PageError message={error} />
+  if (!pet) return <Loading />
 
   return (
-    <article className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <div className="flex items-center gap-4">
-        <div className="h-28 w-28 overflow-hidden rounded-full bg-gray-100">
-          {pet.photoUrl && <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />}
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold">{pet.name}</h1>
-          <p className="text-sm text-gray-600">
-            de{' '}
-            <Link to={`/u/${pet.owner.username}`} className="underline">
-              @{pet.owner.username}
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {pet.description && <p>{pet.description}</p>}
-
-      <dl className="grid grid-cols-2 gap-2 text-sm">
-        {details.map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-gray-500">{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      {isOwner && (
-        <div className="flex gap-4 text-sm">
-          <Link to={`/mascotas/${pet.id}/editar`} className="underline">
-            Editar
+    <Page
+      title={pet.name}
+      back={`/u/${pet.owner.username}`}
+      action={
+        isOwner ? (
+          <Link to={`/mascotas/${pet.id}/editar`} aria-label={`Editar a ${pet.name}`} className={iconButtonClass()}>
+            <EditIcon size={20} />
           </Link>
-          <button onClick={handleDelete} className="text-red-600 underline">
-            Borrar
-          </button>
-        </div>
-      )}
-    </article>
+        ) : undefined
+      }
+    >
+      <div className="space-y-4">
+        <PetCarnet pet={pet} showOwner />
+        {pet.description && (
+          <Card>
+            <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
+            <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{pet.description}</p>
+          </Card>
+        )}
+        {isOwner && <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />}
+      </div>
+    </Page>
   )
 }

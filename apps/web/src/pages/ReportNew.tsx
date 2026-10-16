@@ -12,6 +12,7 @@ import { cx } from '../lib/cx'
 import { speciesLabels, type Pet, type Species } from '../lib/pets'
 import { readReportFields, type LatLng, type Report, type ReportType } from '../lib/reports'
 import { removeImage } from '../lib/storage'
+import { useActiveLostReports } from '../lib/useActiveLostReports'
 
 const STEPS = [
   { title: '¿Qué ha pasado?', next: 'Siguiente: dónde y cuándo' },
@@ -37,6 +38,7 @@ export function ReportNew() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const activeLost = useActiveLostReports()
   const formRef = useRef<HTMLFormElement>(null)
   const fieldsets = useRef<(HTMLFieldSetElement | null)[]>([])
   const titleRef = useRef<HTMLInputElement>(null)
@@ -122,7 +124,7 @@ export function ReportNew() {
     else navigate('/avisos')
   }
 
-  if (!pets && !error) return <Loading />
+  if ((!pets || !activeLost) && !error) return <Loading />
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="mx-auto max-w-xl pb-32">
@@ -199,25 +201,34 @@ export function ReportNew() {
                 </p>
               ) : (
                 <div role="radiogroup" aria-label="Mascota" className="grid grid-cols-3 gap-2.5">
-                  {pets?.map((pet, i) => (
+                  {pets?.map((pet) => {
+                    // Ya tiene un aviso activo: la API no deja abrir otro, así que ni se ofrece.
+                    const busy = !!activeLost?.has(pet.id)
+                    return (
                     <label
                       key={pet.id}
-                      className="flex cursor-pointer flex-col items-center gap-2 rounded-[20px] border-2 border-card-line bg-surface py-3 transition has-[:checked]:border-lost has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lost"
+                      className={cx(
+                        'flex flex-col items-center gap-2 rounded-[20px] border-2 border-card-line bg-surface py-3 transition has-[:checked]:border-lost has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lost',
+                        busy ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                      )}
                     >
                       <input
                         type="radio"
                         name="petId"
                         value={pet.id}
                         required
-                        defaultChecked={preselectedPet ? pet.id === preselectedPet : i === 0}
+                        disabled={busy}
+                        defaultChecked={pet.id === (preselectedPet ?? pets.find((p) => !activeLost?.has(p.id))?.id)}
                         className="sr-only"
                       />
                       <span className="flex h-[60px] w-[60px] items-center justify-center overflow-hidden rounded-[20px] bg-[#F6D9C8] text-lost/40">
                         {pet.photoUrl ? <img src={pet.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={28} />}
                       </span>
                       <span className="max-w-full truncate px-1 text-[15px] font-extrabold">{pet.name}</span>
+                      {busy && <span className="-mt-1.5 text-xs font-bold text-muted">Ya tiene aviso</span>}
                     </label>
-                  ))}
+                    )
+                  })}
                   <Link
                     to="/mascotas/nueva"
                     className="flex flex-col items-center justify-center gap-2 rounded-[20px] border-2 border-dashed border-[#C9C5BB] py-3 text-sm font-extrabold text-muted transition hover:border-ink hover:text-ink"
