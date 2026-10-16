@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
+import { useAuth } from '../auth/useAuth'
 import { Avatar } from '../components/Avatar'
+import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { PetCard } from '../components/PetCard'
+import { ButtonLink } from '../components/ui/Button'
 import { SectionTitle } from '../components/ui/Card'
+import { MessageIcon } from '../components/ui/icons'
 import { api } from '../lib/api'
 import type { Pet } from '../lib/pets'
 import type { PublicProfile } from '../lib/users'
 
 export function UserProfile() {
   const { username } = useParams()
+  const { session } = useAuth()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [pets, setPets] = useState<Pet[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +31,8 @@ export function UserProfile() {
   if (error) return <PageError message={error} />
   if (!profile) return <Loading />
 
+  const isMe = session?.user.user_metadata.username === profile.username
+  const composeLink = `/mensajes/nuevo?para=${profile.username}`
   const since = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(profile.createdAt))
   const stats = [
     [profile.petsCount, profile.petsCount === 1 ? 'mascota' : 'mascotas'],
@@ -49,6 +56,19 @@ export function UserProfile() {
             </div>
           ))}
         </div>
+        {!isMe && (
+          <div className="mt-2 flex flex-col items-center gap-3">
+            <ButtonLink
+              to={session ? composeLink : '/login'}
+              state={session ? undefined : { from: composeLink }}
+              variant="dark"
+              size="md"
+            >
+              <MessageIcon size={20} /> Enviar mensaje
+            </ButtonLink>
+            <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />
+          </div>
+        )}
       </section>
 
       <section className="mt-8 space-y-3">

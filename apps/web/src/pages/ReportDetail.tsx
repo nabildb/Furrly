@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { Marker, Polyline, useMap } from 'react-leaflet'
 import { useAuth } from '../auth/useAuth'
 import { ErrorText } from '../components/Field'
+import { FlagButton } from '../components/FlagButton'
 import { originIcon, sightingIcon } from '../components/mapMarkers'
 import { MapView } from '../components/MapView'
 import { BackButton, Loading, PageError } from '../components/Page'
@@ -10,9 +11,9 @@ import { SightingForm } from '../components/SightingForm'
 import { Badge } from '../components/ui/Badge'
 import { Button, ButtonLink } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
-import { CheckIcon, EditIcon, EyeIcon, PawIcon, ShareIcon, UserIcon } from '../components/ui/icons'
+import { CheckIcon, EditIcon, EyeIcon, MailIcon, MessageIcon, PawIcon, PhoneIcon, ShareIcon } from '../components/ui/icons'
 import { Sheet } from '../components/ui/Sheet'
-import { iconButtonClass } from '../components/ui/styles'
+import { buttonClass, iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import { speciesLabels } from '../lib/pets'
@@ -139,6 +140,11 @@ export function ReportDetail() {
   const numbered = sightings.map((s, i) => ({ ...s, n: i + 1 })).reverse()
   const showBottomBar = isActive && (isReporter || isLost || !session)
 
+  // Escribir al autor: sin sesión, primero al login, que luego lleva a la conversación.
+  const composeLink = `/mensajes/nuevo?para=${report.reporter.username}&aviso=${report.id}`
+  const messageLink = session ? composeLink : '/login'
+  const messageState = session ? undefined : { from: composeLink }
+
   // Mismos botones en la barra fija (móvil y tablet) y en la columna derecha (escritorio).
   const actionButtons = isReporter ? (
     <>
@@ -156,11 +162,12 @@ export function ReportDetail() {
   ) : (
     <>
       <Link
-        to={`/u/${report.reporter.username}`}
-        aria-label={`Ver el perfil de @${report.reporter.username}`}
+        to={messageLink}
+        state={messageState}
+        aria-label={`Escribir a @${report.reporter.username}`}
         className={iconButtonClass('h-14 w-14 rounded-btn')}
       >
-        <UserIcon />
+        <MessageIcon />
       </Link>
       {isLost ? (
         session ? (
@@ -278,6 +285,44 @@ export function ReportDetail() {
               </Link>
             </p>
           </Card>
+
+          {!isReporter && (
+            <Card className="space-y-3">
+              <SectionTitle>Contactar con @{report.reporter.username}</SectionTitle>
+              {report.contact ? (
+                <div className="space-y-2">
+                  {report.contact.phone && (
+                    <div className="flex flex-wrap gap-2">
+                      <a href={`tel:${report.contact.phone.replace(/[^\d+]/g, '')}`} className={buttonClass('secondary', 'md')}>
+                        <PhoneIcon size={20} /> {report.contact.phone}
+                      </a>
+                      <a
+                        href={`https://wa.me/${report.contact.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={buttonClass('secondary', 'md')}
+                      >
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
+                  {report.contact.email && (
+                    <a href={`mailto:${report.contact.email}`} className={buttonClass('secondary', 'md', 'max-w-full')}>
+                      <MailIcon size={20} /> <span className="truncate">{report.contact.email}</span>
+                    </a>
+                  )}
+                </div>
+              ) : (
+                report.hasContact &&
+                !session && <p className="text-[15px] font-semibold text-muted">Ha dejado teléfono o email: entra para verlo.</p>
+              )}
+              <ButtonLink to={messageLink} state={messageState} variant="dark" size="md" className="w-full">
+                <MessageIcon size={20} /> {session ? 'Enviar mensaje' : 'Entra para escribirle'}
+              </ButtonLink>
+            </Card>
+          )}
+
+          {!isReporter && <FlagButton target={{ targetType: 'report', targetId: report.id }} label="Denunciar este aviso" />}
         </article>
       </div>
 

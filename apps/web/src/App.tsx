@@ -7,8 +7,11 @@ import { ForgotPassword } from './pages/ForgotPassword'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
 import { MyReports } from './pages/MyReports'
+import { Conversation, NewConversation } from './pages/Conversation'
 import { Feed } from './pages/Feed'
+import { Messages } from './pages/Messages'
 import { NotFound } from './pages/NotFound'
+import { Notifications } from './pages/Notifications'
 import { PetDetail } from './pages/PetDetail'
 import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
@@ -53,6 +56,8 @@ export function App() {
               <Route path="mascotas" element={<MyPets />} />
               <Route path="avisos/mios" element={<MyReports />} />
               <Route path="perfil" element={<Profile />} />
+              <Route path="mensajes" element={<Messages />} />
+              <Route path="notificaciones" element={<Notifications />} />
             </Route>
             {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
             <Route path="*" element={<NotFound />} />
@@ -67,6 +72,8 @@ export function App() {
               <Route path="mascotas/nueva" element={<PetNew />} />
               <Route path="mascotas/:id/editar" element={<PetEdit />} />
               <Route path="publicaciones/nueva" element={<PostNew />} />
+              <Route path="mensajes/nuevo" element={<NewConversation />} />
+              <Route path="mensajes/:id" element={<Conversation />} />
             </Route>
           </Route>
         </Routes>

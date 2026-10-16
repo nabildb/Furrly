@@ -26,6 +26,10 @@ export interface Report {
   pet: { id: string; name: string; breed: string | null; photoUrl: string | null } | null
   photos: string[]
   location: LatLng
+  /** Si el autor ha dejado teléfono o email. */
+  hasContact: boolean
+  /** Solo viene con sesión (la API no lo enseña a anónimos). */
+  contact: { phone: string | null; email: string | null } | null
 }
 
 export const reportTypeLabels: Record<ReportType, string> = {
@@ -139,5 +143,7 @@ export function readReportFields(form: FormData, location: LatLng, photoUrls: st
     lat: location.lat,
     lng: location.lng,
     photoUrls,
+    contactPhone: form.get('contactPhone') ?? undefined,
+    contactEmail: form.get('contactEmail') ?? undefined,
   }
 }

@@ -81,6 +81,30 @@ export function ReportDetailFields({ type, photoUrls, onPhotosChange, initial, t
         hint="Mínimo 10 caracteres."
       />
       <PhotosInput value={photoUrls} onChange={onPhotosChange} max={3} folder="reports" keep={initial?.photos} />
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-extrabold">Contacto (opcional)</legend>
+        <p className="-mt-1 text-[13px] font-semibold text-muted">
+          Solo lo verán quienes tengan cuenta en Furrly. Aunque no lo pongas, podrán escribirte por mensaje.
+        </p>
+        <Field
+          label="Teléfono"
+          name="contactPhone"
+          type="tel"
+          autoComplete="tel"
+          pattern="\+?[0-9 ()\-]{6,19}"
+          maxLength={20}
+          defaultValue={initial?.contact?.phone ?? ''}
+          placeholder="+34 600 000 000"
+        />
+        <Field
+          label="Email"
+          name="contactEmail"
+          type="email"
+          autoComplete="email"
+          maxLength={254}
+          defaultValue={initial?.contact?.email ?? ''}
+        />
+      </fieldset>
     </>
   )
 }

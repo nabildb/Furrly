@@ -27,3 +27,14 @@ export async function removeImage(publicUrl: string) {
   if (index === -1) return
   await supabase.storage.from(BUCKET).remove([publicUrl.slice(index + marker.length)])
 }
+
+const USER_FOLDERS = ['avatars', 'pets', 'reports', 'posts', 'sightings']
+
+/** Borra todas las fotos del usuario (antes de eliminar su cuenta). Lo que falle queda huérfano, no es crítico. */
+export async function removeUserFolder(userId: string) {
+  for (const folder of USER_FOLDERS) {
+    const { data } = await supabase.storage.from(BUCKET).list(`${userId}/${folder}`, { limit: 1000 })
+    const paths = (data ?? []).map((file) => `${userId}/${folder}/${file.name}`)
+    if (paths.length > 0) await supabase.storage.from(BUCKET).remove(paths)
+  }
+}

@@ -206,3 +206,43 @@ export const TrashIcon = (p: IconProps) => (
     <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
   </Stroke>
 )
+
+export const BellIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+  </Stroke>
+)
+
+export const MessageIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z" />
+    <path d="M8 10h8M8 13h5" />
+  </Stroke>
+)
+
+export const PhoneIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+  </Stroke>
+)
+
+export const MailIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="m3 7 9 6 9-6" />
+  </Stroke>
+)
+
+export const FlagIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+  </Stroke>
+)
+
+export const SendIcon = (p: IconProps) => (
+  <Stroke strokeWidth={2.2} {...p}>
+    <path d="m22 2-7 20-4-9-9-4 20-7z" />
+    <path d="M22 2 11 13" />
+  </Stroke>
+)

@@ -1,0 +1,140 @@
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { ChatComposer, ChatHeader, MessageBubble, ReportContext } from '../components/Chat'
+import { ErrorText } from '../components/Field'
+import { Loading, PageError } from '../components/Page'
+import { Button } from '../components/ui/Button'
+import { useInbox } from '../inbox/useInbox'
+import { api } from '../lib/api'
+import type { ChatMessage, ConversationDetail } from '../lib/inbox'
+import type { Report } from '../lib/reports'
+import type { PublicProfile } from '../lib/users'
+
+const POLL_MS = 8_000
+
+/** Lleva el scroll al final cuando llegan mensajes nuevos. */
+function useScrollToEnd(dep: unknown) {
+  useLayoutEffect(() => {
+    window.scrollTo({ top: document.body.scrollHeight })
+  }, [dep])
+}
+
+/** Conversación abierta: mensajes, cargar anteriores y responder. Se refresca cada 8 s. */
+export function Conversation() {
+  const { id } = useParams()
+  const { refresh: refreshInbox } = useInbox()
+  const [data, setData] = useState<ConversationDetail | null>(null)
+  const [older, setOlder] = useState<ChatMessage[]>([])
+  const [olderCursor, setOlderCursor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const lastId = data?.messages[data.messages.length - 1]?.id
+
+  const load = useCallback(() => {
+    api<ConversationDetail>(`/conversations/${id}`)
+      .then((d) => {
+        setData(d)
+        refreshInbox()
+      })
+      .catch((e: Error) => setError(e.message))
+  }, [id, refreshInbox])
+
+  useEffect(() => {
+    load()
+    const timer = setInterval(() => document.visibilityState === 'visible' && load(), POLL_MS)
+    return () => clearInterval(timer)
+  }, [load])
+
+  useScrollToEnd(lastId)
+
+  if (error && !data) return <PageError message={error} back="/mensajes" />
+  if (!data) return <Loading />
+
+  // El primer cursor de "anteriores" sale de la primera carga; luego, de cada página antigua.
+  const cursor = older.length > 0 ? olderCursor : data.olderCursor
+
+  async function loadOlder() {
+    if (!cursor) return
+    const page = await api<ConversationDetail>(`/conversations/${id}?before=${cursor}`)
+    setOlder((prev) => [...page.messages, ...prev])
+    setOlderCursor(page.olderCursor)
+  }
+
+  async function send(body: string) {
+    const message = await api<ChatMessage>(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) })
+    setData((d) => d && { ...d, messages: [...d.messages, message] })
+  }
+
+  // Si la última página del polling ya incluye mensajes que teníamos como "antiguos", no los repetimos.
+  const shown = new Set(data.messages.map((m) => m.id))
+  const messages = [...older.filter((m) => !shown.has(m.id)), ...data.messages]
+
+  return (
+    <main className="mx-auto max-w-2xl pb-28">
+      <ChatHeader other={data.other} />
+      <div className="space-y-2 px-4 pt-4">
+        {cursor && (
+          <Button variant="secondary" size="md" onClick={loadOlder} className="mx-auto mb-2 flex">
+            Ver mensajes anteriores
+          </Button>
+        )}
+        {messages.map((m) => (
+          <MessageBubble key={m.id} message={m} />
+        ))}
+        {error && <ErrorText>{error}</ErrorText>}
+      </div>
+      <ChatComposer onSend={send} />
+    </main>
+  )
+}
+
+/**
+ * Escribir a alguien por primera vez: /mensajes/nuevo?para=<username>&aviso=<id>.
+ * Si ya hay conversación, la API la reutiliza; al enviar se pasa a /mensajes/:id.
+ */
+export function NewConversation() {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const username = params.get('para') ?? ''
+  const reportId = params.get('aviso')
+  const [profile, setProfile] = useState<PublicProfile | null>(null)
+  const [report, setReport] = useState<Report | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api<PublicProfile>(`/users/${encodeURIComponent(username)}`)
+      .then(setProfile)
+      .catch((e: Error) => setError(e.message))
+    if (reportId) api<Report>(`/reports/${reportId}`).then(setReport, () => {})
+  }, [username, reportId])
+
+  if (error) return <PageError message={error} back="/mensajes" />
+  if (!profile) return <Loading />
+
+  async function send(body: string) {
+    const res = await api<{ conversationId: string }>('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ username, body, reportId: report?.id ?? null }),
+    })
+    navigate(`/mensajes/${res.conversationId}`, { replace: true })
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl pb-28">
+      <ChatHeader other={{ username: profile.username, displayName: profile.displayName, avatarUrl: profile.avatarUrl }} />
+      <div className="space-y-3 px-4 pt-6 text-center">
+        {report && (
+          <div className="mx-auto max-w-sm text-left">
+            <ReportContext report={report} />
+          </div>
+        )}
+        <p className="text-[15px] font-semibold text-muted">
+          Escribe a @{profile.username}. {report ? 'El mensaje irá asociado a este aviso.' : ''}
+        </p>
+      </div>
+      <ChatComposer
+        onSend={send}
+        placeholder={report?.type === 'found' ? 'Creo que es mío…' : report ? 'Creo que la he visto…' : 'Escribe un mensaje…'}
+      />
+    </main>
+  )
+}

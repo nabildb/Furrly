@@ -1,12 +1,15 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { DeleteAccount } from '../components/DeleteAccount'
 import { ErrorText, Field, SelectField, TextAreaField } from '../components/Field'
 import { LocationPicker } from '../components/LocationPicker'
 import { Loading, Page } from '../components/Page'
 import { PhotosInput } from '../components/PhotosInput'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
-import { ArrowRightIcon, CheckIcon, ListIcon, LogoutIcon, UserIcon } from '../components/ui/icons'
+import { CountBadge } from '../components/ui/CountBadge'
+import { ArrowRightIcon, BellIcon, CheckIcon, ListIcon, LogoutIcon, MessageIcon, UserIcon } from '../components/ui/icons'
+import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import type { LatLng } from '../lib/reports'
 import { removeImage } from '../lib/storage'
@@ -15,17 +18,19 @@ import type { Me } from '../lib/users'
 
 const radiusOptions = { '1': '1 km', '2': '2 km', '5': '5 km', '10': '10 km', '25': '25 km', '50': '50 km' }
 
-function MenuLink({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) {
+function MenuLink({ to, icon, count = 0, children }: { to: string; icon: ReactNode; count?: number; children: ReactNode }) {
   return (
     <Link to={to} className="flex h-14 items-center gap-3 px-4 text-[15px] font-extrabold transition hover:bg-subtle">
       {icon}
       <span className="flex-1">{children}</span>
+      <CountBadge count={count} />
       <ArrowRightIcon size={18} className="text-muted" />
     </Link>
   )
 }
 
 export function Profile() {
+  const inbox = useInbox()
   const [me, setMe] = useState<Me | null>(null)
   const [avatar, setAvatar] = useState<string[]>([])
   const [alertLocation, setAlertLocation] = useState<LatLng | null>(null)
@@ -88,6 +93,12 @@ export function Profile() {
       <form onSubmit={handleSubmit} className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
         <div className="space-y-6">
           <Card className="divide-y divide-card-line overflow-hidden p-0">
+            <MenuLink to="/mensajes" icon={<MessageIcon />} count={inbox.messages}>
+              Mensajes
+            </MenuLink>
+            <MenuLink to="/notificaciones" icon={<BellIcon />} count={inbox.notifications}>
+              Notificaciones
+            </MenuLink>
             <MenuLink to="/avisos/mios" icon={<ListIcon />}>
               Mis avisos
             </MenuLink>
@@ -151,6 +162,7 @@ export function Profile() {
               <LogoutIcon size={20} /> Cerrar sesión
             </Button>
           </div>
+          <DeleteAccount username={me.username} />
         </div>
       </form>
     </Page>

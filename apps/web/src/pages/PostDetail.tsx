@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { Avatar } from '../components/Avatar'
 import { ErrorText } from '../components/Field'
+import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { LikeButton, PostHeader } from '../components/PostCard'
 import { Button } from '../components/ui/Button'
@@ -77,10 +78,12 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <PostHeader post={post} />
-          {isOwner && (
+          {isOwner ? (
             <button type="button" onClick={deletePost} aria-label="Borrar publicación" className={iconButtonClass('text-danger')}>
               <TrashIcon size={20} />
             </button>
+          ) : (
+            <FlagButton target={{ targetType: 'post', targetId: post.id }} />
           )}
         </div>
         {post.caption && <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{post.caption}</p>}
@@ -106,6 +109,9 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
                   </p>
                   <p className="text-xs font-semibold text-muted first-letter:uppercase">{formatTimeAgo(c.createdAt)}</p>
                 </div>
+                {c.user.username !== myUsername && (
+                  <FlagButton target={{ targetType: 'comment', targetId: c.id }} label="" className="px-1 py-1" />
+                )}
                 {(c.user.username === myUsername || isOwner) && (
                   <button
                     type="button"

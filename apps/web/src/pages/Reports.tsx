@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { Circle, Marker, useMap, useMapEvents } from 'react-leaflet'
-import { MapView } from '../components/MapView'
+import { useAuth } from '../auth/useAuth'
 import { reportPillIcon, searchCenterIcon } from '../components/mapMarkers'
+import { MapView } from '../components/MapView'
 import { ReportCard } from '../components/ReportCard'
 import { Chip } from '../components/ui/Chip'
-import { LocateIcon, SearchIcon } from '../components/ui/icons'
+import { CountBadge } from '../components/ui/CountBadge'
+import { BellIcon, LocateIcon, SearchIcon } from '../components/ui/icons'
 import { chipClass } from '../components/ui/styles'
 import { TopSearchBar } from '../components/ui/TopSearchBar'
+import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import { searchPlace } from '../lib/geocode'
-import { useMediaQuery } from '../lib/useMediaQuery'
 import { speciesLabels, type Species } from '../lib/pets'
 import { DEFAULT_CENTER, reportColors, type LatLng, type NearbyReport, type ReportType } from '../lib/reports'
+import { useMediaQuery } from '../lib/useMediaQuery'
 
 const RADII = [2, 5, 10, 25, 50]
 
@@ -43,6 +47,8 @@ function FlyTo({ center }: { center: LatLng }) {
 }
 
 export function Reports() {
+  const { session } = useAuth()
+  const inbox = useInbox()
   const [searchCenter, setSearchCenter] = useState<LatLng>(DEFAULT_CENTER)
   const [origin, setOrigin] = useState<Origin>({ kind: 'default' })
   const [mapCenter, setMapCenter] = useState<LatLng>(DEFAULT_CENTER)
@@ -181,17 +187,29 @@ export function Reports() {
             onSearch={handleSearch}
             searching={busy}
             action={
-              <button
-                type="button"
-                onClick={locate}
-                aria-label="Usar mi ubicación"
-                className={cx(
-                  'flex h-11 w-11 flex-none items-center justify-center rounded-[14px] transition',
-                  origin.kind === 'me' ? 'bg-ink text-white' : 'bg-subtle text-ink hover:bg-line',
+              <>
+                {session && (
+                  <Link
+                    to="/notificaciones"
+                    aria-label={`Notificaciones${inbox.notifications ? ` (${inbox.notifications} sin leer)` : ''}`}
+                    className="relative flex h-11 w-11 flex-none items-center justify-center rounded-[14px] bg-subtle text-ink transition hover:bg-line lg:hidden"
+                  >
+                    <BellIcon size={20} />
+                    <CountBadge count={inbox.notifications} className="absolute -top-1 -right-1 ring-2 ring-surface" />
+                  </Link>
                 )}
-              >
-                <LocateIcon size={20} />
-              </button>
+                <button
+                  type="button"
+                  onClick={locate}
+                  aria-label="Usar mi ubicación"
+                  className={cx(
+                    'flex h-11 w-11 flex-none items-center justify-center rounded-[14px] transition',
+                    origin.kind === 'me' ? 'bg-ink text-white' : 'bg-subtle text-ink hover:bg-line',
+                  )}
+                >
+                  <LocateIcon size={20} />
+                </button>
+              </>
             }
           />
         </div>

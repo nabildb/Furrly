@@ -1,6 +1,8 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { useInbox } from '../../inbox/useInbox'
 import { cx } from '../../lib/cx'
+import { CountBadge } from './CountBadge'
 import { ButtonLink } from './Button'
 import { PlusIcon } from './icons'
 import { Logo } from './Logo'
@@ -12,6 +14,7 @@ export function Sidebar() {
   const username = session?.user.user_metadata.username as string | undefined
   const displayName = (session?.user.user_metadata.display_name as string | undefined) ?? username
   const { pathname } = useLocation()
+  const inbox = useInbox()
 
   return (
     <aside className="fixed inset-y-0 left-0 z-[1100] hidden w-(--sidebar-w) flex-col border-r border-card-line bg-surface px-4 py-6 lg:flex">
@@ -24,7 +27,7 @@ export function Sidebar() {
       </ButtonLink>
 
       <nav aria-label="Navegación principal" className="flex flex-col gap-1">
-        {navItems.map(({ to, label, icon, end, also = [] }) => (
+        {navItems.map(({ to, label, icon, end, also = [], badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -38,6 +41,8 @@ export function Sidebar() {
           >
             {icon}
             {label}
+            {/* En la barra lateral Mensajes y Notificaciones tienen su propia entrada: Perfil no suma nada. */}
+            {badge && badge !== 'all' && <CountBadge count={inbox[badge]} className="ml-auto" />}
           </NavLink>
         ))}
       </nav>
