@@ -39,6 +39,21 @@ export const reportStatusLabels: Record<ReportStatus, string> = {
   cancelled: 'Cancelado',
 }
 
+/** "Hoy, 16:10", "Ayer, 9:30" o "12 oct, 16:10": lo que cabe en las cajas de la ficha. */
+export function formatWhen(iso: string) {
+  const date = new Date(iso)
+  const time = new Intl.DateTimeFormat('es-ES', { hour: 'numeric', minute: '2-digit' }).format(date)
+  const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86_400_000)
+  if (days === 0) return `Hoy, ${time}`
+  if (days === 1) return `Ayer, ${time}`
+  const day = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' }).format(date)
+  return `${day}, ${time}`
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+}
+
 export function formatDateTime(iso: string) {
   return new Intl.DateTimeFormat('es-ES', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(iso))
 }
@@ -53,6 +68,8 @@ export interface NearbyReport {
   location: LatLng
   distanceM: number
   photoUrl: string | null
+  /** Solo en avisos de pérdida (los de encontrada no tienen mascota registrada). */
+  petName: string | null
 }
 
 // Leaflet pinta con colores en JS: son los mismos valores que los tokens de src/index.css.

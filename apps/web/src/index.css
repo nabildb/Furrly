@@ -57,3 +57,24 @@
     font: inherit;
   }
 }
+
+@layer components {
+  /* Controles de Leaflet con el estilo de la app; el zoom solo en pantallas con ratón. */
+  .leaflet-control-zoom {
+    @apply hidden overflow-hidden rounded-[14px]! border-0! shadow-chip! lg:block;
+  }
+  .leaflet-control-zoom a {
+    @apply flex! h-11! w-11! items-center justify-center text-ink!;
+  }
+  .leaflet-control-attribution {
+    @apply rounded-tl-lg bg-white/80! text-[10px]!;
+  }
+  /* Teselas de OSM más apagadas, hacia el mapa crema del diseño (solo la capa base). */
+  .leaflet-tile-pane {
+    filter: saturate(0.55) sepia(0.12) brightness(1.04);
+  }
+  /* divIcon: Leaflet le pone fondo y borde blancos por defecto. */
+  .furrly-marker {
+    @apply border-0! bg-transparent!;
+  }
+}

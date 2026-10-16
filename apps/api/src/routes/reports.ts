@@ -61,6 +61,7 @@ interface NearbyReportRow {
   lng: number
   distance_m: number
   photo_url: string | null
+  pet_name: string | null
 }
 
 // Tipo y mascota no se cambian: si te equivocas de aviso, se cancela y se crea otro.
@@ -105,7 +106,8 @@ reportsRouter.get('/', async (req, res) => {
            coalesce(
              (SELECT rp.url FROM report_photos rp WHERE rp.report_id = r.id ORDER BY rp.position LIMIT 1),
              p.photo_url
-           ) AS photo_url
+           ) AS photo_url,
+           p.name AS pet_name
     FROM reports r
     LEFT JOIN pets p ON p.id = r.pet_id
     WHERE ${Prisma.join(filters, ' AND ')}
@@ -123,6 +125,8 @@ reportsRouter.get('/', async (req, res) => {
       location: { lat: r.lat, lng: r.lng },
       distanceM: Math.round(r.distance_m),
       photoUrl: r.photo_url,
+      // El mapa rotula los marcadores con el nombre (los avisos de encontrada no tienen mascota).
+      petName: r.pet_name,
     })),
   )
 })

@@ -81,9 +81,11 @@ describe('GET /reports (avisos cercanos)', () => {
 
     const lostOnly = await request.get('/reports').query({ ...SOL, type: 'lost' })
     expect(lostOnly.body.map((r: { id: string }) => r.id)).toEqual([lost.id])
+    expect(lostOnly.body[0].petName).toBe('Luna')
 
     const cats = await request.get('/reports').query({ ...SOL, species: 'cat' })
     expect(cats.body.map((r: { id: string }) => r.id)).toEqual([cat.body.id])
+    expect(cats.body[0].petName).toBeNull()
 
     await request.patch(`/reports/${lost.id}/status`).set(owner.auth).send({ status: 'resolved' })
     const afterResolve = await request.get('/reports').query(SOL)
