@@ -1,11 +1,14 @@
 import type { SVGProps } from 'react'
+import { cx } from '../../lib/cx'
 
 // Iconos de trazo (stroke 2–2,4) copiados del diseño C. Sin librería: son pocos y así no pesan nada.
 type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 
-function Stroke({ size = 22, strokeWidth = 2, children, ...props }: IconProps) {
+function Stroke({ size = 22, strokeWidth = 2, children, className, ...props }: IconProps) {
   return (
     <svg
+      // Dentro de un flex, un SVG se encoge si falta sitio: los iconos mantienen siempre su tamaño.
+      className={cx('flex-none', className)}
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -23,9 +26,9 @@ function Stroke({ size = 22, strokeWidth = 2, children, ...props }: IconProps) {
 }
 
 /** Huella rellena del logo. */
-export function PawIcon({ size = 22, ...props }: IconProps) {
+export function PawIcon({ size = 22, className, ...props }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+    <svg className={cx('flex-none', className)} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
       <ellipse cx="12" cy="16" rx="5" ry="4" />
       <circle cx="6" cy="10" r="2.2" />
       <circle cx="18" cy="10" r="2.2" />

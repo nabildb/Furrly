@@ -273,7 +273,7 @@ export function ReportDetail() {
                   </span>
                   <div className="min-w-0 flex-1 text-sm leading-snug">
                     <p>
-                      <strong className="font-extrabold first-letter:uppercase" title={formatDateTime(s.seenAt)}>
+                      <strong className="inline-block font-extrabold first-letter:uppercase" title={formatDateTime(s.seenAt)}>
                         {formatTimeAgo(s.seenAt)}
                       </strong>{' '}
                       ·{' '}
@@ -313,9 +313,13 @@ export function ReportDetail() {
           <div className="mx-auto flex max-w-2xl gap-2.5 px-5 pt-3.5 pb-[max(22px,env(safe-area-inset-bottom))]">
             {isReporter ? (
               <>
-                <ButtonLink to={`/avisos/${report.id}/editar`} variant="secondary" aria-label="Editar aviso" className="w-14 flex-none px-0">
+                <Link
+                  to={`/avisos/${report.id}/editar`}
+                  aria-label="Editar aviso"
+                  className={iconButtonClass('h-14 w-14 rounded-btn')}
+                >
                   <EditIcon />
-                </ButtonLink>
+                </Link>
                 <Button variant="dark" className="flex-1" disabled={updating} onClick={() => changeStatus('resolved')}>
                   <CheckIcon /> {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
                 </Button>
@@ -354,6 +358,7 @@ export function ReportDetail() {
         <Sheet title="La he visto" onClose={closeSightingForm}>
           <SightingForm
             report={report}
+            lastSeen={route[route.length - 1]}
             onCreated={() => {
               setShowSightingForm(false)
               setSightingsVersion((v) => v + 1)

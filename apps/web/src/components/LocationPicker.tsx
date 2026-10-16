@@ -12,6 +12,8 @@ interface LocationPickerProps {
   onChange: (value: LatLng) => void
   /** Color del punto marcado: naranja (perdida), azul (encontrada). */
   tone?: ReportType
+  /** Dónde abrir el mapa mientras no hay punto marcado (p. ej. el recorrido de la mascota). */
+  initialCenter?: LatLng
   className?: string
 }
 
@@ -60,11 +62,11 @@ function LocateButton({ onChange }: { onChange: (value: LatLng) => void }) {
   )
 }
 
-export function LocationPicker({ value, onChange, tone = 'lost', className }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, tone = 'lost', initialCenter, className }: LocationPickerProps) {
   return (
     <div>
       <div className="relative">
-        <MapView center={value ?? undefined} zoom={value ? 15 : 13} className={cx('cursor-crosshair', className)}>
+        <MapView center={value ?? initialCenter} zoom={value || initialCenter ? 15 : 13} className={cx('cursor-crosshair', className)}>
           <ClickHandler onChange={onChange} />
           <LocateButton onChange={onChange} />
           {value && <Marker position={value} icon={originIcon(tone)} interactive={false} />}

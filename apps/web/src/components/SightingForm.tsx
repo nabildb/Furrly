@@ -9,10 +9,12 @@ import { EyeIcon } from './ui/icons'
 
 interface SightingFormProps {
   report: Report
+  /** Último punto conocido (avistamiento más reciente o lugar de la pérdida). */
+  lastSeen: LatLng
   onCreated: () => void
 }
 
-export function SightingForm({ report, onCreated }: SightingFormProps) {
+export function SightingForm({ report, lastSeen, onCreated }: SightingFormProps) {
   const [location, setLocation] = useState<LatLng | null>(null)
   const [photos, setPhotos] = useState<string[]>([])
   const [maxDate] = useState(() => toDateTimeInput(new Date()))
@@ -54,7 +56,7 @@ export function SightingForm({ report, onCreated }: SightingFormProps) {
       <div>
         <span className="text-sm font-extrabold">¿Dónde la has visto?</span>
         <div className="mt-1.5">
-          <LocationPicker value={location} onChange={setLocation} className="h-56" />
+          <LocationPicker value={location} onChange={setLocation} initialCenter={lastSeen} className="h-56" />
         </div>
       </div>
       <Field
