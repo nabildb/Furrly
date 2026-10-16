@@ -5,4 +5,4 @@ node_modules/
 !.env.example
 dist/
 build/
-src/generated/
+apps/api/src/generated/
