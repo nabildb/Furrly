@@ -3,6 +3,7 @@ import express from 'express'
 import helmet from 'helmet'
 import { env } from './lib/env.js'
 import { meRouter } from './routes/me.js'
+import { usernamesRouter } from './routes/usernames.js'
 
 export const app = express()
 
@@ -15,3 +16,4 @@ app.get('/health', (_req, res) => {
 })
 
 app.use('/me', meRouter)
+app.use('/usernames', usernamesRouter)
