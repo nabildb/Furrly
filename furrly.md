@@ -32,7 +32,7 @@ Prefiero conversar en español.
 - Base de datos: **Supabase** (PostgreSQL + extensión PostGIS) — proyecto `furrly`, región Frankfurt (eu-central-1)
 - Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
 - Imágenes: Supabase Storage
-- Despliegue: Vercel (frontend) + Render/Railway (API); la BD vive en Supabase
+- Despliegue: **todo en Vercel**, un solo proyecto: la web estática y la API de Express como función serverless bajo `/api` (mismo dominio, sin CORS). La BD vive en Supabase
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Cómo quiero trabajar

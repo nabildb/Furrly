@@ -63,6 +63,15 @@ generada para cada ejecución, igual que hace Supabase Auth.
 Se ejecutan en GitHub Actions en cada push, con PostGIS como servicio del workflow,
 junto con lint, typecheck y build ([ver workflow](.github/workflows/ci.yml)).
 
+## Despliegue
+
+Un único proyecto de **Vercel** ([vercel.json](vercel.json)):
+
+- La web (React) se sirve como estáticos desde `apps/web/dist`.
+- La API de Express se ejecuta como **función serverless** en `/api` ([api/index.mjs](api/index.mjs)),
+  en la región de Frankfurt, junto a Supabase. Al compartir dominio no hace falta CORS.
+- En cada despliegue de producción se aplican las migraciones pendientes (`prisma migrate deploy`).
+
 ## Documentación
 
 - [Modelo de datos](docs/modelo-datos.md)

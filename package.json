@@ -8,7 +8,8 @@
     "dev:web": "npm run dev -w @furrly/web",
     "dev:api": "npm run dev -w @furrly/api",
     "build": "npm run build --workspaces",
-    "test": "npm test -w @furrly/api"
+    "test": "npm test -w @furrly/api",
+    "vercel-build": "npm run build -w @furrly/api && npm run build -w @furrly/web && if [ \"$VERCEL_ENV\" = \"production\" ]; then npm run db:deploy -w @furrly/api; fi"
   },
   "engines": {
     "node": ">=22"
