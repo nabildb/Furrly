@@ -50,7 +50,7 @@ export function ReportNew() {
   const noPets = type === 'lost' && pets?.length === 0
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Nuevo aviso</h1>
 
       <div className="flex gap-2">

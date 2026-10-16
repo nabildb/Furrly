@@ -13,7 +13,7 @@ export function Register() {
   const [submitting, setSubmitting] = useState(false)
   const [sentTo, setSentTo] = useState<string | null>(null)
 
-  if (session) return <Navigate to="/" replace />
+  if (session) return <Navigate to="/avisos" replace />
 
   if (sentTo) {
     return (
@@ -62,7 +62,7 @@ export function Register() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Crear cuenta</h1>
       <Field
         label="Nombre de usuario"

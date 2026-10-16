@@ -37,11 +37,11 @@ export function ResetPassword() {
       setError(error.code === 'same_password' ? 'La contraseña nueva tiene que ser distinta de la anterior.' : error.message)
       return
     }
-    navigate('/')
+    navigate('/avisos')
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Elige una contraseña nueva</h1>
       <Field label="Contraseña nueva" name="password" type="password" required minLength={8} autoComplete="new-password" />
       <Field label="Repítela" name="confirm" type="password" required minLength={8} autoComplete="new-password" />

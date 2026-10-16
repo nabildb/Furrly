@@ -4,6 +4,7 @@ import { Field, SelectField, TextAreaField } from '../components/Field'
 import { LocationPicker } from '../components/LocationPicker'
 import { PhotosInput } from '../components/PhotosInput'
 import { api } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import type { LatLng } from '../lib/reports'
 import { removeImage } from '../lib/storage'
 import type { Me } from '../lib/users'
@@ -60,7 +61,7 @@ export function Profile() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Mi perfil</h1>
         <Link to={`/u/${me.username}`} className="text-sm underline">
@@ -94,6 +95,9 @@ export function Profile() {
       {saved && <p className="text-sm text-green-700">Cambios guardados.</p>}
       <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
         {submitting ? 'Guardando…' : 'Guardar cambios'}
+      </button>
+      <button type="button" onClick={() => supabase.auth.signOut()} className="block text-sm underline">
+        Cerrar sesión
       </button>
     </form>
   )

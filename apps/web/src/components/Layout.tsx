@@ -1,51 +1,16 @@
-import { Link, Outlet } from 'react-router'
-import { useAuth } from '../auth/useAuth'
-import { supabase } from '../lib/supabase'
+import { Outlet } from 'react-router'
+import { BottomNav } from './ui/BottomNav'
 
-export function Layout() {
-  const { session } = useAuth()
-
+/**
+ * Marco de la app. Cada página decide su ancho y cabecera (ver Page.tsx), porque el mapa
+ * ocupa toda la pantalla y el resto va centrado. Las pantallas con su propia barra de
+ * acciones abajo (ficha, publicar, formularios) se montan sin la navegación.
+ */
+export function Layout({ nav = true }: { nav?: boolean }) {
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      <header className="mb-8 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold">
-          Furrly
-        </Link>
-        <nav className="flex gap-4 text-sm">
-          <Link to="/avisos" className="underline">
-            Avisos cerca
-          </Link>
-          {session ? (
-            <>
-              <Link to="/avisos/nuevo" className="underline">
-                Publicar aviso
-              </Link>
-              <Link to="/avisos/mios" className="underline">
-                Mis avisos
-              </Link>
-              <Link to="/mascotas" className="underline">
-                Mis mascotas
-              </Link>
-              <Link to="/perfil" className="underline">
-                Perfil
-              </Link>
-              <button onClick={() => supabase.auth.signOut()} className="underline">
-                Cerrar sesión
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="underline">
-                Entrar
-              </Link>
-              <Link to="/registro" className="underline">
-                Crear cuenta
-              </Link>
-            </>
-          )}
-        </nav>
-      </header>
+    <>
       <Outlet />
-    </div>
+      {nav && <BottomNav />}
+    </>
   )
 }

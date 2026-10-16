@@ -59,7 +59,7 @@ export function ReportEdit() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Editar aviso</h1>
       <ReportFields
         type={report.type}

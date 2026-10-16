@@ -26,7 +26,7 @@ export function PetEdit() {
   if (!pet) return <p>Cargando…</p>
 
   return (
-    <section className="space-y-4">
+    <section className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Editar a {pet.name}</h1>
       <PetForm
         initial={pet}

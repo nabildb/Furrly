@@ -17,7 +17,7 @@ export function MyReports() {
   if (!reports) return <p>Cargando…</p>
 
   return (
-    <section className="space-y-4">
+    <section className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Mis avisos</h1>
         <Link to="/avisos/nuevo" className="rounded bg-black px-3 py-1.5 text-sm text-white">

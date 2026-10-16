@@ -27,7 +27,7 @@ export function UserProfile() {
   const since = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(profile.createdAt))
 
   return (
-    <section className="space-y-6">
+    <section className="mx-auto max-w-2xl space-y-6 px-4 pt-6 pb-32">
       <div className="flex items-center gap-4">
         <Avatar url={profile.avatarUrl} name={profile.displayName} className="h-20 w-20 text-3xl" />
         <div>

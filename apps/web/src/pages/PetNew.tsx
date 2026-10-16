@@ -7,7 +7,7 @@ export function PetNew() {
   const navigate = useNavigate()
 
   return (
-    <section className="space-y-4">
+    <section className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Nueva mascota</h1>
       <PetForm
         submitLabel="Crear mascota"

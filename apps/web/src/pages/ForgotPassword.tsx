@@ -32,7 +32,7 @@ export function ForgotPassword() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Recuperar contraseña</h1>
       <p className="text-sm text-gray-600">Te enviaremos un enlace para elegir una contraseña nueva.</p>
       <Field label="Email" name="email" type="email" autoComplete="email" required />

@@ -44,7 +44,7 @@ export function PetDetail() {
   ].filter(([, value]) => value)
 
   return (
-    <article className="space-y-4">
+    <article className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <div className="flex items-center gap-4">
         <div className="h-28 w-28 overflow-hidden rounded-full bg-gray-100">
           {pet.photoUrl && <img src={pet.photoUrl} alt={pet.name} className="h-full w-full object-cover" />}

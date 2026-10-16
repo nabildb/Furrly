@@ -99,7 +99,7 @@ export function ReportDetail() {
   const photos = report.photos.length > 0 ? report.photos : report.pet?.photoUrl ? [report.pet.photoUrl] : []
 
   return (
-    <article className="space-y-4">
+    <article className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
         <span className={`rounded px-2 py-0.5 text-white ${isLost ? 'bg-red-600' : 'bg-green-600'}`}>
           {reportTypeLabels[report.type]}

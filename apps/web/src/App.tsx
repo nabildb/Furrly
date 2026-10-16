@@ -1,9 +1,9 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Layout } from './components/Layout'
+import { Loading } from './components/Page'
 import { RequireAuth } from './components/RequireAuth'
 import { ForgotPassword } from './pages/ForgotPassword'
-import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
 import { MyReports } from './pages/MyReports'
@@ -30,10 +30,13 @@ const StyleGuide = import.meta.env.DEV
 export function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<p className="p-6">Cargando…</p>}>
+      <Suspense fallback={<Loading />}>
         <Routes>
+          {/* La portada es el mapa: es lo primero que necesita quien ha perdido o encontrado un animal. */}
+          <Route index element={<Navigate to="/avisos" replace />} />
+
+          {/* Con la navegación flotante */}
           <Route element={<Layout />}>
-            <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
             <Route path="registro" element={<Register />} />
             <Route path="recuperar" element={<ForgotPassword />} />
@@ -41,18 +44,24 @@ export function App() {
             <Route path="u/:username" element={<UserProfile />} />
             <Route path="mascotas/:id" element={<PetDetail />} />
             <Route path="avisos" element={<Reports />} />
-            <Route path="avisos/:id" element={<ReportDetail />} />
             <Route element={<RequireAuth />}>
               <Route path="mascotas" element={<MyPets />} />
-              <Route path="mascotas/nueva" element={<PetNew />} />
-              <Route path="mascotas/:id/editar" element={<PetEdit />} />
-              <Route path="avisos/nuevo" element={<ReportNew />} />
               <Route path="avisos/mios" element={<MyReports />} />
-              <Route path="avisos/:id/editar" element={<ReportEdit />} />
               <Route path="perfil" element={<Profile />} />
             </Route>
             {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
             <Route path="*" element={<NotFound />} />
+          </Route>
+
+          {/* Pantallas con su propia barra de acciones abajo */}
+          <Route element={<Layout nav={false} />}>
+            <Route path="avisos/:id" element={<ReportDetail />} />
+            <Route element={<RequireAuth />}>
+              <Route path="avisos/nuevo" element={<ReportNew />} />
+              <Route path="avisos/:id/editar" element={<ReportEdit />} />
+              <Route path="mascotas/nueva" element={<PetNew />} />
+              <Route path="mascotas/:id/editar" element={<PetEdit />} />
+            </Route>
           </Route>
         </Routes>
       </Suspense>
