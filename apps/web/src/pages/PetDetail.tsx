@@ -51,7 +51,12 @@ export function PetDetail() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">{pet.name}</h1>
-          <p className="text-sm text-gray-600">de @{pet.owner.username}</p>
+          <p className="text-sm text-gray-600">
+            de{' '}
+            <Link to={`/u/${pet.owner.username}`} className="underline">
+              @{pet.owner.username}
+            </Link>
+          </p>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
 import { myReportsRouter, reportsRouter } from './routes/reports.js'
 import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
+import { usersRouter } from './routes/users.js'
 
 export const app = express()
 
@@ -28,7 +29,13 @@ app.use('/me', meRouter)
 app.use('/usernames', usernamesRouter)
 app.use('/pets', petsRouter)
 app.use('/users/:username/pets', userPetsRouter)
+app.use('/users', usersRouter)
 app.use('/reports/:reportId/sightings', sightingsRouter)
 app.use('/reports', reportsRouter)
+
+// Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Ruta no encontrada' })
+})
 
 app.use(errorHandler)

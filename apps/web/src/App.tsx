@@ -7,14 +7,17 @@ import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
 import { MyReports } from './pages/MyReports'
+import { NotFound } from './pages/NotFound'
 import { PetDetail } from './pages/PetDetail'
 import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
+import { UserProfile } from './pages/UserProfile'
 
-// Las páginas con mapa cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
+// Las páginas con mapa (avisos y perfil) cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })))
 const ReportEdit = lazy(() => import('./pages/ReportEdit').then((m) => ({ default: m.ReportEdit })))
 const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
 const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
@@ -30,6 +33,7 @@ export function App() {
             <Route path="registro" element={<Register />} />
             <Route path="recuperar" element={<ForgotPassword />} />
             <Route path="restablecer" element={<ResetPassword />} />
+            <Route path="u/:username" element={<UserProfile />} />
             <Route path="mascotas/:id" element={<PetDetail />} />
             <Route path="avisos" element={<Reports />} />
             <Route path="avisos/:id" element={<ReportDetail />} />
@@ -40,7 +44,9 @@ export function App() {
               <Route path="avisos/nuevo" element={<ReportNew />} />
               <Route path="avisos/mios" element={<MyReports />} />
               <Route path="avisos/:id/editar" element={<ReportEdit />} />
+              <Route path="perfil" element={<Profile />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </Suspense>

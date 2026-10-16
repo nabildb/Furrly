@@ -26,6 +26,9 @@ export function Layout() {
               <Link to="/mascotas" className="underline">
                 Mis mascotas
               </Link>
+              <Link to="/perfil" className="underline">
+                Perfil
+              </Link>
               <button onClick={() => supabase.auth.signOut()} className="underline">
                 Cerrar sesión
               </button>

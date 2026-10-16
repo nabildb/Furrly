@@ -113,7 +113,10 @@ export function ReportDetail() {
       <h1 className="text-2xl font-semibold">{report.title}</h1>
       <p className="text-sm text-gray-600">
         {isLost ? 'Se perdió' : 'Encontrado'} el {formatDateTime(report.happenedAt)}
-        {report.addressText && ` · ${report.addressText}`} · aviso de @{report.reporter.username}
+        {report.addressText && ` · ${report.addressText}`} · aviso de{' '}
+        <Link to={`/u/${report.reporter.username}`} className="underline">
+          @{report.reporter.username}
+        </Link>
       </p>
 
       {photos.length > 0 && (
