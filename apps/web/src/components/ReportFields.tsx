@@ -1,27 +1,66 @@
-import { useState } from 'react'
+import { useState, type Ref } from 'react'
 import { toDateTimeInput, type LatLng, type Report, type ReportType } from '../lib/reports'
 import { Field, TextAreaField } from './Field'
 import { LocationPicker } from './LocationPicker'
 import { PhotosInput } from './PhotosInput'
 
-interface ReportFieldsProps {
+// Campos comunes de crear (asistente, pasos 2 y 3) y editar un aviso.
+// Son no controlados: la página los lee con FormData (ver readReportFields).
+
+interface WhereWhenProps {
   type: ReportType
   location: LatLng | null
   onLocationChange: (value: LatLng) => void
-  photoUrls: string[]
-  onPhotosChange: (urls: string[]) => void
   /** Al editar: valores actuales del aviso. */
   initial?: Report
 }
 
-/** Campos comunes de crear y editar un aviso (todo menos el tipo y la mascota). */
-export function ReportFields({ type, location, onLocationChange, photoUrls, onPhotosChange, initial }: ReportFieldsProps) {
+export function ReportWhereWhenFields({ type, location, onLocationChange, initial }: WhereWhenProps) {
   const [maxDate] = useState(() => toDateTimeInput(new Date()))
   const isLost = type === 'lost'
 
   return (
     <>
+      <div>
+        <span className="text-sm font-extrabold">{isLost ? '¿Dónde se perdió?' : '¿Dónde lo encontraste?'}</span>
+        <div className="mt-1.5">
+          <LocationPicker value={location} onChange={onLocationChange} tone={type} className="h-72" />
+        </div>
+      </div>
       <Field
+        label="Zona o dirección (opcional)"
+        name="addressText"
+        maxLength={200}
+        defaultValue={initial?.addressText ?? ''}
+        placeholder="Parque del Retiro, puerta de Alcalá"
+        hint="Ayuda a los vecinos a situarse sin abrir el mapa."
+      />
+      <Field
+        label="¿Cuándo?"
+        name="happenedAt"
+        type="datetime-local"
+        required
+        max={maxDate}
+        defaultValue={initial ? toDateTimeInput(new Date(initial.happenedAt)) : maxDate}
+      />
+    </>
+  )
+}
+
+interface DetailsProps {
+  type: ReportType
+  photoUrls: string[]
+  onPhotosChange: (urls: string[]) => void
+  initial?: Report
+  titleRef?: Ref<HTMLInputElement>
+}
+
+export function ReportDetailFields({ type, photoUrls, onPhotosChange, initial, titleRef }: DetailsProps) {
+  const isLost = type === 'lost'
+  return (
+    <>
+      <Field
+        ref={titleRef}
         label="Título"
         name="title"
         required
@@ -36,33 +75,11 @@ export function ReportFields({ type, location, onLocationChange, photoUrls, onPh
         required
         minLength={10}
         maxLength={2000}
-        rows={4}
+        rows={5}
         defaultValue={initial?.description}
         placeholder="Señas, collar, carácter, si se deja coger…"
+        hint="Mínimo 10 caracteres."
       />
-      <Field
-        label="¿Cuándo?"
-        name="happenedAt"
-        type="datetime-local"
-        required
-        max={maxDate}
-        defaultValue={initial ? toDateTimeInput(new Date(initial.happenedAt)) : maxDate}
-      />
-
-      <div>
-        <span className="text-sm font-medium">{isLost ? '¿Dónde se perdió?' : '¿Dónde lo encontraste?'}</span>
-        <div className="mt-1">
-          <LocationPicker value={location} onChange={onLocationChange} />
-        </div>
-      </div>
-      <Field
-        label="Zona o dirección (opcional)"
-        name="addressText"
-        maxLength={200}
-        defaultValue={initial?.addressText ?? ''}
-        placeholder="Parque del Retiro, puerta de Alcalá"
-      />
-
       <PhotosInput value={photoUrls} onChange={onPhotosChange} max={3} folder="reports" keep={initial?.photos} />
     </>
   )

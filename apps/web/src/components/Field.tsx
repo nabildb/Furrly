@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
 export const controlClass =
   'mt-1.5 block w-full rounded-[14px] border border-line bg-surface px-3.5 py-3 text-base font-semibold text-ink placeholder:font-normal placeholder:text-muted/70 transition focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 disabled:opacity-60'
@@ -16,12 +16,13 @@ export function Label({ label, hint, children }: { label: string; hint?: string;
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   hint?: string
+  ref?: Ref<HTMLInputElement>
 }
 
-export function Field({ label, hint, ...input }: FieldProps) {
+export function Field({ label, hint, ref, ...input }: FieldProps) {
   return (
     <Label label={label} hint={hint}>
-      <input {...input} className={controlClass} />
+      <input ref={ref} {...input} className={controlClass} />
     </Label>
   )
 }

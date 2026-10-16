@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
-import { ReportFields } from '../components/ReportFields'
+import { ReportDetailFields, ReportWhereWhenFields } from '../components/ReportFields'
 import { api } from '../lib/api'
 import { readReportFields, type LatLng, type Report } from '../lib/reports'
 import { removeImage } from '../lib/storage'
@@ -61,14 +61,8 @@ export function ReportEdit() {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
       <h1 className="text-xl font-semibold">Editar aviso</h1>
-      <ReportFields
-        type={report.type}
-        initial={report}
-        location={location}
-        onLocationChange={setLocation}
-        photoUrls={photoUrls}
-        onPhotosChange={setPhotoUrls}
-      />
+      <ReportDetailFields type={report.type} initial={report} photoUrls={photoUrls} onPhotosChange={setPhotoUrls} />
+      <ReportWhereWhenFields type={report.type} initial={report} location={location} onLocationChange={setLocation} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex items-center gap-4">
         <button disabled={submitting} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
