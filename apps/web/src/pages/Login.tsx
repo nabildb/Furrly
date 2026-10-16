@@ -39,6 +39,9 @@ export function Login() {
         {submitting ? 'Entrando…' : 'Entrar'}
       </button>
       <p className="text-sm">
+        <Link to="/recuperar" className="underline">¿Has olvidado tu contraseña?</Link>
+      </p>
+      <p className="text-sm">
         ¿No tienes cuenta? <Link to="/registro" className="underline">Crea una</Link>
       </p>
     </form>

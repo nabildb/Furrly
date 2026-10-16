@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
+import { ForgotPassword } from './pages/ForgotPassword'
 import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
@@ -9,6 +10,7 @@ import { PetDetail } from './pages/PetDetail'
 import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
 import { Register } from './pages/Register'
+import { ResetPassword } from './pages/ResetPassword'
 
 // Las páginas con mapa cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
@@ -24,6 +26,8 @@ export function App() {
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
             <Route path="registro" element={<Register />} />
+            <Route path="recuperar" element={<ForgotPassword />} />
+            <Route path="restablecer" element={<ResetPassword />} />
             <Route path="mascotas/:id" element={<PetDetail />} />
             <Route path="avisos" element={<Reports />} />
             <Route path="avisos/:id" element={<ReportDetail />} />
