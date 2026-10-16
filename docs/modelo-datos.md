@@ -25,7 +25,11 @@ erDiagram
 ## Tablas
 
 ### users
-Perfil del dueño. Si usamos Supabase Auth, `id` coincide con `auth.users.id`.
+Perfil público del dueño. Las credenciales las gestiona **Supabase Auth** (`auth.users`); esta tabla solo guarda el perfil.
+
+- `id` es a la vez PK y FK → `auth.users.id` (ON DELETE CASCADE): borrar la cuenta borra el perfil.
+- La fila se crea con un **trigger** `AFTER INSERT ON auth.users`, que copia `username` y `display_name` de `raw_user_meta_data` (se envían en el `signUp`). Así nunca hay un usuario autenticado sin perfil.
+- **Seguridad:** la API accede con Prisma como rol `postgres`, que ignora RLS. Aun así se activa **RLS en todas las tablas de `public` sin políticas**, para que nadie pueda leer ni escribir directamente con la anon key (la API REST automática de Supabase). Todo el acceso pasa por nuestra API.
 
 | Columna | Tipo | Notas |
 |---|---|---|

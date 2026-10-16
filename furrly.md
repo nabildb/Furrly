@@ -21,7 +21,6 @@ Prefiero conversar en español.
 - **Comunidad + servicios:** dueños, protectoras y profesionales (veterinarios, peluquerías, cuidadores)
 
 ## Decisiones pendientes
-- Autenticación: Supabase Auth (validando su JWT en la API) o auth propia (bcrypt + JWT)
 - Dominio (comprobar disponibilidad de furrly.app, furrly.pet o similares)
 
 ## Decisiones tomadas
@@ -30,6 +29,7 @@ Prefiero conversar en español.
 - Frontend: React + Vite + TypeScript + Tailwind
 - Backend: Node + Express + TypeScript + Prisma (API REST propia)
 - Base de datos: **Supabase** (PostgreSQL + extensión PostGIS)
+- Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
 - Imágenes: Supabase Storage
 - Despliegue: Vercel (frontend) + Render/Railway (API); la BD vive en Supabase
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
