@@ -56,6 +56,7 @@ Hecho, probado (34 tests de integración en CI) y desplegado:
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
 - Vercel: un proyecto `furrly` conectado a GitHub; cada push a `main` despliega y aplica migraciones (`prisma migrate deploy`)
+- **Datos de demo**: `npm run db:seed-demo -w @furrly/api -- --yes` (usa la BD de `apps/api/.env`). Crea 5 vecinos de demo (solo perfiles, sin cuenta en Auth: nadie puede entrar con ellos), 7 mascotas, 8 avisos alrededor de Sol y avistamientos. Usa UUIDs fijos (`f0f0f0f0-…`): cada ejecución borra y recrea solo esos datos, con fechas relativas a ese momento. Conviene repetirlo de vez en cuando para que la demo no envejezca
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar
