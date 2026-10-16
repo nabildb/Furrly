@@ -74,3 +74,21 @@ export function formatTimeAgo(iso: string) {
   if (Math.abs(hours) < 24) return rtf.format(hours, 'hour')
   return rtf.format(Math.round(hours / 24), 'day')
 }
+
+export interface Sighting {
+  id: string
+  seenAt: string
+  note: string | null
+  photoUrl: string | null
+  createdAt: string
+  location: LatLng
+  user: { username: string; displayName: string }
+}
+
+export const SIGHTING_COLOR = '#f59e0b'
+
+/** Valor para <input type="datetime-local"> (hora local, sin zona horaria). */
+export function toDateTimeInput(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 16)
+}

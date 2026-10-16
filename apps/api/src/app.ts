@@ -6,6 +6,7 @@ import { errorHandler } from './lib/http.js'
 import { meRouter } from './routes/me.js'
 import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
 import { reportsRouter } from './routes/reports.js'
+import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
 
 export const app = express()
@@ -23,6 +24,7 @@ app.use('/me', meRouter)
 app.use('/usernames', usernamesRouter)
 app.use('/pets', petsRouter)
 app.use('/users/:username/pets', userPetsRouter)
+app.use('/reports/:reportId/sightings', sightingsRouter)
 app.use('/reports', reportsRouter)
 
 app.use(errorHandler)

@@ -5,14 +5,7 @@ import { LocationPicker } from '../components/LocationPicker'
 import { PhotosInput } from '../components/PhotosInput'
 import { api } from '../lib/api'
 import { speciesLabels, type Pet } from '../lib/pets'
-import { reportTypeLabels, type LatLng, type Report, type ReportType } from '../lib/reports'
-
-/** Valor para <input type="datetime-local"> con la hora local actual. */
-function nowForInput() {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
-}
+import { reportTypeLabels, toDateTimeInput, type LatLng, type Report, type ReportType } from '../lib/reports'
 
 export function ReportNew() {
   const navigate = useNavigate()
@@ -20,7 +13,7 @@ export function ReportNew() {
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [location, setLocation] = useState<LatLng | null>(null)
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
-  const [maxDate] = useState(nowForInput)
+  const [maxDate] = useState(() => toDateTimeInput(new Date()))
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 

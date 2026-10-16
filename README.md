@@ -4,6 +4,17 @@ Comunidad web para dueños de mascotas, centrada en **mascotas perdidas y encont
 
 > Proyecto de portfolio — 2.º DAW. En desarrollo.
 
+## Funcionalidades
+
+- Registro e inicio de sesión (Supabase Auth); el perfil se crea con un trigger en la BD
+- Perfiles de mascotas con foto (subida directa a Supabase Storage)
+- Avisos de mascota **perdida** o **encontrada** con ubicación en el mapa y fotos
+- Mapa y listado de avisos activos en un radio, con filtros (búsqueda geoespacial con PostGIS)
+- **Avistamientos** ("la he visto aquí") que dibujan el recorrido de la mascota en el mapa
+- Cerrar avisos como resueltos o cancelados
+
+Próximamente: alertas por zona y notificaciones, feed social (publicaciones, likes, comentarios, seguir mascotas) y despliegue.
+
 ## Stack
 
 | Capa | Tecnología |
@@ -14,6 +25,7 @@ Comunidad web para dueños de mascotas, centrada en **mascotas perdidas y encont
 | Base de datos | PostgreSQL + PostGIS en Supabase |
 | Autenticación | Supabase Auth (la API valida el JWT con JWKS) |
 | Imágenes | Supabase Storage |
+| Mapas | Leaflet + OpenStreetMap |
 
 ## Estructura
 
