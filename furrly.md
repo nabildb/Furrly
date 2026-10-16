@@ -27,7 +27,7 @@ Prefiero conversar en español.
 - Nombre: **Furrly**
 - Enfoque: **mascotas perdidas y encontradas** — avisos con ubicación, avistamientos y alertas por zona
 - Frontend: React + Vite + TypeScript + Tailwind
-- Diseño visual (UI): hecho con **Claude Design**, elegida la **propuesta C** (colores de la A + tipografía Unbounded/Nunito Sans de la B). Detalle en [docs/diseno.md](docs/diseno.md). **Pendiente de aplicar al código**
+- Diseño visual (UI): hecho con **Claude Design**, elegida la **propuesta C** (colores de la A + tipografía Unbounded/Nunito Sans de la B). Detalle en [docs/diseno.md](docs/diseno.md). **Aplicado** en `apps/web` (16-10-2026)
 - Backend: Node + Express + TypeScript + Prisma (API REST propia)
 - Base de datos: **Supabase** (PostgreSQL + extensión PostGIS) — proyecto `furrly`, región Frankfurt (eu-central-1)
 - Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
@@ -45,12 +45,13 @@ Hecho, probado (34 tests de integración en CI) y desplegado:
 - Rate limiting, validación con zod, RLS sin políticas (todo pasa por la API), CI con GitHub Actions
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
+- **Diseño C aplicado** a toda la web: mapa a pantalla completa como portada, ficha con recorrido, publicar como asistente de 3 pasos, carnet de mascota y resto de páginas (ver docs/diseno.md, "Cómo se ha aplicado")
+
 ### Próximos pasos
-1. **Aplicar el diseño C** a `apps/web` (ver docs/diseno.md, sección "Cómo aplicarlo")
-2. Alertas por zona y notificaciones (la tabla `notifications` y `users.alert_location` ya existen)
-3. Feed social: publicaciones, likes, comentarios, seguir mascotas (tablas ya creadas)
-4. Dominio propio
-5. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
+1. Alertas por zona y notificaciones (la tabla `notifications` y `users.alert_location` ya existen)
+2. Feed social: publicaciones, likes, comentarios, seguir mascotas (tablas ya creadas)
+3. Dominio propio
+4. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`

@@ -4,7 +4,7 @@ Hecho con Claude Design, lienzo: https://claude.ai/artifact/DYomxy2skJifWzksmE18
 Hay tres propuestas (A, B y C). **La elegida es la C**. Sus pantallas están copiadas en [docs/diseno/](diseno/)
 (`C_*.dc.html`: HTML con estilos en línea; sirven de referencia exacta de medidas, colores y estructura).
 
-> Estado: la C está aprobada como dirección. **Falta aplicarla al código** de `apps/web`.
+> Estado: **aplicada** en `apps/web` (16-10-2026). Ver "Cómo se ha aplicado" al final.
 
 ## Propuesta C = colores de la A + tipografía de la B
 
@@ -47,3 +47,14 @@ Naranja (perdida) frente a azul (encontrada): se distinguen también con daltoni
 - Crear componentes base: `Button` (primary/sighting/dark/outline), `Badge` (lost/found/resolved/cancelled), `Chip`, `Card`, `BottomNav` flotante, `TopSearchBar`.
 - Rehacer páginas por orden: Layout + navegación → Avisos cerca → Ficha → Publicar (convertir en asistente de 3 pasos) → Mascotas/carnet → resto (login, registro, perfil, mis avisos, 404) con los mismos tokens.
 - En escritorio: contenido centrado con ancho máximo; en el mapa, lista lateral en vez de carrusel.
+
+## Cómo se ha aplicado
+- **Tokens**: `apps/web/src/index.css` (`@theme`). Leaflet pinta con colores en JS, así que `src/lib/reports.ts` repite los hex del mapa.
+- **Componentes base**: `src/components/ui/` (Button, Badge, Chip, Card, ChoiceCard, Sheet, BottomNav, TopSearchBar, Logo e iconos SVG propios, sin librería). Clases compartidas en `ui/styles.ts`. En desarrollo hay una guía en `/guia`.
+- **Navegación**: la portada es el mapa (`/` → `/avisos`). La barra flotante se oculta en pantallas con su propia barra de acciones (ficha, publicar, formularios).
+- **Mapa**: teselas de OpenStreetMap con un filtro CSS que baja la saturación (las de CARTO ya piden API key). Marcadores `L.divIcon` en pastilla, con el texto escapado contra XSS. Buscador de zonas con Nominatim (solo al enviar, como pide su política). Carrusel en móvil y lista lateral en escritorio (`useMediaQuery`, para montar solo una).
+- **Ficha**: el botón de "contactar" lleva al perfil de quien publica (aún no hay mensajería). "La he visto" abre una hoja modal con el mapa centrado en el último punto conocido.
+- **Publicar**: un solo `<form>` con un `<fieldset>` por paso; los ocultos siguen montados para que `FormData` lo lea todo y volver atrás no pierda nada. Cada paso se valida con `reportValidity()`. Las mascotas con un aviso de pérdida activo no se pueden elegir.
+- **Carnet**: `/mascotas` (con `?m=<id>`) y `/mascotas/:id`. Si la mascota ya tiene un aviso activo, el botón lleva a ese aviso en vez de crear otro.
+- **Cambios en la API**: `GET /reports` devuelve `petName` (rótulo de los marcadores) y `GET /me/reports` devuelve `petId`. Los dos tienen test.
+
