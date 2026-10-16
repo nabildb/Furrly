@@ -1,43 +1,61 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type UIEvent } from 'react'
 import { Link, useParams } from 'react-router'
-import { CircleMarker, Polyline, Tooltip, useMap } from 'react-leaflet'
+import { Marker, Polyline, useMap } from 'react-leaflet'
 import { useAuth } from '../auth/useAuth'
+import { ErrorText } from '../components/Field'
+import { originIcon, sightingIcon } from '../components/mapMarkers'
 import { MapView } from '../components/MapView'
+import { BackButton, Loading, PageError } from '../components/Page'
 import { SightingForm } from '../components/SightingForm'
+import { Badge } from '../components/ui/Badge'
+import { Button, ButtonLink } from '../components/ui/Button'
+import { Card, SectionTitle } from '../components/ui/Card'
+import { CheckIcon, EditIcon, EyeIcon, PawIcon, ShareIcon, UserIcon } from '../components/ui/icons'
+import { Sheet } from '../components/ui/Sheet'
+import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
+import { cx } from '../lib/cx'
 import { speciesLabels } from '../lib/pets'
 import {
   formatDateTime,
   formatTimeAgo,
-  reportColors,
+  formatWhen,
   reportStatusLabels,
   reportTypeLabels,
-  SIGHTING_COLOR,
+  SIGHTING_LINE_COLOR,
   type LatLng,
   type Report,
   type Sighting,
 } from '../lib/reports'
+import { shareCurrentPage } from '../lib/share'
 import { removeImage } from '../lib/storage'
 
 /** Ajusta el zoom para que se vea todo el recorrido. */
 function FitRoute({ points }: { points: LatLng[] }) {
   const map = useMap()
   useEffect(() => {
-    if (points.length > 1) map.fitBounds(points.map((p) => [p.lat, p.lng]), { padding: [30, 30], maxZoom: 16 })
+    if (points.length > 1) map.fitBounds(points.map((p) => [p.lat, p.lng]), { padding: [36, 36], maxZoom: 16 })
   }, [map, points])
   return null
 }
+
+/** Botones redondos blancos sobre la foto. */
+const overPhotoButton = 'flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-ink shadow-chip backdrop-blur'
 
 export function ReportDetail() {
   const { id } = useParams()
   const [report, setReport] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
   const [sightings, setSightings] = useState<Sighting[]>([])
   const [sightingsVersion, setSightingsVersion] = useState(0)
   const [showSightingForm, setShowSightingForm] = useState(false)
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const [toast, setToast] = useState<string | null>(null)
   const { session } = useAuth()
   const myUsername = session?.user.user_metadata.username as string | undefined
+  const closeSightingForm = useCallback(() => setShowSightingForm(false), [])
 
   useEffect(() => {
     api<Report>(`/reports/${id}`)
@@ -51,7 +69,7 @@ export function ReportDetail() {
     if (!isLostReport) return
     api<Sighting[]>(`/reports/${id}/sightings`)
       .then(setSightings)
-      .catch((e: Error) => setError(e.message))
+      .catch((e: Error) => setActionError(e.message))
   }, [id, isLostReport, sightingsVersion])
 
   // Recorrido: del punto de la pérdida a cada avistamiento, en orden cronológico.
@@ -61,10 +79,17 @@ export function ReportDetail() {
     [report, sightings],
   )
 
-  if (error) return <p className="text-red-600">{error}</p>
-  if (!report) return <p>Cargando…</p>
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 2500)
+    return () => clearTimeout(timer)
+  }, [toast])
+
+  if (error) return <PageError message={error} />
+  if (!report) return <Loading />
 
   const isLost = report.type === 'lost'
+  const isActive = report.status === 'active'
   // Solo decide si se muestran los botones: quien de verdad lo comprueba es la API.
   const isReporter = myUsername === report.reporter.username
 
@@ -75,10 +100,11 @@ export function ReportDetail() {
         : '¿Cancelar el aviso? Dejará de aparecer en el mapa.'
     if (!report || !confirm(question)) return
     setUpdating(true)
+    setActionError(null)
     try {
       setReport(await api<Report>(`/reports/${report.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }))
     } catch (e) {
-      setError((e as Error).message)
+      setActionError((e as Error).message)
     } finally {
       setUpdating(false)
     }
@@ -92,153 +118,259 @@ export function ReportDetail() {
       if (sighting.photoUrl && sighting.user.username === myUsername) await removeImage(sighting.photoUrl)
       setSightingsVersion((v) => v + 1)
     } catch (e) {
-      setError((e as Error).message)
+      setActionError((e as Error).message)
     }
   }
 
+  async function share() {
+    if (!report) return
+    const result = await shareCurrentPage(report.title)
+    if (result === 'copied') setToast('Enlace copiado')
+  }
+
+  function onPhotosScroll(e: UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    setPhotoIndex(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
   const photos = report.photos.length > 0 ? report.photos : report.pet?.photoUrl ? [report.pet.photoUrl] : []
+  const subtitle = [report.pet?.name, speciesLabels[report.species], report.pet?.breed].filter(Boolean).join(' · ')
+  // Los avistamientos se numeran por orden (1 = el primero) pero la lista enseña antes el más reciente.
+  const numbered = sightings.map((s, i) => ({ ...s, n: i + 1 })).reverse()
+  const showBottomBar = isActive && (isReporter || isLost || !session)
 
   return (
-    <article className="mx-auto max-w-2xl space-y-4 px-4 pt-6 pb-32">
-      <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-        <span className={`rounded px-2 py-0.5 text-white ${isLost ? 'bg-red-600' : 'bg-green-600'}`}>
-          {reportTypeLabels[report.type]}
-        </span>
-        <span className="rounded bg-gray-200 px-2 py-0.5">{speciesLabels[report.species]}</span>
-        {report.status !== 'active' && (
-          <span className="rounded bg-gray-800 px-2 py-0.5 text-white">{reportStatusLabels[report.status]}</span>
+    <main className={cx('mx-auto max-w-2xl sm:px-4 sm:pt-6', showBottomBar ? 'pb-32' : 'pb-12')}>
+      {/* Foto grande (carrusel si hay varias) con volver y compartir encima */}
+      <div className="relative h-[260px] overflow-hidden bg-[#F6D9C8] sm:h-[340px] sm:rounded-[28px]">
+        {photos.length > 0 ? (
+          <div
+            onScroll={onPhotosScroll}
+            className="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
+          >
+            {photos.map((url, i) => (
+              <img
+                key={url}
+                src={url}
+                alt={i === 0 ? `Foto de ${report.pet?.name ?? speciesLabels[report.species].toLowerCase()}` : ''}
+                className="h-full w-full flex-none snap-center object-cover"
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            className={cx(
+              'flex h-full items-center justify-center',
+              isLost ? 'text-lost/30' : 'bg-[#D5E2F5] text-found/30',
+            )}
+          >
+            <PawIcon size={72} />
+          </div>
+        )}
+        <BackButton fallback="/avisos" className={cx(overPhotoButton, 'absolute top-4 left-4')} />
+        <button type="button" onClick={share} aria-label="Compartir aviso" className={cx(overPhotoButton, 'absolute top-4 right-4')}>
+          <ShareIcon size={20} />
+        </button>
+        {photos.length > 1 && (
+          <div className="absolute bottom-9 left-1/2 flex -translate-x-1/2 gap-1.5 sm:bottom-4" aria-hidden="true">
+            {photos.map((url, i) => (
+              <span
+                key={url}
+                className={cx('h-1.5 rounded-full transition-all', i === photoIndex ? 'w-[18px] bg-white' : 'w-1.5 bg-white/60')}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      <h1 className="text-2xl font-semibold">{report.title}</h1>
-      <p className="text-sm text-gray-600">
-        {isLost ? 'Se perdió' : 'Encontrado'} el {formatDateTime(report.happenedAt)}
-        {report.addressText && ` · ${report.addressText}`} · aviso de{' '}
-        <Link to={`/u/${report.reporter.username}`} className="underline">
-          @{report.reporter.username}
-        </Link>
-      </p>
-
-      {photos.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto">
-          {photos.map((url) => (
-            <img key={url} src={url} alt="" className="h-40 w-40 shrink-0 rounded object-cover" />
-          ))}
-        </div>
-      )}
-
-      {report.pet && (
-        <p className="text-sm">
-          Mascota: <strong>{report.pet.name}</strong>
-          {report.pet.breed && ` (${report.pet.breed})`}
-        </p>
-      )}
-
-      <p className="whitespace-pre-line">{report.description}</p>
-
-      {report.status === 'resolved' && report.resolvedAt && (
-        <p className="rounded bg-green-50 p-3 text-sm text-green-800">
-          {isLost ? '¡Ya está en casa!' : '¡Ya ha vuelto con su familia!'} Resuelto el {formatDateTime(report.resolvedAt)}.
-        </p>
-      )}
-
-      {isReporter && report.status === 'active' && (
-        <div className="flex gap-3">
-          <button
-            onClick={() => changeStatus('resolved')}
-            disabled={updating}
-            className="rounded bg-green-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
-          </button>
-          <button
-            onClick={() => changeStatus('cancelled')}
-            disabled={updating}
-            className="rounded border border-gray-300 px-4 py-2 text-sm disabled:opacity-50"
-          >
-            Cancelar aviso
-          </button>
-          <Link to={`/avisos/${report.id}/editar`} className="self-center text-sm underline">
-            Editar
-          </Link>
-        </div>
-      )}
-
-      <MapView center={report.location} zoom={15}>
-        <FitRoute points={route} />
-        {sightings.length > 0 && (
-          <Polyline positions={route} pathOptions={{ color: SIGHTING_COLOR, dashArray: '6 6', weight: 3 }} />
-        )}
-        <CircleMarker center={report.location} radius={10} pathOptions={{ color: reportColors[report.type], fillOpacity: 0.6 }}>
-          <Tooltip>{isLost ? 'Se perdió aquí' : 'Encontrado aquí'}</Tooltip>
-        </CircleMarker>
-        {sightings.map((s, i) => (
-          <CircleMarker key={s.id} center={s.location} radius={8} pathOptions={{ color: SIGHTING_COLOR, fillOpacity: 0.8 }}>
-            <Tooltip permanent direction="top" offset={[0, -6]}>
-              {i + 1}
-            </Tooltip>
-          </CircleMarker>
-        ))}
-      </MapView>
-
-      {isLost && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Avistamientos ({sightings.length})</h2>
-            {report.status === 'active' &&
-              !showSightingForm &&
-              (session ? (
-                <button onClick={() => setShowSightingForm(true)} className="rounded bg-amber-500 px-3 py-1.5 text-sm text-white">
-                  La he visto
-                </button>
-              ) : (
-                <Link to="/login" className="text-sm underline">
-                  Entra para avisar si la has visto
-                </Link>
-              ))}
+      {/* Hoja con los datos, que se monta sobre la foto */}
+      <article className="relative -mt-5 space-y-5 rounded-t-3xl bg-bg px-5 pt-5 sm:mt-0 sm:px-1">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={report.type} solid>
+              {reportTypeLabels[report.type]}
+            </Badge>
+            {!isActive && <Badge tone={report.status as 'resolved' | 'cancelled'}>{reportStatusLabels[report.status]}</Badge>}
+            <span className="text-[13px] font-semibold text-muted">
+              {isActive ? 'Activo' : 'Cerrado'} · {formatTimeAgo(report.createdAt)}
+            </span>
           </div>
+          <h1 className="font-display text-[26px] leading-[1.15] font-extrabold tracking-[-0.8px]">{report.title}</h1>
+          {subtitle && <p className="text-[15px] font-semibold text-muted">{subtitle}</p>}
+        </div>
 
-          {showSightingForm && (
-            <SightingForm
-              report={report}
-              onCancel={() => setShowSightingForm(false)}
-              onCreated={() => {
-                setShowSightingForm(false)
-                setSightingsVersion((v) => v + 1)
-              }}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
+            <div className="text-xs font-semibold text-muted">Dónde</div>
+            <div className="text-sm font-extrabold">{report.addressText ?? 'Ver en el mapa'}</div>
+          </div>
+          <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
+            <div className="text-xs font-semibold text-muted">Cuándo</div>
+            <div className="text-sm font-extrabold" title={formatDateTime(report.happenedAt)}>
+              {formatWhen(report.happenedAt)}
+            </div>
+          </div>
+        </div>
+
+        {report.status === 'resolved' && report.resolvedAt && (
+          <p className="flex items-center gap-2 rounded-2xl bg-resolved-soft px-4 py-3 text-[15px] font-bold text-resolved-text">
+            <CheckIcon size={20} />
+            {isLost ? '¡Ya está en casa!' : '¡Ya ha vuelto con su familia!'} Resuelto el {formatDateTime(report.resolvedAt)}.
+          </p>
+        )}
+
+        <Card className="space-y-1.5">
+          <SectionTitle>{isLost ? 'Cómo es' : 'Detalles'}</SectionTitle>
+          <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{report.description}</p>
+          <p className="pt-1 text-[13px] font-semibold text-muted">
+            Aviso de{' '}
+            <Link to={`/u/${report.reporter.username}`} className="font-extrabold text-ink underline-offset-2 hover:underline">
+              @{report.reporter.username}
+            </Link>
+          </p>
+        </Card>
+
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <SectionTitle>{isLost ? 'Su recorrido' : 'Dónde se encontró'}</SectionTitle>
+            {isLost && (
+              <span className="text-[13px] font-semibold text-muted">
+                {sightings.length} {sightings.length === 1 ? 'avistamiento' : 'avistamientos'}
+              </span>
+            )}
+          </div>
+          <MapView center={report.location} zoom={15} className="h-56 sm:h-72">
+            <FitRoute points={route} />
+            {sightings.length > 0 && (
+              <Polyline
+                positions={route}
+                pathOptions={{ color: SIGHTING_LINE_COLOR, dashArray: '7 7', weight: 3, lineCap: 'round' }}
+              />
+            )}
+            <Marker
+              position={report.location}
+              icon={originIcon(report.type)}
+              title={isLost ? 'Se perdió aquí' : 'Se encontró aquí'}
             />
-          )}
+            {sightings.map((s, i) => (
+              <Marker key={s.id} position={s.location} icon={sightingIcon(i + 1)} title={`Avistamiento ${i + 1}`} />
+            ))}
+          </MapView>
+        </section>
 
-          {sightings.length === 0 ? (
-            <p className="text-sm text-gray-600">Nadie ha avisado todavía de que la haya visto.</p>
+        {isLost &&
+          (numbered.length === 0 ? (
+            <p className="text-[15px] font-semibold text-muted">
+              Nadie ha avisado todavía de que la haya visto.
+              {isActive && !isReporter && ' Si la ves, pulsa «La he visto».'}
+            </p>
           ) : (
-            <ol className="space-y-2">
-              {sightings.map((s, i) => (
-                <li key={s.id} className="flex gap-3 rounded border border-gray-200 p-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs text-white">
-                    {i + 1}
+            <ol className="space-y-3">
+              {numbered.map((s) => (
+                <li key={s.id} className="flex items-start gap-2.5">
+                  <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-sighting text-xs font-extrabold">
+                    {s.n}
                   </span>
-                  <div className="min-w-0 flex-1 text-sm">
+                  <div className="min-w-0 flex-1 text-sm leading-snug">
                     <p>
-                      <strong>{formatDateTime(s.seenAt)}</strong>{' '}
-                      <span className="text-gray-500">
-                        ({formatTimeAgo(s.seenAt)}) · @{s.user.username}
-                      </span>
+                      <strong className="font-extrabold first-letter:uppercase" title={formatDateTime(s.seenAt)}>
+                        {formatTimeAgo(s.seenAt)}
+                      </strong>{' '}
+                      ·{' '}
+                      <Link to={`/u/${s.user.username}`} className="hover:underline">
+                        @{s.user.username}
+                      </Link>
                     </p>
-                    {s.note && <p className="mt-1">{s.note}</p>}
-                    {s.photoUrl && <img src={s.photoUrl} alt="" className="mt-2 h-24 w-24 rounded object-cover" />}
+                    {s.note && <p className="text-muted">{s.note}</p>}
+                    {s.photoUrl && <img src={s.photoUrl} alt="" className="mt-2 h-24 w-24 rounded-xl object-cover" />}
                   </div>
                   {(s.user.username === myUsername || isReporter) && (
-                    <button onClick={() => deleteSighting(s)} className="self-start text-xs text-red-600 underline">
+                    <button
+                      type="button"
+                      onClick={() => deleteSighting(s)}
+                      className="rounded-lg px-2 py-1 text-xs font-extrabold text-danger hover:bg-lost-soft"
+                    >
                       Borrar
                     </button>
                   )}
                 </li>
               ))}
             </ol>
-          )}
-        </section>
+          ))}
+
+        {actionError && <ErrorText>{actionError}</ErrorText>}
+
+        {isReporter && isActive && (
+          <Button variant="danger" size="md" onClick={() => changeStatus('cancelled')} disabled={updating} className="w-full">
+            Cancelar aviso
+          </Button>
+        )}
+      </article>
+
+      {/* Barra fija de acciones */}
+      {showBottomBar && (
+        <div className="fixed inset-x-0 bottom-0 z-[1100] border-t border-card-line bg-surface">
+          <div className="mx-auto flex max-w-2xl gap-2.5 px-5 pt-3.5 pb-[max(22px,env(safe-area-inset-bottom))]">
+            {isReporter ? (
+              <>
+                <ButtonLink to={`/avisos/${report.id}/editar`} variant="secondary" aria-label="Editar aviso" className="w-14 flex-none px-0">
+                  <EditIcon />
+                </ButtonLink>
+                <Button variant="dark" className="flex-1" disabled={updating} onClick={() => changeStatus('resolved')}>
+                  <CheckIcon /> {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to={`/u/${report.reporter.username}`}
+                  aria-label={`Ver el perfil de @${report.reporter.username}`}
+                  className={iconButtonClass('h-14 w-14 rounded-btn')}
+                >
+                  <UserIcon />
+                </Link>
+                {isLost ? (
+                  session ? (
+                    <Button variant="sighting" className="flex-1" onClick={() => setShowSightingForm(true)}>
+                      <EyeIcon /> La he visto
+                    </Button>
+                  ) : (
+                    <ButtonLink to="/login" state={{ from: `/avisos/${report.id}` }} variant="sighting" className="flex-1">
+                      <EyeIcon /> Entra para avisar
+                    </ButtonLink>
+                  )
+                ) : (
+                  <Button variant="dark" className="flex-1" onClick={share}>
+                    <ShareIcon /> Compartir aviso
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       )}
-    </article>
+
+      {showSightingForm && (
+        <Sheet title="La he visto" onClose={closeSightingForm}>
+          <SightingForm
+            report={report}
+            onCreated={() => {
+              setShowSightingForm(false)
+              setSightingsVersion((v) => v + 1)
+              setToast('¡Gracias! Avistamiento añadido')
+            }}
+          />
+        </Sheet>
+      )}
+
+      {toast && (
+        <p
+          role="status"
+          className="fixed bottom-28 left-1/2 z-[2100] -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-extrabold text-white shadow-card"
+        >
+          {toast}
+        </p>
+      )}
+    </main>
   )
 }

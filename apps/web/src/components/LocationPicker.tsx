@@ -1,12 +1,18 @@
 import L from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
-import { CircleMarker, useMap, useMapEvents } from 'react-leaflet'
-import type { LatLng } from '../lib/reports'
+import { Marker, useMap, useMapEvents } from 'react-leaflet'
+import { cx } from '../lib/cx'
+import type { LatLng, ReportType } from '../lib/reports'
+import { originIcon } from './mapMarkers'
 import { MapView } from './MapView'
+import { LocateIcon } from './ui/icons'
 
 interface LocationPickerProps {
   value: LatLng | null
   onChange: (value: LatLng) => void
+  /** Color del punto marcado: naranja (perdida), azul (encontrada). */
+  tone?: ReportType
+  className?: string
 }
 
 /** Escucha los clics en el mapa. Tiene que vivir dentro de <MapContainer>. */
@@ -46,25 +52,26 @@ function LocateButton({ onChange }: { onChange: (value: LatLng) => void }) {
       ref={ref}
       type="button"
       onClick={locate}
-      className="absolute top-2 right-2 z-[1000] rounded bg-white px-3 py-1.5 text-sm shadow"
+      className="absolute top-3 right-3 z-[1000] flex h-10 items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-extrabold text-ink shadow-chip"
     >
+      <LocateIcon size={18} />
       {status === 'loading' ? 'Buscando…' : status === 'error' ? 'No se pudo localizar' : 'Usar mi ubicación'}
     </button>
   )
 }
 
-export function LocationPicker({ value, onChange }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, tone = 'lost', className }: LocationPickerProps) {
   return (
     <div>
       <div className="relative">
-        <MapView center={value ?? undefined}>
+        <MapView center={value ?? undefined} zoom={value ? 15 : 13} className={cx('cursor-crosshair', className)}>
           <ClickHandler onChange={onChange} />
           <LocateButton onChange={onChange} />
-          {value && <CircleMarker center={value} radius={10} pathOptions={{ color: '#dc2626', fillOpacity: 0.6 }} />}
+          {value && <Marker position={value} icon={originIcon(tone)} interactive={false} />}
         </MapView>
       </div>
-      <p className="mt-1 text-xs text-gray-500">
-        {value ? `Punto marcado: ${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}` : 'Haz clic en el mapa para marcar el lugar.'}
+      <p className={cx('mt-1.5 text-[13px] font-semibold', value ? 'text-muted' : 'text-lost-text')}>
+        {value ? 'Punto marcado. Toca el mapa para cambiarlo.' : 'Toca el mapa para marcar el lugar.'}
       </p>
     </div>
   )

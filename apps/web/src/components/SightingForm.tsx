@@ -1,17 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { api } from '../lib/api'
 import { toDateTimeInput, type LatLng, type Report } from '../lib/reports'
-import { Field, TextAreaField } from './Field'
+import { ErrorText, Field, TextAreaField } from './Field'
 import { LocationPicker } from './LocationPicker'
 import { PhotosInput } from './PhotosInput'
+import { Button } from './ui/Button'
+import { EyeIcon } from './ui/icons'
 
 interface SightingFormProps {
   report: Report
   onCreated: () => void
-  onCancel: () => void
 }
 
-export function SightingForm({ report, onCreated, onCancel }: SightingFormProps) {
+export function SightingForm({ report, onCreated }: SightingFormProps) {
   const [location, setLocation] = useState<LatLng | null>(null)
   const [photos, setPhotos] = useState<string[]>([])
   const [maxDate] = useState(() => toDateTimeInput(new Date()))
@@ -46,9 +47,16 @@ export function SightingForm({ report, onCreated, onCancel }: SightingFormProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded border border-amber-300 bg-amber-50 p-4">
-      <h3 className="font-semibold">¿Dónde la has visto?</h3>
-      <LocationPicker value={location} onChange={setLocation} />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="text-[15px] font-semibold text-muted">
+        Tu avistamiento se suma al recorrido y avisa a quien la busca. Si puedes, no la persigas: se asustan.
+      </p>
+      <div>
+        <span className="text-sm font-extrabold">¿Dónde la has visto?</span>
+        <div className="mt-1.5">
+          <LocationPicker value={location} onChange={setLocation} className="h-56" />
+        </div>
+      </div>
       <Field
         label="¿Cuándo?"
         name="seenAt"
@@ -63,18 +71,13 @@ export function SightingForm({ report, onCreated, onCancel }: SightingFormProps)
         name="note"
         maxLength={300}
         rows={2}
-        placeholder="Iba hacia el parque, parecía asustado…"
+        placeholder="Iba hacia el parque, parecía asustada…"
       />
       <PhotosInput value={photos} onChange={setPhotos} max={1} folder="sightings" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex gap-3">
-        <button disabled={submitting} className="rounded bg-amber-500 px-4 py-2 text-sm text-white disabled:opacity-50">
-          {submitting ? 'Enviando…' : 'Enviar avistamiento'}
-        </button>
-        <button type="button" onClick={onCancel} className="text-sm underline">
-          Cancelar
-        </button>
-      </div>
+      {error && <ErrorText>{error}</ErrorText>}
+      <Button type="submit" variant="sighting" disabled={submitting} className="w-full">
+        <EyeIcon /> {submitting ? 'Enviando…' : 'Enviar avistamiento'}
+      </Button>
     </form>
   )
 }
