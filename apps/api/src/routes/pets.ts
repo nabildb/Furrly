@@ -4,7 +4,8 @@ import { PetSex, Species } from '../generated/prisma/enums.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
-import { requireAuth } from '../middleware/auth.js'
+import { optionalAuth, requireAuth } from '../middleware/auth.js'
+import { findPostsPage } from './posts.js'
 
 // Campos públicos: el microchip solo lo ve el dueño.
 const publicPetSelect = {
@@ -66,11 +67,48 @@ async function findOwnPet(id: string, userId: string) {
 
 export const petsRouter = Router()
 
-petsRouter.get('/:id', async (req, res) => {
+/** Seguidores y publicaciones de la mascota, y si quien pide (si hay sesión) la sigue. */
+async function socialStats(petId: string, userId: string | undefined) {
+  const [followersCount, postsCount, following] = await Promise.all([
+    prisma.follow.count({ where: { petId } }),
+    prisma.post.count({ where: { petId } }),
+    userId ? prisma.follow.count({ where: { petId, followerId: userId } }) : 0,
+  ])
+  return { followersCount, postsCount, followedByMe: following > 0 }
+}
+
+petsRouter.get('/:id', optionalAuth, async (req, res) => {
   const id = parse(idSchema, req.params.id)
   const pet = await prisma.pet.findUnique({ where: { id }, select: publicPetSelect })
   if (!pet) throw new HttpError(404, 'Mascota no encontrada')
-  res.json(pet)
+  res.json({ ...pet, ...(await socialStats(id, req.userId)) })
+})
+
+petsRouter.get('/:id/posts', optionalAuth, async (req, res) => {
+  const id = parse(idSchema, req.params.id)
+  const { cursor } = parse(z.object({ cursor: z.uuid().optional() }), req.query)
+  res.json(await findPostsPage({ petId: id }, cursor, req.userId))
+})
+
+// Seguir: PUT y DELETE idempotentes. No tiene sentido seguir a tus propias mascotas.
+petsRouter.put('/:id/follow', requireAuth, async (req, res) => {
+  const userId = req.userId!
+  const id = parse(idSchema, req.params.id)
+  const pet = await prisma.pet.findUnique({ where: { id }, select: { ownerId: true } })
+  if (!pet) throw new HttpError(404, 'Mascota no encontrada')
+  if (pet.ownerId === userId) throw new HttpError(400, 'No puedes seguir a tus propias mascotas')
+  await prisma.follow.upsert({
+    where: { followerId_petId: { followerId: userId, petId: id } },
+    create: { followerId: userId, petId: id },
+    update: {},
+  })
+  res.json(await socialStats(id, userId))
+})
+
+petsRouter.delete('/:id/follow', requireAuth, async (req, res) => {
+  const id = parse(idSchema, req.params.id)
+  await prisma.follow.deleteMany({ where: { petId: id, followerId: req.userId } })
+  res.json(await socialStats(id, req.userId))
 })
 
 petsRouter.post('/', requireAuth, async (req, res) => {

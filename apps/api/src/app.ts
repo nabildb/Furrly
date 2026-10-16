@@ -6,6 +6,7 @@ import { errorHandler } from './lib/http.js'
 import { apiLimiter, writeLimiter } from './middleware/rateLimit.js'
 import { meRouter } from './routes/me.js'
 import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
+import { feedRouter, postsRouter } from './routes/posts.js'
 import { myReportsRouter, reportsRouter } from './routes/reports.js'
 import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
@@ -32,6 +33,8 @@ app.use('/users/:username/pets', userPetsRouter)
 app.use('/users', usersRouter)
 app.use('/reports/:reportId/sightings', sightingsRouter)
 app.use('/reports', reportsRouter)
+app.use('/posts', postsRouter)
+app.use('/feed', feedRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {

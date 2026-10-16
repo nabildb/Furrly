@@ -10,6 +10,15 @@ declare global {
   }
 }
 
+async function verify(header: string) {
+  const { payload } = await jwtVerify(header.slice('Bearer '.length), jwks, {
+    issuer,
+    audience: 'authenticated',
+  })
+  if (!payload.sub) throw new Error('Token sin sub')
+  return payload.sub
+}
+
 /** Exige un access token válido de Supabase y deja el id del usuario en req.userId. */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization
@@ -19,14 +28,19 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const { payload } = await jwtVerify(header.slice('Bearer '.length), jwks, {
-      issuer,
-      audience: 'authenticated',
-    })
-    if (!payload.sub) throw new Error('Token sin sub')
-    req.userId = payload.sub
+    req.userId = await verify(header)
     next()
   } catch {
     res.status(401).json({ error: 'Token inválido o caducado' })
   }
+}
+
+/**
+ * Para rutas públicas que cambian un poco si hay sesión (p. ej. "le has dado like").
+ * Sin token sigue como anónimo; con un token inválido responde 401, igual que requireAuth,
+ * para que el cliente se entere de que su sesión ha caducado.
+ */
+export async function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.headers.authorization) return next()
+  return requireAuth(req, res, next)
 }
