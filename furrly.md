@@ -27,6 +27,7 @@ Prefiero conversar en español.
 - Nombre: **Furrly**
 - Enfoque: **mascotas perdidas y encontradas** — avisos con ubicación, avistamientos y alertas por zona
 - Frontend: React + Vite + TypeScript + Tailwind
+- Diseño visual (UI): se hará más adelante con **Claude Design**; hasta entonces, el frontend será funcional con estilos mínimos
 - Backend: Node + Express + TypeScript + Prisma (API REST propia)
 - Base de datos: **Supabase** (PostgreSQL + extensión PostGIS)
 - Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
