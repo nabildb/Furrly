@@ -1,1 +1,59 @@
 @import "tailwindcss";
+
+/*
+ * Diseño C (ver docs/diseno.md). Cada token genera sus utilidades:
+ * --color-lost → bg-lost, text-lost, border-lost...; --font-display → font-display.
+ */
+@theme {
+  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #1b2430;
+  --color-bg: #fbfaf7;
+  --color-surface: #ffffff;
+  --color-card-line: #eeece6;
+  --color-line: #e4e2dc;
+  --color-subtle: #f3f1ec;
+  --color-track: #e8e5de;
+  --color-muted: #5b6472;
+  --color-body: #333c48;
+
+  --color-lost: #c2410c;
+  --color-lost-soft: #fde8dc;
+  --color-lost-text: #9a3412;
+  --color-found: #1e5bb8;
+  --color-found-soft: #dce8fa;
+  --color-found-text: #1e4a8f;
+  --color-sighting: #f59e0b;
+  --color-sighting-line: #b45309;
+  --color-resolved-soft: #e7f0e3;
+  --color-resolved-text: #2f6b2a;
+  --color-danger: #b42318;
+
+  --radius-chip: 19px;
+  --radius-btn: 18px;
+  --radius-card: 22px;
+
+  --shadow-float: 0 6px 20px rgb(27 36 48 / 0.12);
+  --shadow-card: 0 10px 30px rgb(27 36 48 / 0.16);
+  --shadow-chip: 0 2px 8px rgb(27 36 48 / 0.1);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-lost;
+  }
+
+  /* Leaflet usa su propia fuente; la igualamos a la de la app. */
+  .leaflet-container {
+    font: inherit;
+  }
+}

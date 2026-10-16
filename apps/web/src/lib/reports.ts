@@ -55,9 +55,10 @@ export interface NearbyReport {
   photoUrl: string | null
 }
 
+// Leaflet pinta con colores en JS: son los mismos valores que los tokens de src/index.css.
 export const reportColors: Record<ReportType, string> = {
-  lost: '#dc2626',
-  found: '#16a34a',
+  lost: '#C2410C',
+  found: '#1E5BB8',
 }
 
 export function formatDistance(meters: number) {
@@ -85,7 +86,9 @@ export interface Sighting {
   user: { username: string; displayName: string }
 }
 
-export const SIGHTING_COLOR = '#f59e0b'
+export const SIGHTING_COLOR = '#F59E0B'
+/** Ámbar oscuro para la línea del recorrido: el ámbar claro apenas se ve sobre el mapa. */
+export const SIGHTING_LINE_COLOR = '#B45309'
 
 /** Valor para <input type="datetime-local"> (hora local, sin zona horaria). */
 export function toDateTimeInput(date: Date) {
