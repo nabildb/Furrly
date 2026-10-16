@@ -9,6 +9,7 @@ export default defineConfig({
       DATABASE_URL: TEST_DB,
       DIRECT_URL: TEST_DB,
       SUPABASE_URL: 'http://supabase.test',
+      RATE_LIMIT_ENABLED: 'false',
     },
     globalSetup: ['test/global-setup.ts'],
     setupFiles: ['test/setup.ts'],
