@@ -60,6 +60,7 @@ export function MyPets() {
     <Page
       title="Mis mascotas"
       variant="sub"
+      width="wide"
       action={
         <Link to={`/mascotas/${pet.id}/editar`} aria-label={`Editar a ${pet.name}`} className={iconButtonClass()}>
           <EditIcon size={20} />
@@ -81,23 +82,24 @@ export function MyPets() {
         </Link>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <PetCarnet pet={pet} />
+        <div className="space-y-4">
+          {pet.description && (
+            <Card>
+              <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
+              <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{pet.description}</p>
+            </Card>
+          )}
 
-        {pet.description && (
-          <Card>
-            <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
-            <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{pet.description}</p>
-          </Card>
-        )}
-
-        <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />
-        <Link
-          to={`/mascotas/${pet.id}`}
-          className="block text-center text-sm font-extrabold text-muted underline-offset-2 hover:text-ink hover:underline"
-        >
-          Ver su carnet público
-        </Link>
+          <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />
+          <Link
+            to={`/mascotas/${pet.id}`}
+            className="block text-center text-sm font-extrabold text-muted underline-offset-2 hover:text-ink hover:underline"
+          >
+            Ver su carnet público
+          </Link>
+        </div>
       </div>
     </Page>
   )

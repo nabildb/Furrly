@@ -34,6 +34,7 @@ export function PetDetail() {
   return (
     <Page
       title={pet.name}
+      width="wide"
       back={`/u/${pet.owner.username}`}
       action={
         isOwner ? (
@@ -43,15 +44,17 @@ export function PetDetail() {
         ) : undefined
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <PetCarnet pet={pet} showOwner />
-        {pet.description && (
-          <Card>
-            <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
-            <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{pet.description}</p>
-          </Card>
-        )}
-        {isOwner && <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />}
+        <div className="space-y-4">
+          {pet.description && (
+            <Card>
+              <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
+              <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{pet.description}</p>
+            </Card>
+          )}
+          {isOwner && <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />}
+        </div>
       </div>
     </Page>
   )

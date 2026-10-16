@@ -24,7 +24,7 @@ export function ReportWhereWhenFields({ type, location, onLocationChange, initia
       <div>
         <span className="text-sm font-extrabold">{isLost ? '¿Dónde se perdió?' : '¿Dónde lo encontraste?'}</span>
         <div className="mt-1.5">
-          <LocationPicker value={location} onChange={onLocationChange} tone={type} className="h-72" />
+          <LocationPicker value={location} onChange={onLocationChange} tone={type} className="h-72 lg:h-96" />
         </div>
       </div>
       <Field

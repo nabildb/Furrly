@@ -139,97 +139,149 @@ export function ReportDetail() {
   const numbered = sightings.map((s, i) => ({ ...s, n: i + 1 })).reverse()
   const showBottomBar = isActive && (isReporter || isLost || !session)
 
-  return (
-    <main className={cx('mx-auto max-w-2xl sm:px-4 sm:pt-6', showBottomBar ? 'pb-32' : 'pb-12')}>
-      {/* Foto grande (carrusel si hay varias) con volver y compartir encima */}
-      <div className="relative h-[260px] overflow-hidden bg-[#F6D9C8] sm:h-[340px] sm:rounded-[28px]">
-        {photos.length > 0 ? (
-          <div
-            onScroll={onPhotosScroll}
-            className="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
-          >
-            {photos.map((url, i) => (
-              <img
-                key={url}
-                src={url}
-                alt={i === 0 ? `Foto de ${report.pet?.name ?? speciesLabels[report.species].toLowerCase()}` : ''}
-                className="h-full w-full flex-none snap-center object-cover"
-              />
-            ))}
-          </div>
+  // Mismos botones en la barra fija (móvil y tablet) y en la columna derecha (escritorio).
+  const actionButtons = isReporter ? (
+    <>
+      <Link
+        to={`/avisos/${report.id}/editar`}
+        aria-label="Editar aviso"
+        className={iconButtonClass('h-14 w-14 rounded-btn')}
+      >
+        <EditIcon />
+      </Link>
+      <Button variant="dark" className="flex-1" disabled={updating} onClick={() => changeStatus('resolved')}>
+        <CheckIcon /> {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
+      </Button>
+    </>
+  ) : (
+    <>
+      <Link
+        to={`/u/${report.reporter.username}`}
+        aria-label={`Ver el perfil de @${report.reporter.username}`}
+        className={iconButtonClass('h-14 w-14 rounded-btn')}
+      >
+        <UserIcon />
+      </Link>
+      {isLost ? (
+        session ? (
+          <Button variant="sighting" className="flex-1" onClick={() => setShowSightingForm(true)}>
+            <EyeIcon /> La he visto
+          </Button>
         ) : (
-          <div
-            className={cx(
-              'flex h-full items-center justify-center',
-              isLost ? 'text-lost/30' : 'bg-[#D5E2F5] text-found/30',
-            )}
-          >
-            <PawIcon size={72} />
-          </div>
-        )}
-        <BackButton fallback="/avisos" className={cx(overPhotoButton, 'absolute top-4 left-4')} />
-        <button type="button" onClick={share} aria-label="Compartir aviso" className={cx(overPhotoButton, 'absolute top-4 right-4')}>
-          <ShareIcon size={20} />
-        </button>
-        {photos.length > 1 && (
-          <div className="absolute bottom-9 left-1/2 flex -translate-x-1/2 gap-1.5 sm:bottom-4" aria-hidden="true">
-            {photos.map((url, i) => (
-              <span
-                key={url}
-                className={cx('h-1.5 rounded-full transition-all', i === photoIndex ? 'w-[18px] bg-white' : 'w-1.5 bg-white/60')}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          <ButtonLink to="/login" state={{ from: `/avisos/${report.id}` }} variant="sighting" className="flex-1">
+            <EyeIcon /> Entra para avisar
+          </ButtonLink>
+        )
+      ) : (
+        <Button variant="dark" className="flex-1" onClick={share}>
+          <ShareIcon /> Compartir aviso
+        </Button>
+      )}
+    </>
+  )
 
-      {/* Hoja con los datos, que se monta sobre la foto */}
-      <article className="relative -mt-5 space-y-5 rounded-t-3xl bg-bg px-5 pt-5 sm:mt-0 sm:px-1">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={report.type} solid>
-              {reportTypeLabels[report.type]}
-            </Badge>
-            {!isActive && <Badge tone={report.status as 'resolved' | 'cancelled'}>{reportStatusLabels[report.status]}</Badge>}
-            <span className="text-[13px] font-semibold text-muted">
-              {isActive ? 'Activo' : 'Cerrado'} · {formatTimeAgo(report.createdAt)}
-            </span>
-          </div>
-          <h1 className="font-display text-[26px] leading-[1.15] font-extrabold tracking-[-0.8px]">{report.title}</h1>
-          {subtitle && <p className="text-[15px] font-semibold text-muted">{subtitle}</p>}
+  return (
+    <main
+      className={cx(
+        'mx-auto max-w-2xl sm:px-6 sm:pt-6',
+        // Escritorio: foto y datos a la izquierda; mapa, avistamientos y acciones a la derecha (fija al bajar).
+        'lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10 lg:px-10 lg:pt-10 lg:pb-12',
+        showBottomBar ? 'pb-32' : 'pb-12',
+      )}
+    >
+      <div className="min-w-0">
+        {/* Foto grande (carrusel si hay varias) con volver y compartir encima */}
+        <div className="relative h-[260px] overflow-hidden bg-[#F6D9C8] sm:h-[340px] sm:rounded-[28px] lg:h-[420px]">
+          {photos.length > 0 ? (
+            <div
+              onScroll={onPhotosScroll}
+              className="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
+            >
+              {photos.map((url, i) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={i === 0 ? `Foto de ${report.pet?.name ?? speciesLabels[report.species].toLowerCase()}` : ''}
+                  className="h-full w-full flex-none snap-center object-cover"
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              className={cx(
+                'flex h-full items-center justify-center',
+                isLost ? 'text-lost/30' : 'bg-[#D5E2F5] text-found/30',
+              )}
+            >
+              <PawIcon size={72} />
+            </div>
+          )}
+          <BackButton fallback="/avisos" className={cx(overPhotoButton, 'absolute top-4 left-4')} />
+          <button type="button" onClick={share} aria-label="Compartir aviso" className={cx(overPhotoButton, 'absolute top-4 right-4')}>
+            <ShareIcon size={20} />
+          </button>
+          {photos.length > 1 && (
+            <div className="absolute bottom-9 left-1/2 flex -translate-x-1/2 gap-1.5 sm:bottom-4" aria-hidden="true">
+              {photos.map((url, i) => (
+                <span
+                  key={url}
+                  className={cx('h-1.5 rounded-full transition-all', i === photoIndex ? 'w-[18px] bg-white' : 'w-1.5 bg-white/60')}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
-            <div className="text-xs font-semibold text-muted">Dónde</div>
-            <div className="text-sm font-extrabold">{report.addressText ?? 'Ver en el mapa'}</div>
+        {/* Hoja con los datos, que se monta sobre la foto */}
+        <article className="relative -mt-5 space-y-5 rounded-t-3xl bg-bg px-5 pt-5 sm:mt-0 sm:px-1">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={report.type} solid>
+                {reportTypeLabels[report.type]}
+              </Badge>
+              {!isActive && <Badge tone={report.status as 'resolved' | 'cancelled'}>{reportStatusLabels[report.status]}</Badge>}
+              <span className="text-[13px] font-semibold text-muted">
+                {isActive ? 'Activo' : 'Cerrado'} · {formatTimeAgo(report.createdAt)}
+              </span>
+            </div>
+            <h1 className="font-display text-[26px] leading-[1.15] font-extrabold tracking-[-0.8px]">{report.title}</h1>
+            {subtitle && <p className="text-[15px] font-semibold text-muted">{subtitle}</p>}
           </div>
-          <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
-            <div className="text-xs font-semibold text-muted">Cuándo</div>
-            <div className="text-sm font-extrabold" title={formatDateTime(report.happenedAt)}>
-              {formatWhen(report.happenedAt)}
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
+              <div className="text-xs font-semibold text-muted">Dónde</div>
+              <div className="text-sm font-extrabold">{report.addressText ?? 'Ver en el mapa'}</div>
+            </div>
+            <div className="rounded-[14px] border border-card-line bg-surface px-3 py-2.5">
+              <div className="text-xs font-semibold text-muted">Cuándo</div>
+              <div className="text-sm font-extrabold" title={formatDateTime(report.happenedAt)}>
+                {formatWhen(report.happenedAt)}
+              </div>
             </div>
           </div>
-        </div>
 
-        {report.status === 'resolved' && report.resolvedAt && (
-          <p className="flex items-center gap-2 rounded-2xl bg-resolved-soft px-4 py-3 text-[15px] font-bold text-resolved-text">
-            <CheckIcon size={20} />
-            {isLost ? '¡Ya está en casa!' : '¡Ya ha vuelto con su familia!'} Resuelto el {formatDateTime(report.resolvedAt)}.
-          </p>
-        )}
+          {report.status === 'resolved' && report.resolvedAt && (
+            <p className="flex items-center gap-2 rounded-2xl bg-resolved-soft px-4 py-3 text-[15px] font-bold text-resolved-text">
+              <CheckIcon size={20} />
+              {isLost ? '¡Ya está en casa!' : '¡Ya ha vuelto con su familia!'} Resuelto el {formatDateTime(report.resolvedAt)}.
+            </p>
+          )}
 
-        <Card className="space-y-1.5">
-          <SectionTitle>{isLost ? 'Cómo es' : 'Detalles'}</SectionTitle>
-          <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{report.description}</p>
-          <p className="pt-1 text-[13px] font-semibold text-muted">
-            Aviso de{' '}
-            <Link to={`/u/${report.reporter.username}`} className="font-extrabold text-ink underline-offset-2 hover:underline">
-              @{report.reporter.username}
-            </Link>
-          </p>
-        </Card>
+          <Card className="space-y-1.5">
+            <SectionTitle>{isLost ? 'Cómo es' : 'Detalles'}</SectionTitle>
+            <p className="text-[15px] leading-relaxed whitespace-pre-line text-body">{report.description}</p>
+            <p className="pt-1 text-[13px] font-semibold text-muted">
+              Aviso de{' '}
+              <Link to={`/u/${report.reporter.username}`} className="font-extrabold text-ink underline-offset-2 hover:underline">
+                @{report.reporter.username}
+              </Link>
+            </p>
+          </Card>
+        </article>
+      </div>
 
+      <section aria-label="Recorrido y acciones" className="space-y-5 px-5 pt-5 sm:px-1 lg:sticky lg:top-10 lg:px-0 lg:pt-0">
         <section className="space-y-2">
           <div className="flex items-baseline justify-between">
             <SectionTitle>{isLost ? 'Su recorrido' : 'Dónde se encontró'}</SectionTitle>
@@ -300,56 +352,20 @@ export function ReportDetail() {
 
         {actionError && <ErrorText>{actionError}</ErrorText>}
 
+        {showBottomBar && <div className="hidden gap-2.5 lg:flex">{actionButtons}</div>}
+
         {isReporter && isActive && (
           <Button variant="danger" size="md" onClick={() => changeStatus('cancelled')} disabled={updating} className="w-full">
             Cancelar aviso
           </Button>
         )}
-      </article>
+      </section>
 
       {/* Barra fija de acciones */}
       {showBottomBar && (
-        <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] border-t border-card-line bg-surface">
+        <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] border-t border-card-line bg-surface lg:hidden">
           <div className="mx-auto flex max-w-2xl gap-2.5 px-5 pt-3.5 pb-[max(22px,env(safe-area-inset-bottom))]">
-            {isReporter ? (
-              <>
-                <Link
-                  to={`/avisos/${report.id}/editar`}
-                  aria-label="Editar aviso"
-                  className={iconButtonClass('h-14 w-14 rounded-btn')}
-                >
-                  <EditIcon />
-                </Link>
-                <Button variant="dark" className="flex-1" disabled={updating} onClick={() => changeStatus('resolved')}>
-                  <CheckIcon /> {isLost ? '¡Ya está en casa!' : 'Ya está con su familia'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to={`/u/${report.reporter.username}`}
-                  aria-label={`Ver el perfil de @${report.reporter.username}`}
-                  className={iconButtonClass('h-14 w-14 rounded-btn')}
-                >
-                  <UserIcon />
-                </Link>
-                {isLost ? (
-                  session ? (
-                    <Button variant="sighting" className="flex-1" onClick={() => setShowSightingForm(true)}>
-                      <EyeIcon /> La he visto
-                    </Button>
-                  ) : (
-                    <ButtonLink to="/login" state={{ from: `/avisos/${report.id}` }} variant="sighting" className="flex-1">
-                      <EyeIcon /> Entra para avisar
-                    </ButtonLink>
-                  )
-                ) : (
-                  <Button variant="dark" className="flex-1" onClick={share}>
-                    <ShareIcon /> Compartir aviso
-                  </Button>
-                )}
-              </>
-            )}
+            {actionButtons}
           </div>
         </div>
       )}
@@ -371,7 +387,7 @@ export function ReportDetail() {
       {toast && (
         <p
           role="status"
-          className="fixed bottom-28 left-[calc(50%+var(--sidebar-w)/2)] z-[2100] -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-extrabold text-white shadow-card"
+          className="fixed bottom-28 left-[calc(50%+var(--sidebar-w)/2)] lg:bottom-10 z-[2100] -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-extrabold text-white shadow-card"
         >
           {toast}
         </p>

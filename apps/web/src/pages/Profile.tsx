@@ -81,72 +81,78 @@ export function Profile() {
   }
 
   return (
-    <Page title="Mi perfil">
+    <Page title="Mi perfil" width="wide">
       <p className="-mt-4 mb-5 text-[15px] font-semibold text-muted">@{me.username}</p>
 
-      <Card className="mb-6 divide-y divide-card-line overflow-hidden p-0">
-        <MenuLink to="/avisos/mios" icon={<ListIcon />}>
-          Mis avisos
-        </MenuLink>
-        <MenuLink to={`/u/${me.username}`} icon={<UserIcon />}>
-          Ver mi perfil público
-        </MenuLink>
-      </Card>
+      {/* Escritorio: menú y datos a la izquierda; zona de alertas y botones a la derecha. */}
+      <form onSubmit={handleSubmit} className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="space-y-6">
+          <Card className="divide-y divide-card-line overflow-hidden p-0">
+            <MenuLink to="/avisos/mios" icon={<ListIcon />}>
+              Mis avisos
+            </MenuLink>
+            <MenuLink to={`/u/${me.username}`} icon={<UserIcon />}>
+              Ver mi perfil público
+            </MenuLink>
+          </Card>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="space-y-4">
-          <SectionTitle>Tus datos</SectionTitle>
-          <PhotosInput
-            label="Foto de perfil"
-            value={avatar}
-            onChange={setAvatar}
-            max={1}
-            folder="avatars"
-            keep={me.avatarUrl ? [me.avatarUrl] : []}
-          />
-          <Field label="Nombre visible" name="displayName" required maxLength={60} defaultValue={me.displayName} />
-          <TextAreaField label="Sobre ti" name="bio" maxLength={300} rows={3} defaultValue={me.bio ?? ''} />
-        </Card>
+          <Card className="space-y-4">
+            <SectionTitle>Tus datos</SectionTitle>
+            <PhotosInput
+              label="Foto de perfil"
+              value={avatar}
+              onChange={setAvatar}
+              max={1}
+              folder="avatars"
+              keep={me.avatarUrl ? [me.avatarUrl] : []}
+            />
+            <Field label="Nombre visible" name="displayName" required maxLength={60} defaultValue={me.displayName} />
+            <TextAreaField label="Sobre ti" name="bio" maxLength={300} rows={3} defaultValue={me.bio ?? ''} />
+          </Card>
+        </div>
 
-        <Card className="space-y-3">
-          <div>
-            <SectionTitle>Zona de alertas</SectionTitle>
-            <p className="mt-1 text-sm font-semibold text-muted">
-              Marca tu barrio para enterarte de las mascotas perdidas cerca. Es privada: nunca se muestra en tu perfil.
-            </p>
-          </div>
-          {!alertLocation && (
-            <p className="rounded-[14px] bg-lost-soft px-3.5 py-2.5 text-sm font-bold text-lost-text">
-              Aún no la has configurado.
+        <div className="space-y-6">
+          <Card className="space-y-3">
+            <div>
+              <SectionTitle>Zona de alertas</SectionTitle>
+              <p className="mt-1 text-sm font-semibold text-muted">
+                Marca tu barrio para enterarte de las mascotas perdidas cerca. Es privada: nunca se muestra en tu perfil.
+              </p>
+            </div>
+            {!alertLocation && (
+              <p className="rounded-[14px] bg-lost-soft px-3.5 py-2.5 text-sm font-bold text-lost-text">
+                Aún no la has configurado.
+              </p>
+            )}
+            <LocationPicker value={alertLocation} onChange={setAlertLocation} className="h-60 lg:h-80" />
+            <div className="flex items-end gap-3">
+              <div className="w-32">
+                <SelectField label="Radio" name="alertRadiusKm" options={radiusOptions} defaultValue={String(me.alertRadiusKm)} />
+              </div>
+              {alertLocation && (
+                <Button variant="secondary" size="md" onClick={() => setAlertLocation(null)} className="mb-px h-[50px]">
+                  Quitar zona
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {error && <ErrorText>{error}</ErrorText>}
+          {saved && (
+            <p role="status" className="flex items-center gap-2 rounded-[14px] bg-resolved-soft px-3.5 py-2.5 text-sm font-bold text-resolved-text">
+              <CheckIcon size={18} /> Cambios guardados.
             </p>
           )}
-          <LocationPicker value={alertLocation} onChange={setAlertLocation} className="h-60" />
-          <div className="flex items-end gap-3">
-            <div className="w-32">
-              <SelectField label="Radio" name="alertRadiusKm" options={radiusOptions} defaultValue={String(me.alertRadiusKm)} />
-            </div>
-            {alertLocation && (
-              <Button variant="secondary" size="md" onClick={() => setAlertLocation(null)} className="mb-px h-[50px]">
-                Quitar zona
-              </Button>
-            )}
+          <div className="space-y-4">
+            <Button type="submit" variant="dark" disabled={submitting} className="w-full">
+              {submitting ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+            <Button variant="secondary" size="md" onClick={() => supabase.auth.signOut()} className="w-full">
+              <LogoutIcon size={20} /> Cerrar sesión
+            </Button>
           </div>
-        </Card>
-
-        {error && <ErrorText>{error}</ErrorText>}
-        {saved && (
-          <p role="status" className="flex items-center gap-2 rounded-[14px] bg-resolved-soft px-3.5 py-2.5 text-sm font-bold text-resolved-text">
-            <CheckIcon size={18} /> Cambios guardados.
-          </p>
-        )}
-        <Button type="submit" variant="dark" disabled={submitting} className="w-full">
-          {submitting ? 'Guardando…' : 'Guardar cambios'}
-        </Button>
+        </div>
       </form>
-
-      <Button variant="secondary" size="md" onClick={() => supabase.auth.signOut()} className="mt-4 w-full">
-        <LogoutIcon size={20} /> Cerrar sesión
-      </Button>
     </Page>
   )
 }

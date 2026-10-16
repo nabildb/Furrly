@@ -62,12 +62,19 @@ export function ReportEdit() {
   }
 
   return (
-    <Page title="Editar aviso" back={`/avisos/${report.id}`} bottomSpace={false} className="pb-12">
+    <Page title="Editar aviso" back={`/avisos/${report.id}`} bottomSpace={false} width="wide" className="pb-12">
       <form onSubmit={handleSubmit} className="space-y-5">
-        <ReportDetailFields type={report.type} initial={report} photoUrls={photoUrls} onPhotosChange={setPhotoUrls} />
-        <ReportWhereWhenFields type={report.type} initial={report} location={location} onLocationChange={setLocation} />
+        {/* Escritorio: textos y fotos a la izquierda, mapa y fecha a la derecha. */}
+        <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8 lg:space-y-0">
+          <div className="space-y-5">
+            <ReportDetailFields type={report.type} initial={report} photoUrls={photoUrls} onPhotosChange={setPhotoUrls} />
+          </div>
+          <div className="space-y-5">
+            <ReportWhereWhenFields type={report.type} initial={report} location={location} onLocationChange={setLocation} />
+          </div>
+        </div>
         {error && <ErrorText>{error}</ErrorText>}
-        <div className="flex gap-2.5">
+        <div className="flex gap-2.5 lg:ml-auto lg:max-w-md">
           <Button variant="secondary" onClick={handleCancel} className="flex-1">
             Cancelar
           </Button>

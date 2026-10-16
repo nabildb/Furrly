@@ -42,10 +42,11 @@ export function Page({
       )}
     >
       {variant === 'sub' ? (
-        <header className="mb-5 flex items-center justify-between gap-3">
-          {back ? <BackButton fallback={back} /> : <span className="w-11" />}
-          <h1 className="truncate font-display text-[15px] font-extrabold">{title}</h1>
-          {action ?? <span className="w-11" />}
+        // Móvil: título pequeño centrado entre botones. Escritorio: título grande a la izquierda.
+        <header className="mb-5 flex items-center justify-between gap-3 lg:mb-8 lg:justify-start lg:gap-4">
+          {back ? <BackButton fallback={back} /> : <span className="w-11 lg:hidden" />}
+          <h1 className="truncate font-display text-[15px] font-extrabold lg:text-[28px] lg:tracking-[-0.8px]">{title}</h1>
+          <div className="lg:ml-auto">{action ?? <span className="block w-11" />}</div>
         </header>
       ) : (
         <header className="mb-6 flex items-center justify-between gap-3">

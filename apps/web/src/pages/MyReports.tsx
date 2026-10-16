@@ -27,6 +27,7 @@ export function MyReports() {
     <Page
       title="Mis avisos"
       back="/perfil"
+      width="wide"
       action={
         <Link to="/avisos/nuevo" aria-label="Publicar aviso" className={iconButtonClass()}>
           <PlusIcon size={20} />
@@ -43,7 +44,7 @@ export function MyReports() {
           </ButtonLink>
         </Card>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-3 md:grid-cols-2">
           {reports?.map((r) => {
             const active = r.status === 'active'
             return (
