@@ -127,7 +127,7 @@ export function ReportNew() {
   if ((!pets || !activeLost) && !error) return <Loading />
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="mx-auto max-w-xl pb-32">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="mx-auto max-w-xl pb-32 lg:pb-12">
       <header className="sticky top-0 z-[1001] space-y-3.5 bg-bg/95 px-4 pt-4 pb-3 backdrop-blur sm:pt-8">
         <div className="flex items-center justify-between">
           {step === 0 ? (
@@ -272,7 +272,8 @@ export function ReportNew() {
 
       </div>
 
-      <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] bg-gradient-to-t from-bg via-bg to-bg/0 pt-6">
+      {/* Móvil y tablet: barra fija abajo. Escritorio: el botón va justo debajo del paso. */}
+      <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] bg-gradient-to-t from-bg via-bg to-bg/0 pt-6 lg:static lg:bg-none lg:pt-8">
         <div className="mx-auto max-w-xl space-y-3 px-5 pb-[max(24px,env(safe-area-inset-bottom))]">
           {/* El error va pegado al botón: si estuviera al final del paso, la barra lo taparía. */}
           {error && <ErrorText>{error}</ErrorText>}
