@@ -33,6 +33,7 @@ Prefiero conversar en español.
 - Autenticación: **Supabase Auth**. El frontend inicia sesión con el SDK de Supabase y envía el access token (`Authorization: Bearer`) a la API; Express lo valida contra el JWKS del proyecto (librería `jose`) y saca el `sub` como id de usuario
 - Imágenes: Supabase Storage
 - Despliegue: **todo en Vercel**, un solo proyecto: la web estática y la API de Express como función serverless bajo `/api` (mismo dominio, sin CORS). La BD vive en Supabase
+- URL de producción: https://furrly-rouge.vercel.app (el dominio propio sigue pendiente)
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Cómo quiero trabajar
