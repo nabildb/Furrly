@@ -14,6 +14,9 @@ export function Layout() {
         <nav className="flex gap-4 text-sm">
           {session ? (
             <>
+              <Link to="/avisos/nuevo" className="underline">
+                Publicar aviso
+              </Link>
               <Link to="/mascotas" className="underline">
                 Mis mascotas
               </Link>

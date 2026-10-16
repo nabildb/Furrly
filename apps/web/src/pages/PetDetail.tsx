@@ -25,7 +25,7 @@ export function PetDetail() {
   const isOwner = session?.user.user_metadata.username === pet.owner.username
 
   async function handleDelete() {
-    if (!pet || !confirm(`¿Seguro que quieres borrar a ${pet.name}? No se puede deshacer.`)) return
+    if (!pet || !confirm(`¿Seguro que quieres borrar a ${pet.name}? También se borrarán sus avisos. No se puede deshacer.`)) return
     try {
       await api(`/pets/${pet.id}`, { method: 'DELETE' })
       if (pet.photoUrl) await removeImage(pet.photoUrl)
