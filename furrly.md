@@ -52,15 +52,14 @@ Hecho, probado (34 tests de integración en CI) y desplegado:
 - **Datos de demo** en producción (ver Notas operativas)
 
 ### Próximos pasos
-1. Fotos para la demo: las mascotas de demo no tienen foto y la Comunidad sale vacía, porque las publicaciones exigen imagen. Hace falta decidir de dónde salen (fotos propias o de un banco libre) y subirlas a Storage
-2. Alertas por zona y notificaciones (avisos cerca, likes, comentarios y nuevos seguidores); la tabla `notifications` y `users.alert_location` ya existen
-3. Dominio propio
-4. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
+1. Alertas por zona y notificaciones (avisos cerca, likes, comentarios y nuevos seguidores); la tabla `notifications` y `users.alert_location` ya existen
+2. Dominio propio
+3. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
 - Vercel: un proyecto `furrly` conectado a GitHub; cada push a `main` despliega y aplica migraciones (`prisma migrate deploy`)
-- **Datos de demo**: `npm run db:seed-demo -w @furrly/api -- --yes` (usa la BD de `apps/api/.env`). Crea 5 vecinos de demo (solo perfiles, sin cuenta en Auth: nadie puede entrar con ellos), 7 mascotas, 8 avisos alrededor de Sol y avistamientos. Usa UUIDs fijos (`f0f0f0f0-…`): cada ejecución borra y recrea solo esos datos, con fechas relativas a ese momento. Conviene repetirlo de vez en cuando para que la demo no envejezca
+- **Datos de demo**: `npm run db:seed-demo -w @furrly/api -- --yes` (usa la BD de `apps/api/.env`). Crea 5 vecinos de demo (solo perfiles, sin cuenta en Auth: nadie puede entrar con ellos), 9 mascotas con foto, 8 avisos alrededor de Sol con avistamientos y 11 publicaciones con seguidores, likes y comentarios. Las fotos son de Wikimedia Commons (dominio público / CC0) y están en `apps/web/public/demo` (créditos en `CREDITS.md`); la web las sirve en `/demo/…`. Usa UUIDs fijos (`f0f0f0f0-…`): cada ejecución borra y recrea solo esos datos, con fechas relativas a ese momento. Conviene repetirlo de vez en cuando para que la demo no envejezca
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar
