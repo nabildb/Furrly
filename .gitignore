@@ -7,3 +7,6 @@ dist/
 build/
 apps/api/src/generated/
 .claude/
+
+# Variables para importar en Vercel (contiene secretos)
+vercel.env.local
