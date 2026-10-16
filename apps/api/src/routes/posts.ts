@@ -4,6 +4,7 @@ import type { Prisma } from '../generated/prisma/client.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
+import { notify } from '../lib/notifications.js'
 import { optionalAuth, requireAuth } from '../middleware/auth.js'
 
 const PAGE_SIZE = 12
@@ -72,7 +73,10 @@ export async function findPostsPage(where: Prisma.PostWhereInput, cursor: string
 
 /** El post y si quien pide es el dueño de la mascota. 404 si no existe. */
 async function findPost(id: string) {
-  const post = await prisma.post.findUnique({ where: { id }, select: { id: true, pet: { select: { ownerId: true } } } })
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { id: true, petId: true, pet: { select: { ownerId: true } } },
+  })
   if (!post) throw new HttpError(404, 'Publicación no encontrada')
   return post
 }
@@ -121,14 +125,12 @@ postsRouter.delete('/:id', requireAuth, async (req, res) => {
 
 // Likes: PUT y DELETE idempotentes (la PK es usuario+post), así repetir un clic no falla.
 postsRouter.put('/:id/like', requireAuth, async (req, res) => {
-  const { id } = await findPost(parse(idSchema, req.params.id))
+  const post = await findPost(parse(idSchema, req.params.id))
   const userId = req.userId!
-  await prisma.like.upsert({
-    where: { userId_postId: { userId, postId: id } },
-    create: { userId, postId: id },
-    update: {},
-  })
-  res.json(await likeState(id, userId))
+  // skipDuplicates: si ya existía, count = 0 y no se notifica otra vez.
+  const { count } = await prisma.like.createMany({ data: [{ userId, postId: post.id }], skipDuplicates: true })
+  if (count > 0) await notify({ userId: post.pet.ownerId, type: 'new_like', actorId: userId, postId: post.id })
+  res.json(await likeState(post.id, userId))
 })
 
 postsRouter.delete('/:id/like', requireAuth, async (req, res) => {
@@ -156,9 +158,11 @@ postsRouter.get('/:id/comments', async (req, res) => {
 })
 
 postsRouter.post('/:id/comments', requireAuth, async (req, res) => {
-  const { id } = await findPost(parse(idSchema, req.params.id))
+  const post = await findPost(parse(idSchema, req.params.id))
   const { body } = parse(commentSchema, req.body)
-  const comment = await prisma.comment.create({ data: { postId: id, userId: req.userId!, body }, select: commentSelect })
+  const userId = req.userId!
+  const comment = await prisma.comment.create({ data: { postId: post.id, userId, body }, select: commentSelect })
+  await notify({ userId: post.pet.ownerId, type: 'new_comment', actorId: userId, postId: post.id })
   res.status(201).json(comment)
 })
 

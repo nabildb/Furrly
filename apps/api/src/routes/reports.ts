@@ -5,7 +5,8 @@ import { ReportType, Species } from '../generated/prisma/enums.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
-import { requireAuth } from '../middleware/auth.js'
+import { notifyReportNearby, notifyReportResolved } from '../lib/notifications.js'
+import { optionalAuth, requireAuth } from '../middleware/auth.js'
 
 const MAX_PHOTOS = 3
 // Margen para pequeñas diferencias de reloj entre el navegador y el servidor.
@@ -29,6 +30,19 @@ const editableFields = z.object({
     .transform((d) => new Date(d))
     .refine((d) => d.getTime() <= Date.now() + CLOCK_SKEW_MS, 'La fecha no puede ser futura'),
   photoUrls: z.array(z.url()).max(MAX_PHOTOS).default([]),
+  // Contacto opcional del autor ('' = quitarlo). Solo lo ven usuarios con sesión.
+  contactPhone: z
+    .string()
+    .trim()
+    .regex(/^(\+?[0-9 ()-]{6,19})?$/, 'Teléfono no válido')
+    .transform((s) => s || null)
+    .nullable()
+    .optional(),
+  contactEmail: z
+    .union([z.literal(''), z.email().max(254)])
+    .transform((s) => s || null)
+    .nullable()
+    .optional(),
 })
 
 const createReportSchema = editableFields
@@ -162,7 +176,8 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
   // parametrizado. Ojo: ST_MakePoint recibe (longitud, latitud).
   const reportId = await prisma.$transaction(async (tx) => {
     const [{ id }] = await tx.$queryRaw<{ id: string }[]>`
-      INSERT INTO reports (id, type, reporter_id, pet_id, species, title, description, location, address_text, happened_at)
+      INSERT INTO reports (id, type, reporter_id, pet_id, species, title, description, location, address_text, happened_at,
+                           contact_phone, contact_email)
       VALUES (
         gen_random_uuid(),
         ${data.type}::report_type,
@@ -173,7 +188,9 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
         ${data.description},
         ST_SetSRID(ST_MakePoint(${data.lng}, ${data.lat}), 4326)::geography,
         ${data.addressText ?? null},
-        ${data.happenedAt}
+        ${data.happenedAt},
+        ${data.contactPhone ?? null},
+        ${data.contactEmail ?? null}
       )
       RETURNING id`
     await tx.reportPhoto.createMany({
@@ -182,7 +199,10 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
     return id
   })
 
-  res.status(201).json(await getReport(reportId))
+  // Después de guardar (fuera de la transacción): si fallase, el aviso ya está publicado igualmente.
+  await notifyReportNearby(reportId, userId)
+
+  res.status(201).json(await getReport(reportId, userId))
 })
 
 /** Editar un aviso activo propio. Solo cambia los campos que se envían. */
@@ -223,7 +243,7 @@ reportsRouter.patch('/:id', requireAuth, async (req, res) => {
     }
   })
 
-  res.json(await getReport(id))
+  res.json(await getReport(id, userId))
 })
 
 /** El autor marca el aviso como resuelto ("¡ya está en casa!") o lo cancela. */
@@ -237,18 +257,23 @@ reportsRouter.patch('/:id/status', requireAuth, async (req, res) => {
     data: { status, resolvedAt: status === 'resolved' ? new Date() : null },
   })
   if (count === 0) throw new HttpError(404, 'Aviso no encontrado o ya cerrado')
+  if (status === 'resolved') await notifyReportResolved(id, req.userId!)
 
-  res.json(await getReport(id))
+  res.json(await getReport(id, req.userId))
 })
 
-reportsRouter.get('/:id', async (req, res) => {
+reportsRouter.get('/:id', optionalAuth, async (req, res) => {
   const id = parse(z.uuid(), req.params.id)
-  const report = await getReport(id)
+  const report = await getReport(id, req.userId)
   if (!report) throw new HttpError(404, 'Aviso no encontrado')
   res.json(report)
 })
 
-async function getReport(id: string) {
+/**
+ * Aviso completo. El contacto (teléfono/email) solo se incluye si hay sesión (viewerId):
+ * así no lo recogen bots que rastreen la web. Sin sesión, hasContact dice si lo hay.
+ */
+async function getReport(id: string, viewerId?: string) {
   const report = await prisma.report.findUnique({
     where: { id },
     select: {
@@ -265,15 +290,20 @@ async function getReport(id: string) {
       reporter: { select: { username: true, displayName: true } },
       pet: { select: { id: true, name: true, breed: true, photoUrl: true } },
       photos: { select: { url: true }, orderBy: { position: 'asc' } },
+      contactPhone: true,
+      contactEmail: true,
     },
   })
   if (!report) return null
+  const { contactPhone, contactEmail, ...rest } = report
+  const hasContact = !!(contactPhone || contactEmail)
+  const contact = viewerId && hasContact ? { phone: contactPhone, email: contactEmail } : null
 
   const [{ lat, lng }] = await prisma.$queryRaw<{ lat: number; lng: number }[]>`
     SELECT ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng
     FROM reports WHERE id = ${id}::uuid`
 
-  return { ...report, photos: report.photos.map((p) => p.url), location: { lat, lng } }
+  return { ...rest, photos: rest.photos.map((p) => p.url), location: { lat, lng }, hasContact, contact }
 }
 
 /** Avisos del usuario autenticado, en cualquier estado. Se monta en /me/reports. */

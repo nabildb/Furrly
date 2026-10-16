@@ -5,6 +5,7 @@ import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
 import { optionalAuth, requireAuth } from '../middleware/auth.js'
+import { notify } from '../lib/notifications.js'
 import { findPostsPage } from './posts.js'
 
 // Campos públicos: el microchip solo lo ve el dueño.
@@ -97,11 +98,8 @@ petsRouter.put('/:id/follow', requireAuth, async (req, res) => {
   const pet = await prisma.pet.findUnique({ where: { id }, select: { ownerId: true } })
   if (!pet) throw new HttpError(404, 'Mascota no encontrada')
   if (pet.ownerId === userId) throw new HttpError(400, 'No puedes seguir a tus propias mascotas')
-  await prisma.follow.upsert({
-    where: { followerId_petId: { followerId: userId, petId: id } },
-    create: { followerId: userId, petId: id },
-    update: {},
-  })
+  const { count } = await prisma.follow.createMany({ data: [{ followerId: userId, petId: id }], skipDuplicates: true })
+  if (count > 0) await notify({ userId: pet.ownerId, type: 'new_follower', actorId: userId, petId: id })
   res.json(await socialStats(id, userId))
 })
 

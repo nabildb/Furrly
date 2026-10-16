@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
+import { notify } from '../lib/notifications.js'
 import { requireAuth } from '../middleware/auth.js'
 
 // Margen para pequeñas diferencias de reloj entre el navegador y el servidor.
@@ -80,7 +81,7 @@ sightingsRouter.post('/', requireAuth, async (req, res) => {
 
   const report = await prisma.report.findUnique({
     where: { id: reportId },
-    select: { type: true, status: true, happenedAt: true },
+    select: { type: true, status: true, happenedAt: true, reporterId: true },
   })
   if (!report) throw new HttpError(404, 'Aviso no encontrado')
   // Solo tiene sentido "la he visto" para una mascota que alguien está buscando.
@@ -104,6 +105,7 @@ sightingsRouter.post('/', requireAuth, async (req, res) => {
     )
     RETURNING id`
 
+  await notify({ userId: report.reporterId, type: 'new_sighting', actorId: userId, reportId })
   res.status(201).json({ id })
 })
 

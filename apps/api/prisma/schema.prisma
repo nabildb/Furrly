@@ -74,6 +74,10 @@ model User {
   sightings              Sighting[]
   notifications          Notification[] @relation("NotificationRecipient")
   triggeredNotifications Notification[] @relation("NotificationActor")
+  conversationsAsA       Conversation[] @relation("ConversationUserA")
+  conversationsAsB       Conversation[] @relation("ConversationUserB")
+  messages               Message[]
+  flags                  ContentFlag[]
 
   @@index([alertLocation], type: Gist)
   @@map("users")
@@ -162,26 +166,30 @@ model Comment {
 
 /// Aviso de mascota perdida o encontrada.
 model Report {
-  id          String                                @id @default(uuid()) @db.Uuid
-  type        ReportType
-  status      ReportStatus                          @default(active)
-  reporterId  String                                @map("reporter_id") @db.Uuid
+  id           String                                @id @default(uuid()) @db.Uuid
+  type         ReportType
+  status       ReportStatus                          @default(active)
+  reporterId   String                                @map("reporter_id") @db.Uuid
   /// Obligatorio si type = lost (CHECK en SQL); NULL en un "found" de una mascota desconocida.
-  petId       String?                               @map("pet_id") @db.Uuid
-  species     Species
-  title       String                                @db.VarChar(100)
-  description String
-  location    Unsupported("geography(Point, 4326)")
-  addressText String?                               @map("address_text") @db.VarChar(200)
-  happenedAt  DateTime                              @map("happened_at") @db.Timestamptz
-  resolvedAt  DateTime?                             @map("resolved_at") @db.Timestamptz
-  createdAt   DateTime                              @default(now()) @map("created_at") @db.Timestamptz
+  petId        String?                               @map("pet_id") @db.Uuid
+  species      Species
+  title        String                                @db.VarChar(100)
+  description  String
+  location     Unsupported("geography(Point, 4326)")
+  addressText  String?                               @map("address_text") @db.VarChar(200)
+  happenedAt   DateTime                              @map("happened_at") @db.Timestamptz
+  /// Contacto opcional del autor. La API solo lo devuelve a usuarios con sesión.
+  contactPhone String?                               @map("contact_phone") @db.VarChar(20)
+  contactEmail String?                               @map("contact_email") @db.VarChar(254)
+  resolvedAt   DateTime?                             @map("resolved_at") @db.Timestamptz
+  createdAt    DateTime                              @default(now()) @map("created_at") @db.Timestamptz
 
   reporter      User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
   pet           Pet?           @relation(fields: [petId], references: [id], onDelete: Cascade)
   photos        ReportPhoto[]
   sightings     Sighting[]
   notifications Notification[]
+  messages      Message[]
 
   @@index([location], type: Gist)
   @@index([status, happenedAt(sort: Desc)])
@@ -238,4 +246,78 @@ model Notification {
 
   @@index([userId, readAt, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+/// Conversación privada entre dos usuarios. La pareja se guarda ordenada (user_a_id < user_b_id,
+/// CHECK en SQL) y es única: entre dos personas solo hay una conversación.
+model Conversation {
+  id            String    @id @default(uuid()) @db.Uuid
+  userAId       String    @map("user_a_id") @db.Uuid
+  userBId       String    @map("user_b_id") @db.Uuid
+  /// Hasta cuándo ha leído cada uno: los no leídos se calculan con esto.
+  userAReadAt   DateTime? @map("user_a_read_at") @db.Timestamptz
+  userBReadAt   DateTime? @map("user_b_read_at") @db.Timestamptz
+  lastMessageAt DateTime  @default(now()) @map("last_message_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  userA    User      @relation("ConversationUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB    User      @relation("ConversationUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userBId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  senderId       String   @map("sender_id") @db.Uuid
+  body           String   @db.VarChar(1000)
+  /// Aviso del que se habla (opcional): se muestra como "Sobre: ...".
+  reportId       String?  @map("report_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  report       Report?      @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+enum FlagTarget {
+  report
+  post
+  comment
+  user
+
+  @@map("flag_target")
+}
+
+enum FlagReason {
+  spam
+  inappropriate
+  fake
+  other
+
+  @@map("flag_reason")
+}
+
+/// Denuncia de contenido. Se revisa a mano (de momento desde el panel de Supabase).
+model ContentFlag {
+  id         String     @id @default(uuid()) @db.Uuid
+  reporterId String     @map("reporter_id") @db.Uuid
+  targetType FlagTarget @map("target_type")
+  targetId   String     @map("target_id") @db.Uuid
+  reason     FlagReason
+  details    String?    @db.VarChar(500)
+  resolvedAt DateTime?  @map("resolved_at") @db.Timestamptz
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([resolvedAt, createdAt])
+  @@map("content_flags")
 }
