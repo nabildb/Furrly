@@ -149,7 +149,7 @@ export function Reports() {
   ))
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-[#ECEFE7]">
+    <main className="fixed inset-y-0 right-0 left-(--sidebar-w) overflow-hidden bg-[#ECEFE7]">
       <h1 className="sr-only">Avisos cerca</h1>
       <MapView center={searchCenter} zoom={14} variant="full">
         <FlyTo center={searchCenter} />
@@ -174,7 +174,7 @@ export function Reports() {
 
       {/* Columna flotante: arriba en móvil; panel lateral con la lista en escritorio.
           pointer-events-none deja arrastrar el mapa por los huecos entre elementos. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[104px] z-10 flex flex-col gap-2.5 pt-[max(18px,env(safe-area-inset-top))] lg:inset-x-auto lg:left-4 lg:w-[380px]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[104px] z-10 flex flex-col gap-2.5 pt-[max(18px,env(safe-area-inset-top))] md:right-auto md:w-[460px] lg:bottom-4 lg:left-4 lg:w-[360px] lg:pt-4 xl:w-[400px]">
         <div className="pointer-events-auto px-4 lg:px-0">
           <TopSearchBar
             place={place}
@@ -199,7 +199,7 @@ export function Reports() {
         <div
           role="toolbar"
           aria-label="Filtros"
-          className="pointer-events-auto flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] lg:flex-wrap lg:px-0"
+          className="pointer-events-auto flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:flex-wrap lg:px-0"
         >
           {typeChips.map(([type, label, dot]) => (
             <Chip
@@ -282,7 +282,7 @@ export function Reports() {
       )}
 
       {reports?.length === 0 && (
-        <p className="absolute inset-x-4 bottom-[112px] z-10 mx-auto max-w-sm rounded-card bg-surface p-4 text-center text-[15px] font-semibold text-muted shadow-card lg:right-auto lg:left-4 lg:mx-0 lg:w-[380px]">
+        <p className="absolute inset-x-4 bottom-[112px] z-10 mx-auto max-w-sm rounded-card bg-surface p-4 text-center text-[15px] font-semibold text-muted shadow-card lg:right-auto lg:bottom-4 lg:left-4 lg:mx-0 lg:w-[360px] lg:max-w-none xl:w-[400px]">
           <span className="block font-display text-base font-extrabold text-ink">Sin avisos por aquí</span>
           No hay mascotas perdidas ni encontradas en {filters.radiusKm} km. ¡Buenas noticias!
         </p>

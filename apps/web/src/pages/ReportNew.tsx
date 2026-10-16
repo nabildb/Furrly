@@ -272,7 +272,7 @@ export function ReportNew() {
 
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-[1100] bg-gradient-to-t from-bg via-bg to-bg/0 pt-6">
+      <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] bg-gradient-to-t from-bg via-bg to-bg/0 pt-6">
         <div className="mx-auto max-w-xl space-y-3 px-5 pb-[max(24px,env(safe-area-inset-bottom))]">
           {/* El error va pegado al botón: si estuviera al final del paso, la barra lo taparía. */}
           {error && <ErrorText>{error}</ErrorText>}

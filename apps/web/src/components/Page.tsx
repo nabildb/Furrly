@@ -13,16 +13,34 @@ interface PageProps {
   action?: ReactNode
   /** Título grande (páginas principales) o pequeño y centrado entre botones (subpáginas). */
   variant?: 'main' | 'sub'
-  /** Hueco abajo para la navegación flotante o la barra de acciones. */
+  /** Hueco abajo para la navegación flotante o la barra de acciones (en escritorio no hace falta). */
   bottomSpace?: boolean
+  /** 'narrow': una columna de lectura; 'wide': páginas que en escritorio van a dos columnas. */
+  width?: 'narrow' | 'wide'
   className?: string
   children: ReactNode
 }
 
 /** Contenedor de las páginas normales: centrado, con ancho máximo y cabecera común. */
-export function Page({ title, back, action, variant = back ? 'sub' : 'main', bottomSpace = true, className, children }: PageProps) {
+export function Page({
+  title,
+  back,
+  action,
+  variant = back ? 'sub' : 'main',
+  bottomSpace = true,
+  width = 'narrow',
+  className,
+  children,
+}: PageProps) {
   return (
-    <main className={cx('mx-auto w-full max-w-2xl px-4 pt-4 sm:pt-8', bottomSpace && 'pb-32', className)}>
+    <main
+      className={cx(
+        'mx-auto w-full px-4 pt-4 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10',
+        width === 'wide' ? 'max-w-5xl' : 'max-w-2xl',
+        bottomSpace && 'pb-32 lg:pb-12',
+        className,
+      )}
+    >
       {variant === 'sub' ? (
         <header className="mb-5 flex items-center justify-between gap-3">
           {back ? <BackButton fallback={back} /> : <span className="w-11" />}

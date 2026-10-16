@@ -1,25 +1,9 @@
-import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { cx } from '../../lib/cx'
-import { MapIcon, PawOutlineIcon, PlusIcon, UserIcon } from './icons'
+import { PlusIcon } from './icons'
+import { navItems, type NavItem } from './navItems'
 
-interface Item {
-  to: string
-  label: string
-  icon: ReactNode
-  /** /avisos no debe quedar activo en /avisos/123 (la ficha no es "el mapa"). */
-  end?: boolean
-  /** Otras rutas que cuelgan de esta pestaña (Mis avisos se abre desde el perfil). */
-  also?: string[]
-}
-
-const items: Item[] = [
-  { to: '/avisos', label: 'Mapa', icon: <MapIcon />, end: true },
-  { to: '/mascotas', label: 'Mascotas', icon: <PawOutlineIcon size={24} /> },
-  { to: '/perfil', label: 'Perfil', icon: <UserIcon size={24} />, also: ['/avisos/mios'] },
-]
-
-function Tab({ to, label, icon, end, also = [] }: Item) {
+function Tab({ to, label, icon, end, also = [] }: NavItem) {
   const { pathname } = useLocation()
   const inSubpage = also.some((path) => pathname.startsWith(path))
   return (
@@ -27,14 +11,13 @@ function Tab({ to, label, icon, end, also = [] }: Item) {
       to={to}
       end={end}
       aria-label={label}
-      className={({ isActive: matches }) => {
-        const isActive = matches || inSubpage
-        return cx(
+      className={({ isActive }) =>
+        cx(
           'flex h-12 items-center gap-2 rounded-2xl text-sm font-extrabold transition',
           // La pestaña activa se convierte en pastilla blanca con texto; las demás son solo icono.
-          isActive ? 'bg-white px-4 text-ink' : 'w-12 justify-center text-white hover:bg-white/10',
+          isActive || inSubpage ? 'bg-white px-4 text-ink' : 'w-12 justify-center text-white hover:bg-white/10',
         )
-      }}
+      }
     >
       {({ isActive }) => (
         <>
@@ -46,13 +29,18 @@ function Tab({ to, label, icon, end, also = [] }: Item) {
   )
 }
 
-/** Barra de navegación flotante y oscura, abajo y centrada (móvil y escritorio). */
+// En la barra de abajo no cabe "Mis avisos": se llega desde el perfil, que queda marcado.
+const tabs = navItems
+  .filter((item) => !item.wideOnly)
+  .map((item) => (item.to === '/perfil' ? { ...item, also: ['/avisos/mios'] } : item))
+
+/** Barra de navegación flotante y oscura, abajo y centrada (móvil y tablet). */
 export function BottomNav() {
-  const [map, ...rest] = items
+  const [map, ...rest] = tabs
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-4 bottom-[max(20px,env(safe-area-inset-bottom))] z-[1100] mx-auto flex h-[68px] max-w-md items-center justify-around rounded-3xl bg-ink px-2 shadow-card"
+      className="fixed inset-x-4 bottom-[max(20px,env(safe-area-inset-bottom))] z-[1100] mx-auto flex h-[68px] max-w-md items-center justify-around rounded-3xl bg-ink px-2 shadow-card lg:hidden"
     >
       <Tab {...map} />
       <NavLink

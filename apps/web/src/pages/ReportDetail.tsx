@@ -309,7 +309,7 @@ export function ReportDetail() {
 
       {/* Barra fija de acciones */}
       {showBottomBar && (
-        <div className="fixed inset-x-0 bottom-0 z-[1100] border-t border-card-line bg-surface">
+        <div className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] border-t border-card-line bg-surface">
           <div className="mx-auto flex max-w-2xl gap-2.5 px-5 pt-3.5 pb-[max(22px,env(safe-area-inset-bottom))]">
             {isReporter ? (
               <>
@@ -371,7 +371,7 @@ export function ReportDetail() {
       {toast && (
         <p
           role="status"
-          className="fixed bottom-28 left-1/2 z-[2100] -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-extrabold text-white shadow-card"
+          className="fixed bottom-28 left-[calc(50%+var(--sidebar-w)/2)] z-[2100] -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-extrabold text-white shadow-card"
         >
           {toast}
         </p>

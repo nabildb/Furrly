@@ -39,6 +39,19 @@
   --shadow-chip: 0 2px 8px rgb(27 36 48 / 0.1);
 }
 
+/*
+ * Ancho de la barra lateral de escritorio (0 en móvil y tablet). Los elementos con position:fixed
+ * (mapa, barras de acciones) usan left: var(--sidebar-w) para no quedar debajo de ella.
+ */
+:root {
+  --sidebar-w: 0px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --sidebar-w: 260px;
+  }
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
