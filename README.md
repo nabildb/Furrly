@@ -2,46 +2,123 @@
 
 [![CI](https://github.com/nabildb/Furrly/actions/workflows/ci.yml/badge.svg)](https://github.com/nabildb/Furrly/actions/workflows/ci.yml)
 
-Comunidad web para dueños de mascotas, centrada en **mascotas perdidas y encontradas**: avisos geolocalizados, avistamientos y alertas a los vecinos de la zona.
+Red social para dueños de mascotas centrada en lo que más importa cuando algo sale mal:
+**encontrar mascotas perdidas**. Avisos geolocalizados, avistamientos que dibujan el recorrido del animal,
+alertas a los vecinos de la zona y mensajes para coordinarse. Y, el resto del tiempo, una comunidad
+para compartir fotos de tus mascotas.
 
-**🌐 Demo:** https://furrly-rouge.vercel.app
+**🌐 Demo:** https://furrly-rouge.vercel.app &nbsp;·&nbsp; Proyecto de portfolio de 2.º de DAW
 
-> Proyecto de portfolio — 2.º DAW. En desarrollo.
+<p align="center">
+  <img src="docs/capturas/mapa.jpg" alt="Mapa de avisos cerca" width="230">
+  <img src="docs/capturas/ficha.jpg" alt="Ficha de un aviso de mascota perdida" width="230">
+  <img src="docs/capturas/comunidad.jpg" alt="Feed de la comunidad" width="230">
+</p>
 
-## Funcionalidades
+> Móvil primero; en escritorio la navegación pasa a una barra lateral y las páginas a dos columnas.
+> La demo tiene datos de ejemplo (vecinos, mascotas, avisos y publicaciones alrededor de Madrid centro).
+> Puedes explorarla sin cuenta o registrarte para publicar, avisar de un avistamiento o escribir mensajes.
 
-- Registro e inicio de sesión (Supabase Auth); el perfil se crea con un trigger en la BD
-- Perfiles de mascotas con foto (subida directa a Supabase Storage)
-- Avisos de mascota **perdida** o **encontrada** con ubicación en el mapa y fotos
-- Mapa y listado de avisos activos en un radio, con filtros (búsqueda geoespacial con PostGIS)
-- **Avistamientos** ("la he visto aquí") que dibujan el recorrido de la mascota en el mapa
-- Cerrar avisos como resueltos o cancelados
+## Qué se puede hacer
 
-Próximamente: alertas por zona y notificaciones, feed social (publicaciones, likes, comentarios, seguir mascotas) y despliegue.
+**Mascotas perdidas y encontradas**
+- Publicar un aviso de **perdida** o **encontrada** con un asistente de 3 pasos: qué ha pasado, dónde y cuándo, y detalles con fotos.
+- **Mapa a pantalla completa** con los avisos activos en un radio, filtros por tipo y especie, y búsqueda de zonas.
+- **"La he visto"**: los avistamientos se numeran y dibujan en el mapa el recorrido de la mascota.
+- **Alertas por zona**: cada usuario marca su barrio y un radio, y recibe una notificación cuando se publica un aviso dentro.
+- **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso.
+
+**Comunidad**
+- Carnet de cada mascota, publicaciones con foto, likes, comentarios y seguir mascotas.
+- Feed "Siguiendo" (las mascotas que sigues) y "Explorar" (todo lo reciente) con scroll infinito.
+- Notificaciones de likes, comentarios, seguidores, avistamientos y avisos resueltos.
+
+**Cuenta y moderación**
+- Registro, login y recuperación de contraseña. Perfil público y zona de alertas privada.
+- Denunciar avisos, publicaciones, comentarios o usuarios.
+- Borrar la cuenta con todos sus datos y fotos (derecho de supresión del RGPD).
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+  subgraph Vercel["Vercel (un solo proyecto, región Frankfurt)"]
+    web["Web estática<br/>React + Vite"]
+    api["API REST<br/>Express 5 (función serverless en /api)"]
+  end
+  subgraph Supabase["Supabase"]
+    auth["Auth<br/>(JWT)"]
+    db[("PostgreSQL + PostGIS")]
+    storage["Storage<br/>(fotos)"]
+  end
+  web -- "login / sesión" --> auth
+  web -- "sube fotos a su carpeta" --> storage
+  web -- "fetch + Bearer token" --> api
+  api -- "valida el JWT con JWKS" --> auth
+  api -- "Prisma + SQL (PostGIS)" --> db
+```
+
+- **La web y la API comparten dominio** (`/api`), así que no hay CORS. La API es la única que toca la base de datos:
+  las tablas tienen RLS activado **sin políticas**, de modo que nadie puede leerlas directamente con la clave pública de Supabase.
+- **Las fotos las sube el navegador** directamente a Storage, cada usuario solo en su carpeta (políticas del bucket).
+  La API solo acepta URLs de esa carpeta.
+
+## Decisiones técnicas que me gustaría destacar
+
+- **Búsquedas geoespaciales con PostGIS.** `ST_DWithin` sobre columnas `geography` con índice GiST para "avisos en X km".
+  Las alertas por zona usan el radio **de cada usuario**; antes se filtra por el radio máximo (50 km) para que Postgres pueda usar el índice.
+- **Reglas de negocio en la base de datos.** `CHECK` (un aviso de pérdida siempre tiene mascota, `resolved_at` solo si está resuelto),
+  claves compuestas que hacen imposibles los likes o seguidores duplicados y una conversación única por pareja de usuarios
+  (par ordenado con `CHECK user_a < user_b` + `UNIQUE`).
+- **Operaciones idempotentes.** Like, seguir y denunciar son `PUT`/`DELETE` o `createMany({ skipDuplicates })`:
+  repetir un clic no falla ni duplica nada, y solo notifica la primera vez.
+- **Paginación por cursor** en el feed, las notificaciones y los mensajes, no por `offset`: no se repiten ni se saltan elementos aunque entren nuevos mientras haces scroll.
+- **No leídos calculados, no almacenados.** Cada conversación guarda hasta cuándo ha leído cada lado; el número de no leídos sale de una consulta (`LATERAL` + subconsulta).
+- **Privacidad por defecto.** El microchip solo se devuelve al dueño, la zona de alertas nunca es pública
+  y el contacto de un aviso solo se ve con sesión (la API usa un middleware de **sesión opcional**).
+- **UI optimista** en los likes: el corazón cambia al instante y se corrige con la respuesta de la API, o se deshace si falla.
+- **Asistente de 3 pasos con un solo `<form>`.** Los pasos ocultos siguen montados, así `FormData` lo lee todo al final y volver atrás no pierde nada.
+  Cada paso se valida con `reportValidity()`.
+- **Diseño propio** hecho con Claude Design ([docs/diseno.md](docs/diseno.md)): tokens en Tailwind v4 (`@theme`), componentes base sin librería de UI,
+  móvil primero con barra lateral en escritorio, e iconos SVG propios.
 
 ## Stack
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | React 19 + Vite + TypeScript + Tailwind CSS |
-| API | Node + Express 5 + TypeScript |
-| ORM | Prisma 7 (driver adapter `pg`) |
-| Base de datos | PostgreSQL + PostGIS en Supabase |
-| Autenticación | Supabase Auth (la API valida el JWT con JWKS) |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, React Router 7 |
+| Mapas | Leaflet + OpenStreetMap, geocodificación con Nominatim |
+| API | Node, Express 5, TypeScript, zod |
+| Base de datos | PostgreSQL + PostGIS (Supabase), Prisma 7 con driver adapter `pg` |
+| Autenticación | Supabase Auth: la API valida el JWT con el JWKS del proyecto (`jose`) |
 | Imágenes | Supabase Storage |
-| Mapas | Leaflet + OpenStreetMap |
+| Tests y CI | Vitest + Supertest contra PostGIS real, GitHub Actions |
+| Despliegue | Vercel (web estática + API serverless) |
 
 ## Estructura
 
 ```
 apps/
-  web/   → frontend (React)
-  api/   → API REST (Express + Prisma)
+  web/                     → frontend (React)
+    src/components/ui/     → componentes base del diseño (Button, Chip, Sheet, BottomNav, Sidebar...)
+    public/demo/           → fotos de la demo (dominio público / CC0, ver CREDITS.md)
+  api/                     → API REST (Express + Prisma)
+    src/routes/            → un router por recurso (reports, posts, conversations...)
+    src/scripts/           → script de datos de demo
     prisma/schema.prisma   → modelo de datos
     prisma/migrations/     → migraciones SQL (incluye PostGIS, CHECKs, triggers y RLS)
-docs/
-  modelo-datos.md          → diseño de la base de datos y decisiones
+    test/                  → tests de integración
+docs/                      → modelo de datos, diseño y capturas
 ```
+
+## Tests
+
+La API tiene **53 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real:
+reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
+paginación y casos límite. Los tokens se firman con una clave ES256 generada en cada ejecución, igual que hace Supabase Auth.
+
+Se ejecutan en GitHub Actions en cada push, con PostGIS como servicio del workflow, junto con lint, typecheck y build
+([ver workflow](.github/workflows/ci.yml)).
 
 ## Puesta en marcha
 
@@ -52,29 +129,20 @@ npm install
 cp apps/api/.env.example apps/api/.env   # rellenar con los datos de Supabase
 cp apps/web/.env.example apps/web/.env
 npm run db:deploy -w @furrly/api         # aplica las migraciones
+npm run db:seed-demo -w @furrly/api -- --yes   # opcional: datos de demo
 npm run dev:api
 npm run dev:web
 ```
 
-## Tests
-
-La API tiene tests de integración (Vitest + Supertest) contra un PostgreSQL + PostGIS real:
-reglas de negocio, permisos y búsquedas geoespaciales. Los tokens se firman con una clave ES256
-generada para cada ejecución, igual que hace Supabase Auth.
-
-Se ejecutan en GitHub Actions en cada push, con PostGIS como servicio del workflow,
-junto con lint, typecheck y build ([ver workflow](.github/workflows/ci.yml)).
-
 ## Despliegue
 
-Un único proyecto de **Vercel** ([vercel.json](vercel.json)):
-
-- La web (React) se sirve como estáticos desde `apps/web/dist`.
-- La API de Express se ejecuta como **función serverless** en `/api` ([api/index.mjs](api/index.mjs)),
-  en la región de Frankfurt, junto a Supabase. Al compartir dominio no hace falta CORS.
-- En cada despliegue de producción se aplican las migraciones pendientes (`prisma migrate deploy`).
+Un único proyecto de **Vercel** ([vercel.json](vercel.json)): la web se sirve como estáticos y la API de Express como
+función serverless en `/api` ([api/index.mjs](api/index.mjs)), en Frankfurt, junto a Supabase.
+Cada push a `main` despliega y aplica las migraciones pendientes (`prisma migrate deploy`).
 
 ## Documentación
 
 - [Modelo de datos](docs/modelo-datos.md)
-- [Contexto y decisiones del proyecto](furrly.md)
+- [Diseño visual](docs/diseno.md)
+- [Contexto, decisiones y hoja de ruta](furrly.md)
+- [Créditos de las fotos de la demo](apps/web/public/demo/CREDITS.md)

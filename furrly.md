@@ -36,25 +36,29 @@ Prefiero conversar en español.
 - URL de producción: https://furrly-rouge.vercel.app (el dominio propio sigue pendiente)
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
-## Estado actual (16-10-2026)
-Hecho, probado (34 tests de integración en CI) y desplegado:
+## Estado actual (17-10-2026)
+Hecho, probado (53 tests de integración en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña), perfil editable con zona de alertas, perfil público `/u/:username`, 404
-- Mascotas (CRUD con foto en Storage, microchip privado)
+- Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
 - Avistamientos con recorrido en el mapa
+- **Contacto y mensajes**: teléfono/email opcionales en el aviso (solo visibles con sesión) y mensajes privados entre usuarios (una conversación por pareja, no leídos calculados, polling)
+- **Alertas por zona y notificaciones**: aviso nuevo dentro de tu zona, avistamientos, avisos resueltos, likes, comentarios y seguidores; campana y globos de no leídos
+- **Comunidad (feed social)**: publicaciones con foto, likes, comentarios y seguir mascotas; "Siguiendo" y "Explorar" con paginación por cursor
+- **Moderación**: denunciar avisos, publicaciones, comentarios y usuarios (tabla `content_flags`, se revisa desde Supabase) y borrar la cuenta (RGPD)
+- **Diseño C** aplicado (ver docs/diseno.md) y **responsive** (barra lateral en escritorio, dos columnas)
+- **Datos de demo** en producción con fotos libres (ver Notas operativas) y README de portfolio con capturas
 - Rate limiting, validación con zod, RLS sin políticas (todo pasa por la API), CI con GitHub Actions
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
-- **Diseño C aplicado** a toda la web: mapa a pantalla completa como portada, ficha con recorrido, publicar como asistente de 3 pasos, carnet de mascota y resto de páginas (ver docs/diseno.md, "Cómo se ha aplicado")
-
-- **Comunidad (feed social)**: publicaciones con foto de cada mascota, likes, comentarios y seguir mascotas. Feed "Siguiendo" (mascotas que sigues + las tuyas) y "Explorar", con paginación por cursor; likes y seguir como `PUT`/`DELETE` idempotentes. Tests de integración en `apps/api/test/social.test.ts`
-- **Responsive**: barra lateral en escritorio y páginas a dos columnas; mapa adaptado a tablet
-- **Datos de demo** en producción (ver Notas operativas)
-
-### Próximos pasos
-1. Alertas por zona y notificaciones (avisos cerca, likes, comentarios y nuevos seguidores); la tabla `notifications` y `users.alert_location` ya existen
-2. Dominio propio
-3. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
+### Hoja de ruta (de más a menos importante)
+1. **Tests del frontend**: Vitest + Testing Library para la lógica delicada (asistente por pasos, like optimista, paginación) y un par de pruebas end-to-end con Playwright en la CI
+2. **Fotos más ligeras y sin huérfanas**: comprimir en el navegador antes de subir (p. ej. WebP a 1600 px) y una tarea periódica con la clave de servicio que borre de Storage lo que ya no usa ninguna fila
+3. **PWA y notificaciones push**: instalable en el móvil y avisos al momento de mascotas perdidas cerca (se apoya en las notificaciones que ya existen). Los mensajes podrían pasar de polling a tiempo real
+4. **Panel de moderación**: revisar las denuncias desde la propia app (rol de administrador) en vez de desde Supabase
+5. **Refresco automático de la demo**: GitHub Action semanal que ejecute `db:seed-demo`
+6. **Dominio propio** (actualizando las URLs de Supabase Auth)
+7. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API (caché y User-Agent propio, como pide Nominatim) y Sentry para errores en producción
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
