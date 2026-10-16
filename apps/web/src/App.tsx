@@ -7,10 +7,13 @@ import { ForgotPassword } from './pages/ForgotPassword'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
 import { MyReports } from './pages/MyReports'
+import { Feed } from './pages/Feed'
 import { NotFound } from './pages/NotFound'
 import { PetDetail } from './pages/PetDetail'
 import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
+import { PostDetail } from './pages/PostDetail'
+import { PostNew } from './pages/PostNew'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { UserProfile } from './pages/UserProfile'
@@ -44,6 +47,8 @@ export function App() {
             <Route path="u/:username" element={<UserProfile />} />
             <Route path="mascotas/:id" element={<PetDetail />} />
             <Route path="avisos" element={<Reports />} />
+            <Route path="comunidad" element={<Feed />} />
+            <Route path="publicaciones/:id" element={<PostDetail />} />
             <Route element={<RequireAuth />}>
               <Route path="mascotas" element={<MyPets />} />
               <Route path="avisos/mios" element={<MyReports />} />
@@ -61,6 +66,7 @@ export function App() {
               <Route path="avisos/:id/editar" element={<ReportEdit />} />
               <Route path="mascotas/nueva" element={<PetNew />} />
               <Route path="mascotas/:id/editar" element={<PetEdit />} />
+              <Route path="publicaciones/nueva" element={<PostNew />} />
             </Route>
           </Route>
         </Routes>

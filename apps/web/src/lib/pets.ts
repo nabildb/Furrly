@@ -15,6 +15,10 @@ export interface Pet {
   owner: { username: string; displayName: string }
   /** Solo viene cuando quien pide es el dueño. */
   microchip?: string | null
+  /** Solo en la ficha (GET /pets/:id). followedByMe es false si no hay sesión. */
+  followersCount?: number
+  postsCount?: number
+  followedByMe?: boolean
 }
 
 export type PetInput = Omit<Pet, 'id' | 'createdAt' | 'owner'>

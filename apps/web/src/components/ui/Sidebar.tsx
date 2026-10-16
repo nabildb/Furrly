@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
 import { cx } from '../../lib/cx'
 import { ButtonLink } from './Button'
@@ -11,6 +11,7 @@ export function Sidebar() {
   const { session } = useAuth()
   const username = session?.user.user_metadata.username as string | undefined
   const displayName = (session?.user.user_metadata.display_name as string | undefined) ?? username
+  const { pathname } = useLocation()
 
   return (
     <aside className="fixed inset-y-0 left-0 z-[1100] hidden w-(--sidebar-w) flex-col border-r border-card-line bg-surface px-4 py-6 lg:flex">
@@ -23,7 +24,7 @@ export function Sidebar() {
       </ButtonLink>
 
       <nav aria-label="Navegación principal" className="flex flex-col gap-1">
-        {navItems.map(({ to, label, icon, end }) => (
+        {navItems.map(({ to, label, icon, end, also = [] }) => (
           <NavLink
             key={to}
             to={to}
@@ -31,7 +32,7 @@ export function Sidebar() {
             className={({ isActive }) =>
               cx(
                 'flex h-12 items-center gap-3 rounded-2xl px-3.5 text-[15px] font-extrabold transition',
-                isActive ? 'bg-ink text-white' : 'text-ink hover:bg-subtle',
+                isActive || also.some((path) => pathname.startsWith(path)) ? 'bg-ink text-white' : 'text-ink hover:bg-subtle',
               )
             }
           >

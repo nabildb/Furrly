@@ -3,9 +3,12 @@ import { Link, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { Loading, Page, PageError } from '../components/Page'
 import { LostAlertButton } from '../components/LostAlertButton'
+import { FollowButton, PetStats } from '../components/FollowButton'
 import { PetCarnet } from '../components/PetCarnet'
+import { PetPostsGrid } from '../components/PetPostsGrid'
+import { ButtonLink } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
-import { EditIcon } from '../components/ui/icons'
+import { CameraIcon, EditIcon } from '../components/ui/icons'
 import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
 import type { Pet } from '../lib/pets'
@@ -47,6 +50,18 @@ export function PetDetail() {
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
         <PetCarnet pet={pet} showOwner />
         <div className="space-y-4">
+          <PetStats followersCount={pet.followersCount ?? 0} postsCount={pet.postsCount ?? 0} />
+          {isOwner ? (
+            <ButtonLink to={`/publicaciones/nueva?mascota=${pet.id}`} variant="dark" className="w-full">
+              <CameraIcon /> Publicar foto de {pet.name}
+            </ButtonLink>
+          ) : (
+            <FollowButton
+              petId={pet.id}
+              followedByMe={pet.followedByMe ?? false}
+              onChange={(stats) => setPet({ ...pet, ...stats })}
+            />
+          )}
           {pet.description && (
             <Card>
               <SectionTitle className="mb-1.5 text-[15px]">Cómo es</SectionTitle>
@@ -55,6 +70,9 @@ export function PetDetail() {
           )}
           {isOwner && <LostAlertButton pet={pet} activeReportId={activeLost?.get(pet.id)} />}
         </div>
+      </div>
+      <div className="mt-8">
+        <PetPostsGrid key={pet.id} petId={pet.id} petName={pet.name} />
       </div>
     </Page>
   )

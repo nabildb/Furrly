@@ -15,8 +15,8 @@ interface PageProps {
   variant?: 'main' | 'sub'
   /** Hueco abajo para la navegación flotante o la barra de acciones (en escritorio no hace falta). */
   bottomSpace?: boolean
-  /** 'narrow': una columna de lectura; 'wide': páginas que en escritorio van a dos columnas. */
-  width?: 'narrow' | 'wide'
+  /** 'feed': columna de publicaciones; 'narrow': una columna de lectura; 'wide': dos columnas en escritorio. */
+  width?: 'feed' | 'narrow' | 'wide'
   className?: string
   children: ReactNode
 }
@@ -36,7 +36,7 @@ export function Page({
     <main
       className={cx(
         'mx-auto w-full px-4 pt-4 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10',
-        width === 'wide' ? 'max-w-5xl' : 'max-w-2xl',
+        { feed: 'max-w-xl', narrow: 'max-w-2xl', wide: 'max-w-5xl' }[width],
         bottomSpace && 'pb-32 lg:pb-12',
         className,
       )}

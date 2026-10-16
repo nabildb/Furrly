@@ -6,7 +6,20 @@ import { PetForm } from '../components/PetForm'
 import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
 import type { Pet } from '../lib/pets'
+import type { PostsPage } from '../lib/posts'
 import { removeImage } from '../lib/storage'
+
+/** Todas las fotos publicadas de la mascota (recorriendo las páginas del cursor). */
+async function allPostImages(petId: string) {
+  const urls: string[] = []
+  let cursor: string | null = null
+  do {
+    const page: PostsPage = await api<PostsPage>(`/pets/${petId}/posts${cursor ? `?cursor=${cursor}` : ''}`)
+    urls.push(...page.posts.map((p) => p.imageUrl))
+    cursor = page.nextCursor
+  } while (cursor)
+  return urls
+}
 
 export function PetEdit() {
   const { id } = useParams()
@@ -32,8 +45,11 @@ export function PetEdit() {
   async function handleDelete() {
     if (!pet || !confirm(`¿Seguro que quieres borrar a ${pet.name}? También se borrarán sus avisos. No se puede deshacer.`)) return
     try {
+      // La BD borra en cascada sus publicaciones, pero las fotos viven en Storage:
+      // apuntamos sus URLs antes de borrar para no dejarlas huérfanas.
+      const postImages = await allPostImages(pet.id)
       await api(`/pets/${pet.id}`, { method: 'DELETE' })
-      if (pet.photoUrl) await removeImage(pet.photoUrl)
+      await Promise.all([pet.photoUrl, ...postImages].filter((url): url is string => !!url).map(removeImage))
       navigate('/mascotas', { replace: true })
     } catch (e) {
       setDeleteError((e as Error).message)

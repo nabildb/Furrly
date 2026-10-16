@@ -36,13 +36,17 @@ const tabs = navItems
 
 /** Barra de navegación flotante y oscura, abajo y centrada (móvil y tablet). */
 export function BottomNav() {
-  const [map, ...rest] = tabs
+  // El botón de publicar queda en el centro: dos pestañas a cada lado.
+  const left = tabs.slice(0, 2)
+  const right = tabs.slice(2)
   return (
     <nav
       aria-label="Navegación principal"
       className="fixed inset-x-4 bottom-[max(20px,env(safe-area-inset-bottom))] z-[1100] mx-auto flex h-[68px] max-w-md items-center justify-around rounded-3xl bg-ink px-2 shadow-card lg:hidden"
     >
-      <Tab {...map} />
+      {left.map((item) => (
+        <Tab key={item.to} {...item} />
+      ))}
       <NavLink
         to="/avisos/nuevo"
         aria-label="Publicar aviso"
@@ -50,7 +54,7 @@ export function BottomNav() {
       >
         <PlusIcon size={24} />
       </NavLink>
-      {rest.map((item) => (
+      {right.map((item) => (
         <Tab key={item.to} {...item} />
       ))}
     </nav>

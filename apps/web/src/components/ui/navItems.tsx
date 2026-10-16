@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ListIcon, MapIcon, PawOutlineIcon, UserIcon } from './icons'
+import { CommunityIcon, ListIcon, MapIcon, PawOutlineIcon, UserIcon } from './icons'
 
 export interface NavItem {
   to: string
@@ -14,9 +14,9 @@ export interface NavItem {
 }
 
 // Mismas secciones en la barra flotante (móvil/tablet) y en la lateral (escritorio).
-// Para el feed social bastará con añadir aquí su entrada.
 export const navItems: NavItem[] = [
   { to: '/avisos', label: 'Mapa', icon: <MapIcon />, end: true },
+  { to: '/comunidad', label: 'Comunidad', icon: <CommunityIcon />, also: ['/publicaciones'] },
   { to: '/mascotas', label: 'Mascotas', icon: <PawOutlineIcon size={24} /> },
   { to: '/avisos/mios', label: 'Mis avisos', icon: <ListIcon />, wideOnly: true },
   { to: '/perfil', label: 'Perfil', icon: <UserIcon size={24} /> },

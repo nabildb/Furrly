@@ -176,3 +176,33 @@ export const ListIcon = (p: IconProps) => (
     <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
   </Stroke>
 )
+
+export function HeartIcon({ filled, ...p }: IconProps & { filled?: boolean }) {
+  return (
+    <Stroke {...p} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M12 20s-7.5-4.6-9.3-9.2C1.4 7.4 3.6 4 7 4c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8C19.5 15.4 12 20 12 20z" />
+    </Stroke>
+  )
+}
+
+export const CommentIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.8A8 8 0 1 1 21 12z" />
+  </Stroke>
+)
+
+/** Pestaña Comunidad (el feed). */
+export const CommunityIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+    <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+    <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+  </Stroke>
+)
+
+export const TrashIcon = (p: IconProps) => (
+  <Stroke {...p}>
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+  </Stroke>
+)
