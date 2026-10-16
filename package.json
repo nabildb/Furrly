@@ -8,9 +8,7 @@
     "dev:web": "npm run dev -w @furrly/web",
     "dev:api": "npm run dev -w @furrly/api",
     "build": "npm run build --workspaces",
-    "test": "npm test -w @furrly/api",
-    "db:test:up": "docker compose up -d --wait db-test",
-    "db:test:down": "docker compose down"
+    "test": "npm test -w @furrly/api"
   },
   "engines": {
     "node": ">=22"

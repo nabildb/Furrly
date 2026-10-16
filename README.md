@@ -56,16 +56,12 @@ npm run dev:web
 
 ## Tests
 
-La API tiene tests de integración (Vitest + Supertest) contra un PostgreSQL + PostGIS real en Docker:
+La API tiene tests de integración (Vitest + Supertest) contra un PostgreSQL + PostGIS real:
 reglas de negocio, permisos y búsquedas geoespaciales. Los tokens se firman con una clave ES256
 generada para cada ejecución, igual que hace Supabase Auth.
 
-```bash
-npm run db:test:up   # arranca PostGIS en Docker (puerto 54329)
-npm test
-```
-
-En cada push, GitHub Actions ejecuta lint, typecheck, tests y build.
+Se ejecutan en GitHub Actions en cada push, con PostGIS como servicio del workflow,
+junto con lint, typecheck y build ([ver workflow](.github/workflows/ci.yml)).
 
 ## Documentación
 

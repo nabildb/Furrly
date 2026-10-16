@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
+// BD del servicio PostGIS del workflow de CI (.github/workflows/ci.yml).
 const TEST_DB = 'postgresql://postgres:postgres@localhost:54329/furrly_test'
 
 export default defineConfig({
