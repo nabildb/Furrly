@@ -47,11 +47,16 @@ Hecho, probado (34 tests de integración en CI) y desplegado:
 
 - **Diseño C aplicado** a toda la web: mapa a pantalla completa como portada, ficha con recorrido, publicar como asistente de 3 pasos, carnet de mascota y resto de páginas (ver docs/diseno.md, "Cómo se ha aplicado")
 
+- **Comunidad (feed social)**: publicaciones con foto de cada mascota, likes, comentarios y seguir mascotas. Feed "Siguiendo" (mascotas que sigues + las tuyas) y "Explorar", con paginación por cursor; likes y seguir como `PUT`/`DELETE` idempotentes. Tests de integración en `apps/api/test/social.test.ts`
+- **Responsive**: barra lateral en escritorio y páginas a dos columnas; mapa adaptado a tablet
+- **Datos de demo** en producción (ver Notas operativas)
+
 ### Próximos pasos
-1. Alertas por zona y notificaciones (la tabla `notifications` y `users.alert_location` ya existen)
-2. Feed social: publicaciones, likes, comentarios, seguir mascotas (tablas ya creadas)
-3. Dominio propio
-4. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
+1. Fotos para la demo: las mascotas de demo no tienen foto y la Comunidad sale vacía, porque las publicaciones exigen imagen. Hace falta decidir de dónde salen (fotos propias o de un banco libre) y subirlas a Storage
+2. Alertas por zona y notificaciones (la tabla `notifications` y `users.alert_location` ya existen)
+3. Notificaciones (likes, comentarios, nuevos seguidores y avisos cerca): la tabla `notifications` ya existe
+4. Dominio propio
+5. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
