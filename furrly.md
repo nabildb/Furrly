@@ -53,10 +53,9 @@ Hecho, probado (34 tests de integración en CI) y desplegado:
 
 ### Próximos pasos
 1. Fotos para la demo: las mascotas de demo no tienen foto y la Comunidad sale vacía, porque las publicaciones exigen imagen. Hace falta decidir de dónde salen (fotos propias o de un banco libre) y subirlas a Storage
-2. Alertas por zona y notificaciones (la tabla `notifications` y `users.alert_location` ya existen)
-3. Notificaciones (likes, comentarios, nuevos seguidores y avisos cerca): la tabla `notifications` ya existe
-4. Dominio propio
-5. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
+2. Alertas por zona y notificaciones (avisos cerca, likes, comentarios y nuevos seguidores); la tabla `notifications` y `users.alert_location` ya existen
+3. Dominio propio
+4. Limpieza de fotos huérfanas en Storage (p. ej. al borrar avistamientos ajenos)
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
