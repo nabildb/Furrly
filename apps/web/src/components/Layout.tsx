@@ -20,6 +20,9 @@ export function Layout() {
               <Link to="/avisos/nuevo" className="underline">
                 Publicar aviso
               </Link>
+              <Link to="/avisos/mios" className="underline">
+                Mis avisos
+              </Link>
               <Link to="/mascotas" className="underline">
                 Mis mascotas
               </Link>

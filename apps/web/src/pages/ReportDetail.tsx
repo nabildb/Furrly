@@ -155,6 +155,9 @@ export function ReportDetail() {
           >
             Cancelar aviso
           </button>
+          <Link to={`/avisos/${report.id}/editar`} className="self-center text-sm underline">
+            Editar
+          </Link>
         </div>
       )}
 

@@ -7,10 +7,15 @@ interface PhotosInputProps {
   onChange: (urls: string[]) => void
   max: number
   folder: string
+  /**
+   * Fotos ya guardadas (al editar): al quitarlas no se borran de Storage todavía,
+   * porque el usuario aún puede cancelar. Las borra la página tras guardar.
+   */
+  keep?: string[]
 }
 
 /** Sube varias fotos a Storage y devuelve sus URLs. */
-export function PhotosInput({ value, onChange, max, folder }: PhotosInputProps) {
+export function PhotosInput({ value, onChange, max, folder, keep = [] }: PhotosInputProps) {
   const { session } = useAuth()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +37,7 @@ export function PhotosInput({ value, onChange, max, folder }: PhotosInputProps) 
 
   function remove(url: string) {
     onChange(value.filter((u) => u !== url))
-    void removeImage(url)
+    if (!keep.includes(url)) void removeImage(url)
   }
 
   return (

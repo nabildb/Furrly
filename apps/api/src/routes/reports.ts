@@ -11,26 +11,31 @@ const MAX_PHOTOS = 3
 // Margen para pequeñas diferencias de reloj entre el navegador y el servidor.
 const CLOCK_SKEW_MS = 5 * 60 * 1000
 
-const createReportSchema = z
-  .object({
+// Campos que se pueden indicar al crear y cambiar al editar.
+const editableFields = z.object({
+  title: z.string().trim().min(3).max(100),
+  description: z.string().trim().min(10).max(2000),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  addressText: z
+    .string()
+    .trim()
+    .max(200)
+    .transform((s) => s || null)
+    .nullable()
+    .optional(),
+  happenedAt: z.iso
+    .datetime({ offset: true })
+    .transform((d) => new Date(d))
+    .refine((d) => d.getTime() <= Date.now() + CLOCK_SKEW_MS, 'La fecha no puede ser futura'),
+  photoUrls: z.array(z.url()).max(MAX_PHOTOS).default([]),
+})
+
+const createReportSchema = editableFields
+  .extend({
     type: z.enum(ReportType),
     petId: z.uuid().optional(),
     species: z.enum(Species).optional(),
-    title: z.string().trim().min(3).max(100),
-    description: z.string().trim().min(10).max(2000),
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-    addressText: z
-      .string()
-      .trim()
-      .max(200)
-      .transform((s) => s || null)
-      .optional(),
-    happenedAt: z.iso
-      .datetime({ offset: true })
-      .transform((d) => new Date(d))
-      .refine((d) => d.getTime() <= Date.now() + CLOCK_SKEW_MS, 'La fecha no puede ser futura'),
-    photoUrls: z.array(z.url()).max(MAX_PHOTOS).default([]),
   })
   .refine((r) => r.type !== 'lost' || r.petId, { message: 'Elige cuál de tus mascotas se ha perdido', path: ['petId'] })
   .refine((r) => r.type !== 'found' || r.species, { message: 'Indica la especie', path: ['species'] })
@@ -58,7 +63,21 @@ interface NearbyReportRow {
   photo_url: string | null
 }
 
+// Tipo y mascota no se cambian: si te equivocas de aviso, se cancela y se crea otro.
+const updateReportSchema = editableFields
+  .partial()
+  .refine((r) => (r.lat === undefined) === (r.lng === undefined), {
+    message: 'Indica latitud y longitud a la vez',
+    path: ['lat'],
+  })
+
 const statusBodySchema = z.object({ status: z.enum(['resolved', 'cancelled']) })
+
+function checkPhotos(photoUrls: string[] | undefined, userId: string) {
+  if (photoUrls?.some((url) => !isOwnMediaUrl(url, userId))) {
+    throw new HttpError(400, 'Las fotos deben estar subidas a tu carpeta de Furrly')
+  }
+}
 
 export const reportsRouter = Router()
 
@@ -112,9 +131,7 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
   const userId = req.userId!
   const data = parse(createReportSchema, req.body)
 
-  if (data.photoUrls.some((url) => !isOwnMediaUrl(url, userId))) {
-    throw new HttpError(400, 'Las fotos deben estar subidas a tu carpeta de Furrly')
-  }
+  checkPhotos(data.photoUrls, userId)
 
   // Perdida: la mascota tiene que ser tuya, y la especie sale de su ficha.
   // Encontrada: es un animal desconocido, no se enlaza con ninguna mascota.
@@ -162,6 +179,47 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
   })
 
   res.status(201).json(await getReport(reportId))
+})
+
+/** Editar un aviso activo propio. Solo cambia los campos que se envían. */
+reportsRouter.patch('/:id', requireAuth, async (req, res) => {
+  const userId = req.userId!
+  const id = parse(z.uuid(), req.params.id)
+  const { lat, lng, photoUrls, ...fields } = parse(updateReportSchema, req.body)
+  checkPhotos(photoUrls, userId)
+
+  const report = await prisma.report.findFirst({
+    where: { id, reporterId: userId, status: 'active' },
+    select: { id: true },
+  })
+  if (!report) throw new HttpError(404, 'Aviso no encontrado o ya cerrado')
+
+  if (fields.happenedAt) {
+    const firstSighting = await prisma.sighting.findFirst({
+      where: { reportId: id },
+      orderBy: { seenAt: 'asc' },
+      select: { seenAt: true },
+    })
+    if (firstSighting && fields.happenedAt > firstSighting.seenAt) {
+      throw new HttpError(400, 'La fecha no puede ser posterior al primer avistamiento')
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.report.update({ where: { id }, data: fields })
+    if (lat !== undefined && lng !== undefined) {
+      await tx.$executeRaw`
+        UPDATE reports SET location = ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+        WHERE id = ${id}::uuid`
+    }
+    // Las fotos se sustituyen por la lista nueva completa, en el orden recibido.
+    if (photoUrls) {
+      await tx.reportPhoto.deleteMany({ where: { reportId: id } })
+      await tx.reportPhoto.createMany({ data: photoUrls.map((url, position) => ({ reportId: id, url, position })) })
+    }
+  })
+
+  res.json(await getReport(id))
 })
 
 /** El autor marca el aviso como resuelto ("¡ya está en casa!") o lo cancela. */
@@ -213,3 +271,35 @@ async function getReport(id: string) {
 
   return { ...report, photos: report.photos.map((p) => p.url), location: { lat, lng } }
 }
+
+/** Avisos del usuario autenticado, en cualquier estado. Se monta en /me/reports. */
+export const myReportsRouter = Router()
+
+myReportsRouter.get('/', requireAuth, async (req, res) => {
+  const reports = await prisma.report.findMany({
+    where: { reporterId: req.userId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      species: true,
+      title: true,
+      addressText: true,
+      happenedAt: true,
+      createdAt: true,
+      pet: { select: { name: true, photoUrl: true } },
+      photos: { select: { url: true }, orderBy: { position: 'asc' }, take: 1 },
+      _count: { select: { sightings: true } },
+    },
+  })
+
+  res.json(
+    reports.map(({ photos, pet, _count, ...r }) => ({
+      ...r,
+      petName: pet?.name ?? null,
+      photoUrl: photos[0]?.url ?? pet?.photoUrl ?? null,
+      sightingsCount: _count.sightings,
+    })),
+  )
+})

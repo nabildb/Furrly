@@ -92,3 +92,31 @@ export function toDateTimeInput(date: Date) {
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
   return local.toISOString().slice(0, 16)
 }
+
+export interface MyReport {
+  id: string
+  type: ReportType
+  status: ReportStatus
+  species: Species
+  title: string
+  addressText: string | null
+  happenedAt: string
+  createdAt: string
+  petName: string | null
+  photoUrl: string | null
+  sightingsCount: number
+}
+
+/** Lee los campos comunes del formulario en el formato que espera la API. */
+export function readReportFields(form: FormData, location: LatLng, photoUrls: string[]) {
+  return {
+    title: form.get('title'),
+    description: form.get('description'),
+    addressText: form.get('addressText'),
+    // datetime-local no lleva zona horaria: el navegador la interpreta como hora local.
+    happenedAt: new Date(String(form.get('happenedAt'))).toISOString(),
+    lat: location.lat,
+    lng: location.lng,
+    photoUrls,
+  }
+}

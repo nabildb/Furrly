@@ -1,11 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Field, SelectField, TextAreaField } from '../components/Field'
-import { LocationPicker } from '../components/LocationPicker'
-import { PhotosInput } from '../components/PhotosInput'
+import { SelectField } from '../components/Field'
+import { ReportFields } from '../components/ReportFields'
 import { api } from '../lib/api'
 import { speciesLabels, type Pet } from '../lib/pets'
-import { reportTypeLabels, toDateTimeInput, type LatLng, type Report, type ReportType } from '../lib/reports'
+import { readReportFields, reportTypeLabels, type LatLng, type Report, type ReportType } from '../lib/reports'
 
 export function ReportNew() {
   const navigate = useNavigate()
@@ -13,7 +12,6 @@ export function ReportNew() {
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [location, setLocation] = useState<LatLng | null>(null)
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
-  const [maxDate] = useState(() => toDateTimeInput(new Date()))
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -38,14 +36,7 @@ export function ReportNew() {
         body: JSON.stringify({
           type,
           ...(type === 'lost' ? { petId: form.get('petId') } : { species: form.get('species') }),
-          title: form.get('title'),
-          description: form.get('description'),
-          addressText: form.get('addressText'),
-          // datetime-local no lleva zona horaria: el navegador la interpreta como hora local.
-          happenedAt: new Date(String(form.get('happenedAt'))).toISOString(),
-          lat: location.lat,
-          lng: location.lng,
-          photoUrls,
+          ...readReportFields(form, location, photoUrls),
         }),
       })
       navigate(`/avisos/${report.id}`)
@@ -89,34 +80,13 @@ export function ReportNew() {
         <SelectField label="Especie" name="species" options={speciesLabels} defaultValue="dog" />
       )}
 
-      <Field
-        label="Título"
-        name="title"
-        required
-        minLength={3}
-        maxLength={100}
-        placeholder={type === 'lost' ? 'Se ha perdido Toby en el Retiro' : 'Gato atigrado encontrado en Lavapiés'}
+      <ReportFields
+        type={type}
+        location={location}
+        onLocationChange={setLocation}
+        photoUrls={photoUrls}
+        onPhotosChange={setPhotoUrls}
       />
-      <TextAreaField
-        label="Descripción"
-        name="description"
-        required
-        minLength={10}
-        maxLength={2000}
-        rows={4}
-        placeholder="Señas, collar, carácter, si se deja coger…"
-      />
-      <Field label="¿Cuándo?" name="happenedAt" type="datetime-local" required max={maxDate} defaultValue={maxDate} />
-
-      <div>
-        <span className="text-sm font-medium">{type === 'lost' ? '¿Dónde se perdió?' : '¿Dónde lo encontraste?'}</span>
-        <div className="mt-1">
-          <LocationPicker value={location} onChange={setLocation} />
-        </div>
-      </div>
-      <Field label="Zona o dirección (opcional)" name="addressText" maxLength={200} placeholder="Parque del Retiro, puerta de Alcalá" />
-
-      <PhotosInput value={photoUrls} onChange={setPhotoUrls} max={3} folder="reports" />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button disabled={submitting || noPets} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">

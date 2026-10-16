@@ -6,7 +6,7 @@ import { errorHandler } from './lib/http.js'
 import { apiLimiter, writeLimiter } from './middleware/rateLimit.js'
 import { meRouter } from './routes/me.js'
 import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
-import { reportsRouter } from './routes/reports.js'
+import { myReportsRouter, reportsRouter } from './routes/reports.js'
 import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
 
@@ -23,6 +23,7 @@ app.get('/health', (_req, res) => {
 })
 
 app.use('/me/pets', myPetsRouter)
+app.use('/me/reports', myReportsRouter)
 app.use('/me', meRouter)
 app.use('/usernames', usernamesRouter)
 app.use('/pets', petsRouter)

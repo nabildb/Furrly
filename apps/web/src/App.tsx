@@ -6,6 +6,7 @@ import { ForgotPassword } from './pages/ForgotPassword'
 import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
+import { MyReports } from './pages/MyReports'
 import { PetDetail } from './pages/PetDetail'
 import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
@@ -14,6 +15,7 @@ import { ResetPassword } from './pages/ResetPassword'
 
 // Las páginas con mapa cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
+const ReportEdit = lazy(() => import('./pages/ReportEdit').then((m) => ({ default: m.ReportEdit })))
 const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
 const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
 
@@ -36,6 +38,8 @@ export function App() {
               <Route path="mascotas/nueva" element={<PetNew />} />
               <Route path="mascotas/:id/editar" element={<PetEdit />} />
               <Route path="avisos/nuevo" element={<ReportNew />} />
+              <Route path="avisos/mios" element={<MyReports />} />
+              <Route path="avisos/:id/editar" element={<ReportEdit />} />
             </Route>
           </Route>
         </Routes>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALCALA, createLostReport, createPet, createUser, minutesAgo, RETIRO, request, SOL } from './helpers.js'
+import { ALCALA, createLostReport, createPet, createUser, mediaUrl, minutesAgo, RETIRO, request, SOL } from './helpers.js'
 
 const foundReport = (body: Record<string, unknown> = {}) => ({
   type: 'found',
@@ -121,5 +121,70 @@ describe('PATCH /reports/:id/status', () => {
     const report = await createLostReport(owner, pet.id)
     const res = await request.patch(`/reports/${report.id}/status`).set(owner.auth).send({ status: 'cancelled' })
     expect(res.body).toMatchObject({ status: 'cancelled', resolvedAt: null })
+  })
+})
+
+describe('PATCH /reports/:id (editar)', () => {
+  it('el autor puede corregir textos, ubicación y fotos', async () => {
+    const owner = await createUser('nabil')
+    const pet = await createPet(owner)
+    const report = await createLostReport(owner, pet.id, { photoUrls: [mediaUrl(owner.id, 'a.png')] })
+
+    const res = await request
+      .patch(`/reports/${report.id}`)
+      .set(owner.auth)
+      .send({ title: 'Título corregido', ...RETIRO, photoUrls: [mediaUrl(owner.id, 'b.png'), mediaUrl(owner.id, 'c.png')] })
+    expect(res.status).toBe(200)
+    expect(res.body.title).toBe('Título corregido')
+    expect(res.body.description).toBe('Beagle tricolor con collar azul')
+    expect(res.body.location.lat).toBeCloseTo(RETIRO.lat, 6)
+    expect(res.body.photos.map((u: string) => u.split('/').pop())).toEqual(['b.png', 'c.png'])
+  })
+
+  it('no deja editar avisos ajenos ni cerrados', async () => {
+    const owner = await createUser('nabil')
+    const intruder = await createUser('intruso')
+    const pet = await createPet(owner)
+    const report = await createLostReport(owner, pet.id)
+
+    expect((await request.patch(`/reports/${report.id}`).set(intruder.auth).send({ title: 'Hack' })).status).toBe(404)
+    await request.patch(`/reports/${report.id}/status`).set(owner.auth).send({ status: 'resolved' })
+    expect((await request.patch(`/reports/${report.id}`).set(owner.auth).send({ title: 'Tarde' })).status).toBe(404)
+  })
+
+  it('exige latitud y longitud juntas y no deja mover la fecha después del primer avistamiento', async () => {
+    const owner = await createUser('nabil')
+    const pet = await createPet(owner)
+    const report = await createLostReport(owner, pet.id, { happenedAt: minutesAgo(180) })
+    await request
+      .post(`/reports/${report.id}/sightings`)
+      .set(owner.auth)
+      .send({ ...RETIRO, seenAt: minutesAgo(60) })
+
+    expect((await request.patch(`/reports/${report.id}`).set(owner.auth).send({ lat: 40 })).status).toBe(400)
+    const late = await request.patch(`/reports/${report.id}`).set(owner.auth).send({ happenedAt: minutesAgo(30) })
+    expect(late.status).toBe(400)
+    const ok = await request.patch(`/reports/${report.id}`).set(owner.auth).send({ happenedAt: minutesAgo(90) })
+    expect(ok.status).toBe(200)
+  })
+})
+
+describe('GET /me/reports', () => {
+  it('lista mis avisos en cualquier estado, con portada y nº de avistamientos', async () => {
+    const owner = await createUser('nabil')
+    const other = await createUser('otra')
+    const pet = await createPet(owner, { name: 'Luna', photoUrl: mediaUrl(owner.id, 'luna.png') })
+    const lost = await createLostReport(owner, pet.id)
+    await request.post(`/reports/${lost.id}/sightings`).set(other.auth).send({ ...RETIRO, seenAt: minutesAgo(10) })
+    const found = await request.post('/reports').set(owner.auth).send(foundReport())
+    await request.patch(`/reports/${found.body.id}/status`).set(owner.auth).send({ status: 'cancelled' })
+    await request.post('/reports').set(other.auth).send(foundReport())
+
+    const res = await request.get('/me/reports').set(owner.auth)
+    expect(res.body).toHaveLength(2)
+    const byId = Object.fromEntries(res.body.map((r: { id: string }) => [r.id, r]))
+    expect(byId[lost.id]).toMatchObject({ petName: 'Luna', sightingsCount: 1, status: 'active' })
+    expect(byId[lost.id].photoUrl).toMatch(/luna\.png$/)
+    expect(byId[found.body.id]).toMatchObject({ status: 'cancelled', petName: null })
   })
 })
