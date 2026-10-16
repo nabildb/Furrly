@@ -22,6 +22,11 @@ const ReportEdit = lazy(() => import('./pages/ReportEdit').then((m) => ({ defaul
 const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
 const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
 
+// Guía de componentes: solo en desarrollo (en producción Vite elimina esta rama).
+const StyleGuide = import.meta.env.DEV
+  ? lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })))
+  : null
+
 export function App() {
   return (
     <BrowserRouter>
@@ -46,6 +51,7 @@ export function App() {
               <Route path="avisos/:id/editar" element={<ReportEdit />} />
               <Route path="perfil" element={<Profile />} />
             </Route>
+            {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
