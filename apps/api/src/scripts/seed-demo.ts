@@ -19,8 +19,9 @@ type Species = 'dog' | 'cat' | 'rabbit' | 'bird' | 'other'
 type Sex = 'male' | 'female' | 'unknown'
 type Point = { lat: number; lng: number }
 
-// Dónde están publicadas las fotos de apps/web/public/demo.
-const MEDIA_BASE = process.env.DEMO_MEDIA_BASE ?? 'https://furrly-rouge.vercel.app/demo'
+// Fotos de apps/web/public/demo. Rutas relativas: las sirve la propia web en cualquier dominio
+// (producción, local o un dominio propio) y encajan con la CSP ('self') sin abrirla a nadie más.
+const MEDIA_BASE = process.env.DEMO_MEDIA_BASE ?? '/demo'
 const photo = (file: string) => `${MEDIA_BASE}/${file}`
 
 const demoId = (n: number) => `f0f0f0f0-0000-4000-8000-${String(n).padStart(12, '0')}`

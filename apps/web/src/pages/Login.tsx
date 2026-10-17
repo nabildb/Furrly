@@ -4,13 +4,14 @@ import { useAuth } from '../auth/useAuth'
 import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
 import { Button } from '../components/ui/Button'
+import { safeRedirect } from '../lib/redirect'
 import { supabase } from '../lib/supabase'
 
 export function Login() {
   const { session } = useAuth()
   const navigate = useNavigate()
   // Si RequireAuth nos ha mandado aquí, al entrar volvemos a esa página.
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/avisos'
+  const from = safeRedirect((useLocation().state as { from?: unknown } | null)?.from)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 

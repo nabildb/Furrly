@@ -26,6 +26,13 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(err.status).json({ error: err.message })
     return
   }
+  // Errores de express.json: JSON mal formado (400) o cuerpo demasiado grande (413).
+  // Son culpa de la petición, no del servidor: no deben acabar como 500 ni llenar el log.
+  const status = (err as { status?: unknown; expose?: unknown }).status
+  if (typeof status === 'number' && status >= 400 && status < 500 && (err as { expose?: unknown }).expose) {
+    res.status(status).json({ error: status === 413 ? 'La petición es demasiado grande' : 'Petición mal formada' })
+    return
+  }
   console.error(err)
   res.status(500).json({ error: 'Error interno del servidor' })
 }
