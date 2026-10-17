@@ -71,6 +71,8 @@ export function ChatComposer({ onSend, placeholder = 'Escribe un mensaje…' }: 
     try {
       await onSend(text)
       setBody('')
+    } catch {
+      // El padre muestra el error (p. ej. límite de mensajes); el texto se queda para reintentarlo.
     } finally {
       setSending(false)
     }

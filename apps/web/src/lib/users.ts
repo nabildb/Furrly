@@ -18,4 +18,6 @@ export interface PublicProfile {
   createdAt: string
   petsCount: number
   reportsCount: number
+  /** Solo con sesión: si lo has bloqueado tú. */
+  blockedByMe: boolean
 }

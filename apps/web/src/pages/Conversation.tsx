@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { ChatComposer, ChatHeader, MessageBubble, ReportContext } from '../components/Chat'
+import { BlockButton } from '../components/BlockButton'
 import { ErrorText } from '../components/Field'
+import { FlagButton } from '../components/FlagButton'
 import { Loading, PageError } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { useInbox } from '../inbox/useInbox'
@@ -60,8 +62,14 @@ export function Conversation() {
   }
 
   async function send(body: string) {
-    const message = await api<ChatMessage>(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) })
-    setData((d) => d && { ...d, messages: [...d.messages, message] })
+    setError(null)
+    try {
+      const message = await api<ChatMessage>(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) })
+      setData((d) => d && { ...d, messages: [...d.messages, message] })
+    } catch (e) {
+      setError((e as Error).message)
+      throw e
+    }
   }
 
   // Si la última página del polling ya incluye mensajes que teníamos como "antiguos", no los repetimos.
@@ -70,7 +78,15 @@ export function Conversation() {
 
   return (
     <main className="mx-auto max-w-2xl pb-28">
-      <ChatHeader other={data.other} />
+      <ChatHeader
+        other={data.other}
+        action={
+          <div className="flex flex-col items-end gap-1">
+            <BlockButton username={data.other.username} blockedByMe={data.blockedByMe} onChange={load} />
+            <FlagButton target={{ targetType: 'conversation', targetId: data.id }} />
+          </div>
+        }
+      />
       <div className="space-y-2 px-4 pt-4">
         {cursor && (
           <Button variant="secondary" size="md" onClick={loadOlder} className="mx-auto mb-2 flex">
@@ -82,7 +98,16 @@ export function Conversation() {
         ))}
         {error && <ErrorText>{error}</ErrorText>}
       </div>
-      <ChatComposer onSend={send} />
+      {data.canReply ? (
+        <ChatComposer onSend={send} />
+      ) : (
+        // Con un bloqueo de por medio no se puede escribir. Solo se dice si lo has bloqueado tú.
+        <p className="fixed right-0 bottom-0 left-(--sidebar-w) z-[1100] border-t border-card-line bg-surface px-4 pt-4 pb-[max(20px,env(safe-area-inset-bottom))] text-center text-sm font-semibold text-muted">
+          {data.blockedByMe
+            ? `Has bloqueado a @${data.other.username}: no podéis escribiros.`
+            : 'No puedes responder a esta conversación.'}
+        </p>
+      )}
     </main>
   )
 }
@@ -99,6 +124,7 @@ export function NewConversation() {
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [report, setReport] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   useEffect(() => {
     api<PublicProfile>(`/users/${encodeURIComponent(username)}`)
@@ -111,11 +137,17 @@ export function NewConversation() {
   if (!profile) return <Loading />
 
   async function send(body: string) {
-    const res = await api<{ conversationId: string }>('/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ username, body, reportId: report?.id ?? null }),
-    })
-    navigate(`/mensajes/${res.conversationId}`, { replace: true })
+    setSendError(null)
+    try {
+      const res = await api<{ conversationId: string }>('/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ username, body, reportId: report?.id ?? null }),
+      })
+      navigate(`/mensajes/${res.conversationId}`, { replace: true })
+    } catch (e) {
+      setSendError((e as Error).message)
+      throw e
+    }
   }
 
   return (
@@ -130,6 +162,7 @@ export function NewConversation() {
         <p className="text-[15px] font-semibold text-muted">
           Escribe a @{profile.username}. {report ? 'El mensaje irá asociado a este aviso.' : ''}
         </p>
+        {sendError && <ErrorText>{sendError}</ErrorText>}
       </div>
       <ChatComposer
         onSend={send}

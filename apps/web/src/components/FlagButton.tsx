@@ -9,7 +9,7 @@ import { CheckIcon, FlagIcon } from './ui/icons'
 import { Sheet } from './ui/Sheet'
 
 export type FlagTarget =
-  | { targetType: 'report' | 'post' | 'comment'; targetId: string }
+  | { targetType: 'report' | 'post' | 'comment' | 'conversation'; targetId: string }
   | { targetType: 'user'; username: string }
 
 const reasons = {
@@ -23,6 +23,7 @@ const targetNames: Record<FlagTarget['targetType'], string> = {
   report: 'este aviso',
   post: 'esta publicación',
   comment: 'este comentario',
+  conversation: 'esta conversación',
   user: 'a este usuario',
 }
 

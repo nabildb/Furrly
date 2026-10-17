@@ -41,6 +41,10 @@ export interface ChatMessage {
 
 export interface ConversationDetail {
   id: string
+  /** false si hay un bloqueo entre los dos (en cualquier sentido). */
+  canReply: boolean
+  /** Si lo has bloqueado tú (nunca se dice si te han bloqueado a ti). */
+  blockedByMe: boolean
   other: ConversationSummary['other']
   messages: ChatMessage[]
   olderCursor: string | null

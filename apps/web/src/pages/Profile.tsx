@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { BlockedUsers } from '../components/BlockedUsers'
 import { DeleteAccount } from '../components/DeleteAccount'
 import { ErrorText, Field, SelectField, TextAreaField } from '../components/Field'
 import { LocationPicker } from '../components/LocationPicker'
@@ -165,6 +166,7 @@ export function Profile() {
               <LogoutIcon size={20} /> Cerrar sesión
             </Button>
           </div>
+          <BlockedUsers />
           <DeleteAccount username={me.username} />
         </div>
       </form>

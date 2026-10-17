@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { Avatar } from '../components/Avatar'
+import { BlockButton } from '../components/BlockButton'
 import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { PetCard } from '../components/PetCard'
@@ -66,7 +67,16 @@ export function UserProfile() {
             >
               <MessageIcon size={20} /> Enviar mensaje
             </ButtonLink>
-            <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />
+            <div className="flex items-center gap-4">
+              {session && (
+                <BlockButton
+                  username={profile.username}
+                  blockedByMe={profile.blockedByMe}
+                  onChange={(blockedByMe) => setProfile({ ...profile, blockedByMe })}
+                />
+              )}
+              <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />
+            </div>
           </div>
         )}
       </section>
