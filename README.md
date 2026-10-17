@@ -36,7 +36,9 @@ para compartir fotos de tus mascotas.
 
 **Cuenta y moderación**
 - Registro, login y recuperación de contraseña. Perfil público y zona de alertas privada.
-- Denunciar avisos, publicaciones, comentarios o usuarios.
+- Denunciar avisos, publicaciones, comentarios, usuarios o conversaciones.
+- **Bloquear** a un usuario: no podéis escribiros ni interactuar con vuestras publicaciones, y dejas de recibir sus avisos.
+- Límites contra el spam: 30 mensajes por hora y 10 conversaciones nuevas al día por usuario.
 - Borrar la cuenta con todos sus datos y fotos (derecho de supresión del RGPD).
 
 ## Arquitectura
@@ -80,6 +82,9 @@ flowchart LR
 - **Web Push sin librerías.** El cifrado de extremo a extremo del RFC 8291 (ECDH P-256 + HKDF + AES-128-GCM) y la firma VAPID
   del RFC 8292 están implementados con `node:crypto` y `jose`, y se comprueban con el **vector de prueba oficial del RFC**.
   Solo se aceptan endpoints de servicios de push conocidos, para que nadie use la API para hacer peticiones a otros servidores (SSRF).
+- **Seguridad comprobada, no solo prometida** ([SECURITY.md](SECURITY.md)): consultas siempre parametrizadas (la CI falla si aparece SQL sin parámetros),
+  tests que lanzan inyección SQL, tokens falsificados y *mass assignment* contra la API, CSP estricta que los tests end-to-end
+  respetan igual que producción, y CodeQL + Dependabot + `npm audit` en cada push.
 - **UI optimista** en los likes: el corazón cambia al instante y se corrige con la respuesta de la API, o se deshace si falla.
 - **Asistente de 3 pasos con un solo `<form>`.** Los pasos ocultos siguen montados, así `FormData` lo lee todo al final y volver atrás no pierde nada.
   Cada paso se valida con `reportValidity()`.
@@ -120,14 +125,14 @@ docs/                      → modelo de datos, diseño y capturas
 
 Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows/ci.yml)):
 
-- **API: 59 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
+- **API: 71 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
   reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
-  paginación, Web Push (incluido el vector del RFC 8291) y casos límite. Los tokens se firman con una clave ES256
+  paginación, Web Push (incluido el vector del RFC 8291), bloqueos y límites anti-spam, ataques (inyección SQL, tokens falsos) y casos límite. Los tokens se firman con una clave ES256
   generada en cada ejecución, igual que hace Supabase Auth.
-- **Web: 18 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
-  (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push y denuncias.
-- **End-to-end: 6 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
-  simulada (nunca tocan datos reales): un invitado explora el mapa, publicar un aviso con clic real en el mapa y escribir un mensaje.
+- **Web: 23 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
+  (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos y redirecciones seguras.
+- **End-to-end: 8 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
+  simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa escribir un mensaje y una conversación bloqueada.
 
 ## Puesta en marcha
 
@@ -153,5 +158,6 @@ Cada push a `main` despliega y aplica las migraciones pendientes (`prisma migrat
 
 - [Modelo de datos](docs/modelo-datos.md)
 - [Diseño visual](docs/diseno.md)
+- [Seguridad](SECURITY.md)
 - [Contexto, decisiones y hoja de ruta](furrly.md)
 - [Créditos de las fotos de la demo](apps/web/public/demo/CREDITS.md)
