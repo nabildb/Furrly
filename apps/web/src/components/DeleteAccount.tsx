@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { api } from '../lib/api'
+import { disablePush } from '../lib/push'
 import { removeUserFolder } from '../lib/storage'
 import { supabase } from '../lib/supabase'
 import { ErrorText, Field } from './Field'
@@ -27,6 +28,7 @@ export function DeleteAccount({ username }: { username: string }) {
     try {
       // Primero las fotos: después ya no tendríamos sesión para borrarlas de Storage.
       await removeUserFolder(session.user.id)
+      await disablePush().catch(() => {})
       await api('/me', { method: 'DELETE' })
       await supabase.auth.signOut()
       navigate('/avisos', { replace: true })

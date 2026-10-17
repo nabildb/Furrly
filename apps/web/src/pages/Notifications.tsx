@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Avatar } from '../components/Avatar'
 import { ErrorText } from '../components/Field'
 import { Loading, Page } from '../components/Page'
+import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
 import { BellIcon, CheckIcon, CommentIcon, EyeIcon, HeartIcon, PinIcon, PlusIcon } from '../components/ui/icons'
@@ -137,6 +138,10 @@ export function Notifications() {
 
   return (
     <Page title="Notificaciones" back="/perfil" width="feed">
+      {/* Invitación a activar el push, solo si aún no está activado en este dispositivo. */}
+      <div className="mb-4">
+        <PushToggle compact />
+      </div>
       {error && <ErrorText>{error}</ErrorText>}
       {items?.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 py-10 text-center">

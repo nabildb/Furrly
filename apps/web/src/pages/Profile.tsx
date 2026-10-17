@@ -5,6 +5,7 @@ import { ErrorText, Field, SelectField, TextAreaField } from '../components/Fiel
 import { LocationPicker } from '../components/LocationPicker'
 import { Loading, Page } from '../components/Page'
 import { PhotosInput } from '../components/PhotosInput'
+import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
 import { CountBadge } from '../components/ui/CountBadge'
@@ -13,7 +14,7 @@ import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import type { LatLng } from '../lib/reports'
 import { removeImage } from '../lib/storage'
-import { supabase } from '../lib/supabase'
+import { signOut } from '../lib/session'
 import type { Me } from '../lib/users'
 
 const radiusOptions = { '1': '1 km', '2': '2 km', '5': '5 km', '10': '10 km', '25': '25 km', '50': '50 km' }
@@ -148,6 +149,8 @@ export function Profile() {
             </div>
           </Card>
 
+          <PushToggle />
+
           {error && <ErrorText>{error}</ErrorText>}
           {saved && (
             <p role="status" className="flex items-center gap-2 rounded-[14px] bg-resolved-soft px-3.5 py-2.5 text-sm font-bold text-resolved-text">
@@ -158,7 +161,7 @@ export function Profile() {
             <Button type="submit" variant="dark" disabled={submitting} className="w-full">
               {submitting ? 'Guardando…' : 'Guardar cambios'}
             </Button>
-            <Button variant="secondary" size="md" onClick={() => supabase.auth.signOut()} className="w-full">
+            <Button variant="secondary" size="md" onClick={signOut} className="w-full">
               <LogoutIcon size={20} /> Cerrar sesión
             </Button>
           </div>
