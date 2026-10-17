@@ -37,8 +37,8 @@ Prefiero conversar en español.
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Estado actual (17-10-2026)
-Hecho, probado (71 tests de API, 23 de componentes y 8 end-to-end en CI) y desplegado:
-- Registro/login con Supabase Auth (+ recuperar contraseña), perfil editable con zona de alertas, perfil público `/u/:username`, 404
+Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desplegado:
+- Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); página de privacidad en /privacidad, perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
 - Avistamientos con recorrido en el mapa
@@ -70,6 +70,7 @@ Hecho, probado (71 tests de API, 23 de componentes y 8 end-to-end en CI) y despl
 - **Web Push**: necesita `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno de la API (en local, `apps/api/.env`; en producción, variables de Vercel). Sin ellas todo funciona menos el push. Se generan con el comando de `apps/api/.env.example`
 - **Tests de la web**: solo en la CI (`npm test -w @furrly/web` y `npm run e2e -w @furrly/web`); sus dependencias no se instalan en local. Para añadir dependencias sin instalarlas: `npm install --package-lock-only`
 - **Supabase Auth**: contraseña de 8 caracteres mínimo también en el servidor. La protección contra contraseñas filtradas requiere el plan Pro (no activada). El captcha no se activa sin añadirlo antes a los formularios
+- **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase
 - **Dependabot** abre PRs cada semana: las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
