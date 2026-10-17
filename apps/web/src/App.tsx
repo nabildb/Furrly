@@ -17,6 +17,7 @@ import { PetEdit } from './pages/PetEdit'
 import { PetNew } from './pages/PetNew'
 import { PostDetail } from './pages/PostDetail'
 import { PostNew } from './pages/PostNew'
+import { Privacy } from './pages/Privacy'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { UserProfile } from './pages/UserProfile'
@@ -53,6 +54,7 @@ export function App() {
             <Route path="avisos" element={<Reports />} />
             <Route path="comunidad" element={<Feed />} />
             <Route path="publicaciones/:id" element={<PostDetail />} />
+            <Route path="privacidad" element={<Privacy />} />
             <Route element={<RequireAuth />}>
               <Route path="mascotas" element={<MyPets />} />
               <Route path="avisos/mios" element={<MyReports />} />

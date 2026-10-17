@@ -71,9 +71,14 @@ export function Register() {
       title="Crear cuenta"
       subtitle="Únete a los vecinos que ayudan a que vuelvan a casa."
       footer={
-        <p>
-          ¿Ya tienes cuenta? <AuthLink to="/login">Entra</AuthLink>
-        </p>
+        <>
+          <p>
+            ¿Ya tienes cuenta? <AuthLink to="/login">Entra</AuthLink>
+          </p>
+          <p className="text-sm">
+            <AuthLink to="/privacidad">Privacidad</AuthLink>
+          </p>
+        </>
       }
     >
       <OAuthButtons next="/avisos" />

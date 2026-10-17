@@ -44,9 +44,14 @@ export function Login() {
       title="Entrar"
       subtitle="Para publicar avisos y avisar si ves a alguna mascota."
       footer={
-        <p>
-          ¿No tienes cuenta? <AuthLink to="/registro">Crea una</AuthLink>
-        </p>
+        <>
+          <p>
+            ¿No tienes cuenta? <AuthLink to="/registro">Crea una</AuthLink>
+          </p>
+          <p className="text-sm">
+            <AuthLink to="/privacidad">Privacidad</AuthLink>
+          </p>
+        </>
       }
     >
       <OAuthButtons next={from} />
