@@ -79,6 +79,8 @@ model User {
   messages               Message[]
   flags                  ContentFlag[]
   pushSubscriptions      PushSubscription[]
+  blocking               UserBlock[]        @relation("Blocker")
+  blockedBy              UserBlock[]        @relation("Blocked")
 
   @@index([alertLocation], type: Gist)
   @@map("users")
@@ -292,6 +294,7 @@ enum FlagTarget {
   post
   comment
   user
+  conversation
 
   @@map("flag_target")
 }
@@ -338,4 +341,19 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// Bloqueo entre usuarios: mientras exista, ninguno de los dos puede escribir al otro y el bloqueado
+/// deja de generar notificaciones para quien le ha bloqueado. CHECK en SQL: no se puede bloquear a uno mismo.
+model UserBlock {
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("user_blocks")
 }

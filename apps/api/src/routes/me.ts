@@ -69,6 +69,16 @@ meRouter.patch('/', requireAuth, async (req, res) => {
   res.json(await getMe(userId))
 })
 
+/** Usuarios que he bloqueado (para poder desbloquearlos desde el perfil). */
+meRouter.get('/blocks', requireAuth, async (req, res) => {
+  const blocks = await prisma.userBlock.findMany({
+    where: { blockerId: req.userId },
+    select: { createdAt: true, blocked: { select: { username: true, displayName: true, avatarUrl: true } } },
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json(blocks.map((b) => ({ ...b.blocked, blockedAt: b.createdAt })))
+})
+
 /**
  * Borrar la cuenta. En Supabase se borra el usuario de auth.users: el trigger on_auth_user_deleted
  * borra el perfil y, en cascada, mascotas, avisos, publicaciones, mensajes... (la API se conecta

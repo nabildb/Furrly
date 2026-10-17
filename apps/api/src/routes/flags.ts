@@ -6,7 +6,7 @@ import { prisma } from '../lib/prisma.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const flagSchema = z.discriminatedUnion('targetType', [
-  z.object({ targetType: z.enum(['report', 'post', 'comment']), targetId: z.uuid() }),
+  z.object({ targetType: z.enum(['report', 'post', 'comment', 'conversation']), targetId: z.uuid() }),
   // A los usuarios se les conoce por su username en la web.
   z.object({ targetType: z.literal('user'), username: z.string().trim().toLowerCase() }),
 ]).and(
@@ -17,10 +17,13 @@ const flagSchema = z.discriminatedUnion('targetType', [
 )
 
 /** Comprueba que lo denunciado existe y devuelve su id. */
-async function resolveTarget(target: z.infer<typeof flagSchema>) {
+async function resolveTarget(target: z.infer<typeof flagSchema>, userId: string) {
   const select = { id: true } as const
   const found =
-    target.targetType === 'user'
+    target.targetType === 'conversation'
+      ? // Una conversación solo la puede denunciar quien participa en ella (es privada).
+        await prisma.conversation.findFirst({ where: { id: target.targetId, OR: [{ userAId: userId }, { userBId: userId }] }, select })
+      : target.targetType === 'user'
       ? await prisma.user.findUnique({ where: { username: target.username }, select })
       : target.targetType === 'report'
         ? await prisma.report.findUnique({ where: { id: target.targetId }, select })
@@ -36,7 +39,7 @@ export const flagsRouter = Router()
 
 flagsRouter.post('/', requireAuth, async (req, res) => {
   const data = parse(flagSchema, req.body)
-  const targetId = await resolveTarget(data)
+  const targetId = await resolveTarget(data, req.userId!)
   if (data.targetType === 'user' && targetId === req.userId) throw new HttpError(400, 'No puedes denunciarte a ti mismo')
 
   // Una denuncia por persona y contenido: repetirla no duplica nada (y no da pistas de si ya existía).

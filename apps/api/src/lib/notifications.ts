@@ -17,6 +17,8 @@ interface NotifyInput {
 /** Crea una notificación (y su push), salvo que quien la provoca sea el propio destinatario. */
 export async function notify({ userId, actorId, ...rest }: NotifyInput) {
   if (userId === actorId) return
+  // Quien ha bloqueado a alguien no recibe notificaciones de lo que hace.
+  if (await prisma.userBlock.count({ where: { blockerId: userId, blockedId: actorId } })) return
   const { id } = await prisma.notification.create({ data: { userId, actorId, ...rest }, select: { id: true } })
   await pushNotifications([id])
 }
@@ -36,6 +38,7 @@ export async function notifyReportNearby(reportId: string, reporterId: string) {
       AND ST_DWithin(u.alert_location, r.location, ${MAX_ALERT_RADIUS_M})
       AND ST_DWithin(u.alert_location, r.location, u.alert_radius_km * 1000)
     WHERE r.id = ${reportId}::uuid AND u.id <> ${reporterId}::uuid
+      AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE b.blocker_id = u.id AND b.blocked_id = ${reporterId}::uuid)
     RETURNING id`
   await pushNotifications(created.map((n) => n.id))
   return created.length
@@ -48,6 +51,7 @@ export async function notifyReportResolved(reportId: string, reporterId: string)
     SELECT gen_random_uuid(), s.user_id, 'report_resolved', ${reporterId}::uuid, ${reportId}::uuid
     FROM (SELECT DISTINCT user_id FROM sightings WHERE report_id = ${reportId}::uuid) s
     WHERE s.user_id <> ${reporterId}::uuid
+      AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE b.blocker_id = s.user_id AND b.blocked_id = ${reporterId}::uuid)
     RETURNING id`
   await pushNotifications(created.map((n) => n.id))
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import type { Prisma } from '../generated/prisma/client.js'
+import { assertNotBlocked } from '../lib/blocks.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
@@ -127,6 +128,7 @@ postsRouter.delete('/:id', requireAuth, async (req, res) => {
 postsRouter.put('/:id/like', requireAuth, async (req, res) => {
   const post = await findPost(parse(idSchema, req.params.id))
   const userId = req.userId!
+  await assertNotBlocked(userId, post.pet.ownerId)
   // skipDuplicates: si ya existía, count = 0 y no se notifica otra vez.
   const { count } = await prisma.like.createMany({ data: [{ userId, postId: post.id }], skipDuplicates: true })
   if (count > 0) await notify({ userId: post.pet.ownerId, type: 'new_like', actorId: userId, postId: post.id })
@@ -161,6 +163,7 @@ postsRouter.post('/:id/comments', requireAuth, async (req, res) => {
   const post = await findPost(parse(idSchema, req.params.id))
   const { body } = parse(commentSchema, req.body)
   const userId = req.userId!
+  await assertNotBlocked(userId, post.pet.ownerId)
   const comment = await prisma.comment.create({ data: { postId: post.id, userId, body }, select: commentSelect })
   await notify({ userId: post.pet.ownerId, type: 'new_comment', actorId: userId, postId: post.id })
   res.status(201).json(comment)

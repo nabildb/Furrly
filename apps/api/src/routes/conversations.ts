@@ -1,11 +1,16 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { assertNotBlocked, isBlockedEitherWay } from '../lib/blocks.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { pushToUsers } from '../lib/push.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const PAGE_SIZE = 50
+
+/** Límites contra el spam, por usuario (el rate limiting general es por IP). */
+export const MESSAGES_PER_HOUR = 30
+export const NEW_CONVERSATIONS_PER_DAY = 10
 
 const messageSchema = z.object({
   body: z.string().trim().min(1).max(1000),
@@ -39,6 +44,28 @@ async function findOwnConversation(id: string, userId: string) {
   if (!conversation) throw new HttpError(404, 'Conversación no encontrada')
   const iAmA = conversation.userAId === userId
   return { id: conversation.id, iAmA, other: iAmA ? conversation.userB : conversation.userA }
+}
+
+/** Corta el envío si el usuario ha mandado demasiados mensajes en la última hora. */
+async function assertMessageQuota(senderId: string) {
+  const sent = await prisma.message.count({
+    where: { senderId, createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
+  })
+  if (sent >= MESSAGES_PER_HOUR) throw new HttpError(429, 'Has enviado muchos mensajes seguidos. Espera un rato.')
+}
+
+/** Corta la creación de conversaciones nuevas si ha empezado demasiadas en las últimas 24 h. */
+async function assertNewConversationQuota(userId: string) {
+  // Conversaciones de las últimas 24 h cuyo primer mensaje es suyo (= las ha empezado él).
+  const [{ started }] = await prisma.$queryRaw<{ started: number }[]>`
+    SELECT count(*)::int AS started
+    FROM conversations c
+    WHERE c.created_at > now() - interval '24 hours'
+      AND ${userId}::uuid IN (c.user_a_id, c.user_b_id)
+      AND (SELECT m.sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at LIMIT 1) = ${userId}::uuid`
+  if (started >= NEW_CONVERSATIONS_PER_DAY) {
+    throw new HttpError(429, 'Has empezado muchas conversaciones hoy. Vuelve a intentarlo mañana.')
+  }
 }
 
 /** Push al otro participante. Misma etiqueta por conversación: el móvil enseña solo el último. */
@@ -122,8 +149,12 @@ conversationsRouter.post('/', requireAuth, async (req, res) => {
   const other = await prisma.user.findUnique({ where: { username }, select: { id: true } })
   if (!other) throw new HttpError(404, 'Usuario no encontrado')
   if (other.id === me) throw new HttpError(400, 'No puedes escribirte a ti mismo')
+  await assertNotBlocked(me, other.id)
 
   const [userAId, userBId] = orderedPair(me, other.id)
+  const existing = await prisma.conversation.findUnique({ where: { userAId_userBId: { userAId, userBId } }, select: { id: true } })
+  if (!existing) await assertNewConversationQuota(me)
+  await assertMessageQuota(me)
   const conversation = await prisma.conversation.upsert({
     where: { userAId_userBId: { userAId, userBId } },
     create: { userAId, userBId },
@@ -156,8 +187,12 @@ conversationsRouter.get('/:id', requireAuth, async (req, res) => {
     data: conversation.iAmA ? { userAReadAt: new Date() } : { userBReadAt: new Date() },
   })
 
+  const blockedByMe = (await prisma.userBlock.count({ where: { blockerId: me, blockedId: conversation.other.id } })) > 0
   res.json({
     id: conversation.id,
+    // Si hay un bloqueo (en cualquier sentido) no se puede responder; solo se dice si lo has bloqueado tú.
+    canReply: !(await isBlockedEitherWay(me, conversation.other.id)),
+    blockedByMe,
     other: { username: conversation.other.username, displayName: conversation.other.displayName, avatarUrl: conversation.other.avatarUrl },
     messages: messages.map(({ senderId, ...m }) => ({ ...m, fromMe: senderId === me })),
     olderCursor: hasMore ? messages[0].id : null,
@@ -168,6 +203,8 @@ conversationsRouter.post('/:id/messages', requireAuth, async (req, res) => {
   const me = req.userId!
   const conversation = await findOwnConversation(parse(z.uuid(), req.params.id), me)
   const { body, reportId } = parse(messageSchema, req.body)
+  await assertNotBlocked(me, conversation.other.id)
+  await assertMessageQuota(me)
   const { senderId, ...message } = await addMessage(conversation.id, me, body, reportId)
   res.status(201).json({ ...message, fromMe: senderId === me })
 })
