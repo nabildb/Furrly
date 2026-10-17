@@ -12,6 +12,10 @@ const envSchema = z.object({
   SUPABASE_URL: z.url(),
   // Detrás de un proxy (Render, etc.) la IP real viene en X-Forwarded-For: nº de proxies de confianza.
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  // Web Push (VAPID). Si faltan, la app funciona igual pero sin avisos push (p. ej. en local).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('https://furrly-rouge.vercel.app'),
   RATE_LIMIT_ENABLED: z
     .enum(['true', 'false'])
     .default('true')

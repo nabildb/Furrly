@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
+import { pushToUsers } from '../lib/push.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const PAGE_SIZE = 50
@@ -40,6 +41,23 @@ async function findOwnConversation(id: string, userId: string) {
   return { id: conversation.id, iAmA, other: iAmA ? conversation.userB : conversation.userA }
 }
 
+/** Push al otro participante. Misma etiqueta por conversación: el móvil enseña solo el último. */
+async function pushMessage(conversationId: string, senderId: string, body: string) {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: { userAId: true, userBId: true },
+  })
+  const sender = await prisma.user.findUnique({ where: { id: senderId }, select: { username: true } })
+  if (!conversation || !sender) return
+  const recipient = conversation.userAId === senderId ? conversation.userBId : conversation.userAId
+  await pushToUsers([recipient], {
+    title: `Mensaje de @${sender.username}`,
+    body: body.length > 120 ? `${body.slice(0, 117)}…` : body,
+    url: `/mensajes/${conversationId}`,
+    tag: `conversation-${conversationId}`,
+  })
+}
+
 async function addMessage(conversationId: string, senderId: string, body: string, reportId?: string | null) {
   if (reportId && !(await prisma.report.findUnique({ where: { id: reportId }, select: { id: true } }))) {
     throw new HttpError(404, 'Aviso no encontrado')
@@ -48,6 +66,7 @@ async function addMessage(conversationId: string, senderId: string, body: string
     prisma.message.create({ data: { conversationId, senderId, body, reportId }, select: messageSelect }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
   ])
+  await pushMessage(conversationId, senderId, body)
   return message
 }
 

@@ -72,12 +72,13 @@ model User {
   comments               Comment[]
   reports                Report[]
   sightings              Sighting[]
-  notifications          Notification[] @relation("NotificationRecipient")
-  triggeredNotifications Notification[] @relation("NotificationActor")
-  conversationsAsA       Conversation[] @relation("ConversationUserA")
-  conversationsAsB       Conversation[] @relation("ConversationUserB")
+  notifications          Notification[]     @relation("NotificationRecipient")
+  triggeredNotifications Notification[]     @relation("NotificationActor")
+  conversationsAsA       Conversation[]     @relation("ConversationUserA")
+  conversationsAsB       Conversation[]     @relation("ConversationUserB")
   messages               Message[]
   flags                  ContentFlag[]
+  pushSubscriptions      PushSubscription[]
 
   @@index([alertLocation], type: Gist)
   @@map("users")
@@ -320,4 +321,21 @@ model ContentFlag {
   @@unique([reporterId, targetType, targetId])
   @@index([resolvedAt, createdAt])
   @@map("content_flags")
+}
+
+/// Suscripción de Web Push de un navegador (un usuario puede tener varias: móvil, portátil...).
+/// El endpoint lo da el servicio de push del navegador y es único por dispositivo.
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique
+  /// Clave pública del navegador (P-256, base64url) y secreto de autenticación: sirven para cifrar.
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

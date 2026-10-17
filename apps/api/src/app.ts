@@ -8,6 +8,7 @@ import { conversationsRouter, inboxRouter } from './routes/conversations.js'
 import { flagsRouter } from './routes/flags.js'
 import { meRouter } from './routes/me.js'
 import { notificationsRouter } from './routes/notifications.js'
+import { pushRouter } from './routes/push.js'
 import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
 import { feedRouter, postsRouter } from './routes/posts.js'
 import { myReportsRouter, reportsRouter } from './routes/reports.js'
@@ -42,6 +43,7 @@ app.use('/feed', feedRouter)
 app.use('/conversations', conversationsRouter)
 app.use('/notifications', notificationsRouter)
 app.use('/flags', flagsRouter)
+app.use('/push', pushRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {
