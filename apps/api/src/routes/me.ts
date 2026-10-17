@@ -29,7 +29,7 @@ const updateMeSchema = z.object({
 async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
+    select: { id: true, username: true, usernameConfirmed: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
   })
   if (!user) throw new HttpError(404, 'Perfil no encontrado')
 
@@ -66,6 +66,33 @@ meRouter.patch('/', requireAuth, async (req, res) => {
     }
   })
 
+  res.json(await getMe(userId))
+})
+
+const chooseUsernameSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_]{3,30}$/, 'Formato no válido: 3-30 caracteres, minúsculas, números o _'),
+  displayName: z.string().trim().min(1).max(60),
+})
+
+/**
+ * Quien entra con Google/Apple tiene un username provisional: aquí lo confirma o lo cambia.
+ * Solo una vez; después el username es fijo (los enlaces /u/:username no se rompen).
+ */
+meRouter.put('/username', requireAuth, async (req, res) => {
+  const userId = req.userId!
+  const { username, displayName } = parse(chooseUsernameSchema, req.body)
+  const me = await prisma.user.findUnique({ where: { id: userId }, select: { usernameConfirmed: true } })
+  if (!me) throw new HttpError(404, 'Perfil no encontrado')
+  if (me.usernameConfirmed) throw new HttpError(409, 'Tu nombre de usuario ya está elegido')
+
+  const taken = await prisma.user.findFirst({ where: { username, NOT: { id: userId } }, select: { id: true } })
+  if (taken) throw new HttpError(409, 'Ese nombre de usuario ya está cogido')
+
+  await prisma.user.update({ where: { id: userId }, data: { username, displayName, usernameConfirmed: true } })
   res.json(await getMe(userId))
 })
 
