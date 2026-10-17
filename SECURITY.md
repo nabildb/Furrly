@@ -94,7 +94,9 @@ Cabeceras en [vercel.json](vercel.json):
 - **CodeQL** (`security-extended`) analiza el código en busca de vulnerabilidades.
 - **Dependabot** propone actualizaciones de dependencias cada semana.
 
-## Pendiente (configuración de Supabase)
+## Contraseñas (configuración de Supabase Auth)
 
-- Activar la **protección contra contraseñas filtradas** (Auth → *Password security*).
-- Exigir **8 caracteres mínimo** también en el servidor (ahora solo lo exige el formulario).
+- Mínimo de **8 caracteres**, exigido por el formulario y también por Supabase Auth en el servidor.
+- La **protección contra contraseñas filtradas** (comprobar contra Have I Been Pwned) requiere el plan Pro de Supabase;
+  el proyecto está en el plan gratuito, así que no está activada.
+- El captcha está desactivado a propósito: activarlo exige mostrarlo en los formularios de registro y login.
