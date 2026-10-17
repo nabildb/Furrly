@@ -37,7 +37,7 @@ Prefiero conversar en español.
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Estado actual (17-10-2026)
-Hecho, probado (53 tests de integración en CI) y desplegado:
+Hecho, probado (59 tests de API, 18 de componentes y 6 end-to-end en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña), perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
@@ -45,6 +45,8 @@ Hecho, probado (53 tests de integración en CI) y desplegado:
 - **Contacto y mensajes**: teléfono/email opcionales en el aviso (solo visibles con sesión) y mensajes privados entre usuarios (una conversación por pareja, no leídos calculados, polling)
 - **Alertas por zona y notificaciones**: aviso nuevo dentro de tu zona, avistamientos, avisos resueltos, likes, comentarios y seguidores; campana y globos de no leídos
 - **Comunidad (feed social)**: publicaciones con foto, likes, comentarios y seguir mascotas; "Siguiendo" y "Explorar" con paginación por cursor
+- **Avisos push (PWA)**: Web Push implementado a mano (RFC 8291/8292) con test del vector oficial; la web es instalable. En producción falta configurar las claves VAPID en Vercel (ver Notas operativas)
+- **Tests del frontend**: Vitest + Testing Library (componentes) y Playwright (end-to-end, móvil y escritorio, API simulada)
 - **Moderación**: denunciar avisos, publicaciones, comentarios y usuarios (tabla `content_flags`, se revisa desde Supabase) y borrar la cuenta (RGPD)
 - **Diseño C** aplicado (ver docs/diseno.md) y **responsive** (barra lateral en escritorio, dos columnas)
 - **Datos de demo** en producción con fotos libres (ver Notas operativas) y README de portfolio con capturas
@@ -52,18 +54,20 @@ Hecho, probado (53 tests de integración en CI) y desplegado:
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
 ### Hoja de ruta (de más a menos importante)
-1. **Tests del frontend**: Vitest + Testing Library para la lógica delicada (asistente por pasos, like optimista, paginación) y un par de pruebas end-to-end con Playwright en la CI
-2. **Fotos más ligeras y sin huérfanas**: comprimir en el navegador antes de subir (p. ej. WebP a 1600 px) y una tarea periódica con la clave de servicio que borre de Storage lo que ya no usa ninguna fila
-3. **PWA y notificaciones push**: instalable en el móvil y avisos al momento de mascotas perdidas cerca (se apoya en las notificaciones que ya existen). Los mensajes podrían pasar de polling a tiempo real
-4. **Panel de moderación**: revisar las denuncias desde la propia app (rol de administrador) en vez de desde Supabase
+1. **Seguridad en los mensajes**: bloquear usuarios, límite de mensajes por hora contra el spam y denunciar conversaciones
+2. **Fotos más ligeras y sin huérfanas**: comprimir en el navegador antes de subir y una tarea periódica que borre de Storage lo que ya no se usa
+3. **Panel de moderación**: revisar las denuncias desde la app (rol de administrador) en vez de desde Supabase
+4. **Auditoría de accesibilidad y rendimiento** (Lighthouse/axe) y poner la puntuación en el README
 5. **Refresco automático de la demo**: GitHub Action semanal que ejecute `db:seed-demo`
 6. **Dominio propio** (actualizando las URLs de Supabase Auth)
-7. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API (caché y User-Agent propio, como pide Nominatim) y Sentry para errores en producción
+7. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API y Sentry para errores en producción
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
 - Vercel: un proyecto `furrly` conectado a GitHub; cada push a `main` despliega y aplica migraciones (`prisma migrate deploy`)
 - **Datos de demo**: `npm run db:seed-demo -w @furrly/api -- --yes` (usa la BD de `apps/api/.env`). Crea 5 vecinos de demo (solo perfiles, sin cuenta en Auth: nadie puede entrar con ellos), 9 mascotas con foto, 8 avisos alrededor de Sol con avistamientos y 11 publicaciones con seguidores, likes y comentarios. Las fotos son de Wikimedia Commons (dominio público / CC0) y están en `apps/web/public/demo` (créditos en `CREDITS.md`); la web las sirve en `/demo/…`. Usa UUIDs fijos (`f0f0f0f0-…`): cada ejecución borra y recrea solo esos datos, con fechas relativas a ese momento. Conviene repetirlo de vez en cuando para que la demo no envejezca
+- **Web Push**: necesita `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno de la API (en local, `apps/api/.env`; en producción, variables de Vercel). Sin ellas todo funciona menos el push. Se generan con el comando de `apps/api/.env.example`
+- **Tests de la web**: solo en la CI (`npm test -w @furrly/web` y `npm run e2e -w @furrly/web`); sus dependencias no se instalan en local. Para añadir dependencias sin instalarlas: `npm install --package-lock-only`
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar

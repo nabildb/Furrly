@@ -25,7 +25,8 @@ para compartir fotos de tus mascotas.
 - Publicar un aviso de **perdida** o **encontrada** con un asistente de 3 pasos: qué ha pasado, dónde y cuándo, y detalles con fotos.
 - **Mapa a pantalla completa** con los avisos activos en un radio, filtros por tipo y especie, y búsqueda de zonas.
 - **"La he visto"**: los avistamientos se numeran y dibujan en el mapa el recorrido de la mascota.
-- **Alertas por zona**: cada usuario marca su barrio y un radio, y recibe una notificación cuando se publica un aviso dentro.
+- **Alertas por zona**: cada usuario marca su barrio y un radio, y recibe una notificación cuando se publica un aviso dentro,
+  también como **aviso push** en el móvil aunque no tenga Furrly abierta (la web es una PWA instalable).
 - **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso.
 
 **Comunidad**
@@ -76,6 +77,9 @@ flowchart LR
 - **No leídos calculados, no almacenados.** Cada conversación guarda hasta cuándo ha leído cada lado; el número de no leídos sale de una consulta (`LATERAL` + subconsulta).
 - **Privacidad por defecto.** El microchip solo se devuelve al dueño, la zona de alertas nunca es pública
   y el contacto de un aviso solo se ve con sesión (la API usa un middleware de **sesión opcional**).
+- **Web Push sin librerías.** El cifrado de extremo a extremo del RFC 8291 (ECDH P-256 + HKDF + AES-128-GCM) y la firma VAPID
+  del RFC 8292 están implementados con `node:crypto` y `jose`, y se comprueban con el **vector de prueba oficial del RFC**.
+  Solo se aceptan endpoints de servicios de push conocidos, para que nadie use la API para hacer peticiones a otros servidores (SSRF).
 - **UI optimista** en los likes: el corazón cambia al instante y se corrige con la respuesta de la API, o se deshace si falla.
 - **Asistente de 3 pasos con un solo `<form>`.** Los pasos ocultos siguen montados, así `FormData` lo lee todo al final y volver atrás no pierde nada.
   Cada paso se valida con `reportValidity()`.
@@ -92,7 +96,7 @@ flowchart LR
 | Base de datos | PostgreSQL + PostGIS (Supabase), Prisma 7 con driver adapter `pg` |
 | Autenticación | Supabase Auth: la API valida el JWT con el JWKS del proyecto (`jose`) |
 | Imágenes | Supabase Storage |
-| Tests y CI | Vitest + Supertest contra PostGIS real, GitHub Actions |
+| Tests y CI | Vitest + Supertest (API, PostGIS real), Vitest + Testing Library (web), Playwright (end-to-end), GitHub Actions |
 | Despliegue | Vercel (web estática + API serverless) |
 
 ## Estructura
@@ -108,17 +112,22 @@ apps/
     prisma/schema.prisma   → modelo de datos
     prisma/migrations/     → migraciones SQL (incluye PostGIS, CHECKs, triggers y RLS)
     test/                  → tests de integración
+  web/e2e/                 → tests end-to-end (Playwright)
 docs/                      → modelo de datos, diseño y capturas
 ```
 
 ## Tests
 
-La API tiene **53 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real:
-reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
-paginación y casos límite. Los tokens se firman con una clave ES256 generada en cada ejecución, igual que hace Supabase Auth.
+Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows/ci.yml)):
 
-Se ejecutan en GitHub Actions en cada push, con PostGIS como servicio del workflow, junto con lint, typecheck y build
-([ver workflow](.github/workflows/ci.yml)).
+- **API: 59 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
+  reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
+  paginación, Web Push (incluido el vector del RFC 8291) y casos límite. Los tokens se firman con una clave ES256
+  generada en cada ejecución, igual que hace Supabase Auth.
+- **Web: 18 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
+  (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push y denuncias.
+- **End-to-end: 6 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
+  simulada (nunca tocan datos reales): un invitado explora el mapa, publicar un aviso con clic real en el mapa y escribir un mensaje.
 
 ## Puesta en marcha
 
