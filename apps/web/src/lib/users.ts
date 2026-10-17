@@ -3,6 +3,8 @@ import type { LatLng } from './reports'
 export interface Me {
   id: string
   username: string
+  /** false = entró con Google/Apple y aún no ha elegido su username (tiene uno provisional). */
+  usernameConfirmed: boolean
   displayName: string
   avatarUrl: string | null
   bio: string | null

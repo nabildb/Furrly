@@ -3,6 +3,7 @@ import { Navigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
+import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -75,6 +76,7 @@ export function Register() {
         </p>
       }
     >
+      <OAuthButtons next="/avisos" />
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field
           label="Nombre de usuario"

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import { useUsernameGate } from '../lib/usernameGate'
 import { BottomNav } from './ui/BottomNav'
 import { Sidebar } from './ui/Sidebar'
 
@@ -10,6 +11,7 @@ import { Sidebar } from './ui/Sidebar'
  * - Escritorio: barra lateral fija siempre; el contenido se desplaza su ancho (--sidebar-w).
  */
 export function Layout({ nav = true }: { nav?: boolean }) {
+  useUsernameGate()
   return (
     <>
       <Sidebar />

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
+import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
 import { safeRedirect } from '../lib/redirect'
 import { supabase } from '../lib/supabase'
@@ -10,9 +11,13 @@ import { supabase } from '../lib/supabase'
 export function Login() {
   const { session } = useAuth()
   const navigate = useNavigate()
-  // Si RequireAuth nos ha mandado aquí, al entrar volvemos a esa página.
-  const from = safeRedirect((useLocation().state as { from?: unknown } | null)?.from)
-  const [error, setError] = useState<string | null>(null)
+  const [params] = useSearchParams()
+  // Si RequireAuth nos ha mandado aquí, al entrar volvemos a esa página. Al volver de Google/Apple llega en ?next=.
+  const from = safeRedirect((useLocation().state as { from?: unknown } | null)?.from ?? params.get('next'))
+  // Si se cancela o falla en Google/Apple, Supabase vuelve con ?error_description=.
+  const [error, setError] = useState<string | null>(
+    params.get('error_description') ? 'No se ha podido entrar con esa cuenta. Inténtalo de nuevo.' : null,
+  )
   const [submitting, setSubmitting] = useState(false)
 
   if (session) return <Navigate to={from} replace />
@@ -44,6 +49,7 @@ export function Login() {
         </p>
       }
     >
+      <OAuthButtons next={from} />
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <Field label="Contraseña" name="password" type="password" autoComplete="current-password" required />

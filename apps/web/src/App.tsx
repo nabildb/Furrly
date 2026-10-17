@@ -20,6 +20,7 @@ import { PostNew } from './pages/PostNew'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { UserProfile } from './pages/UserProfile'
+import { Welcome } from './pages/Welcome'
 
 // Las páginas con mapa (avisos y perfil) cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
@@ -74,6 +75,7 @@ export function App() {
               <Route path="publicaciones/nueva" element={<PostNew />} />
               <Route path="mensajes/nuevo" element={<NewConversation />} />
               <Route path="mensajes/:id" element={<Conversation />} />
+              <Route path="bienvenida" element={<Welcome />} />
             </Route>
           </Route>
         </Routes>
