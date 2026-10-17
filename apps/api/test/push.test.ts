@@ -130,6 +130,17 @@ describe('suscripciones y envío', () => {
     expect((await request.get('/push/key')).body.publicKey).toBe(process.env.VAPID_PUBLIC_KEY)
   })
 
+  it('el aviso de prueba llega a los dispositivos propios', async () => {
+    const user = await createUser('nabil')
+    const browser = await subscribe(user)
+    const calls = mockPushService(201)
+
+    const res = await request.post('/push/test').set(user.auth)
+    expect(res.body).toEqual({ sent: 1 })
+    expect(decrypt(calls[0].body, browser)).toMatchObject({ title: 'Furrly', url: '/perfil' })
+    expect((await request.post('/push/test')).status).toBe(401)
+  })
+
   it('un aviso cerca de tu zona llega por push, cifrado y con VAPID', async () => {
     const reporter = await createUser('nabil')
     const neighbour = await createUser('vecina')

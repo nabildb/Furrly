@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { disablePush, enablePush, getPushStatus, type PushStatus } from '../lib/push'
+import { disablePush, enablePush, getPushStatus, sendTestPush, type PushStatus } from '../lib/push'
 import { Button } from './ui/Button'
 import { Card, SectionTitle } from './ui/Card'
 import { BellIcon, CheckIcon } from './ui/icons'
@@ -16,6 +16,7 @@ const messages: Record<Exclude<PushStatus, 'on' | 'off'>, string> = {
 export function PushToggle({ compact = false }: { compact?: boolean }) {
   const [status, setStatus] = useState<PushStatus | null>(null)
   const [busy, setBusy] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
 
   useEffect(() => {
     getPushStatus().then(setStatus, () => setStatus('unsupported'))
@@ -34,6 +35,20 @@ export function PushToggle({ compact = false }: { compact?: boolean }) {
       setStatus('unavailable')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function sendTest() {
+    setTestResult('Enviando…')
+    try {
+      const sent = await sendTestPush()
+      setTestResult(
+        sent > 0
+          ? 'Enviado: debería llegarte en unos segundos.'
+          : 'No se ha podido entregar. Prueba a desactivar y volver a activar los avisos.',
+      )
+    } catch {
+      setTestResult('No se ha podido enviar. Inténtalo más tarde.')
     }
   }
 
@@ -68,6 +83,18 @@ export function PushToggle({ compact = false }: { compact?: boolean }) {
             'Activar avisos'
           )}
         </Button>
+      )}
+      {status === 'on' && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <button type="button" onClick={sendTest} className="text-sm font-extrabold text-lost-text hover:underline">
+            Enviar un aviso de prueba
+          </button>
+          {testResult && (
+            <span role="status" className="text-sm font-semibold text-muted">
+              {testResult}
+            </span>
+          )}
+        </div>
       )}
     </Card>
   )

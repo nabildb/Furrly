@@ -19,10 +19,10 @@ export const vapidKeys: VapidKeys | null =
 /**
  * Envía un push a todos los dispositivos de esos usuarios. Las suscripciones que el servicio da por
  * caducadas (404/410: el usuario desinstaló o revocó el permiso) se borran. Nunca lanza: un push
- * fallido no debe romper la acción que lo provocó.
+ * fallido no debe romper la acción que lo provocó. Devuelve cuántos aceptó el servicio de push.
  */
 export async function pushToUsers(userIds: string[], message: PushMessage) {
-  if (!vapidKeys || userIds.length === 0) return
+  if (!vapidKeys || userIds.length === 0) return 0
   const keys = vapidKeys
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId: { in: userIds } } })
   const results = await Promise.allSettled(subscriptions.map((s) => sendWebPush(s, message, keys)))
@@ -34,6 +34,7 @@ export async function pushToUsers(userIds: string[], message: PushMessage) {
   if (expired.length > 0) {
     await prisma.pushSubscription.deleteMany({ where: { id: { in: expired.map((s) => s.id) } } })
   }
+  return results.filter((r) => r.status === 'fulfilled' && r.value >= 200 && r.value < 300).length
 }
 
 /** Texto del push para cada notificación (los likes no mandan push: serían demasiados). */

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
-import { vapidKeys } from '../lib/push.js'
+import { pushToUsers, vapidKeys } from '../lib/push.js'
 import { isPushServiceUrl } from '../lib/webpush.js'
 import { requireAuth } from '../middleware/auth.js'
 
@@ -42,3 +42,16 @@ pushRouter.delete('/subscriptions', requireAuth, async (req, res) => {
   await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: req.userId } })
   res.status(204).end()
 })
+
+/** Aviso de prueba a los dispositivos propios: comprueba de punta a punta que el push llega. */
+pushRouter.post('/test', requireAuth, async (req, res) => {
+  if (!vapidKeys) throw new HttpError(503, 'Los avisos push no están configurados')
+  const sent = await pushToUsers([req.userId!], {
+    title: 'Furrly',
+    body: '¡Los avisos funcionan en este dispositivo!',
+    url: '/perfil',
+    tag: 'prueba',
+  })
+  res.json({ sent })
+})
+

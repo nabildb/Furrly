@@ -64,3 +64,9 @@ export async function disablePush() {
   await api('/push/subscriptions', { method: 'DELETE', body: JSON.stringify({ endpoint: subscription.endpoint }) }).catch(() => {})
   await subscription.unsubscribe()
 }
+
+/** Pide a la API un aviso de prueba a los dispositivos propios. Devuelve a cuántos se ha enviado. */
+export async function sendTestPush() {
+  const { sent } = await api<{ sent: number }>('/push/test', { method: 'POST' })
+  return sent
+}
