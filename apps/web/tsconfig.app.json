@@ -22,5 +22,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Los tests usan dependencias que solo se instalan en la CI: tienen su propio tsconfig.test.json.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
 }
