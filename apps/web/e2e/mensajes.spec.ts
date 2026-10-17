@@ -7,6 +7,8 @@ test('escribir al autor de un aviso abre la conversación', async ({ page }) => 
     id: 'c1',
     other: { username: 'ana_g', displayName: 'Ana García', avatarUrl: null },
     olderCursor: null,
+    canReply: true,
+    blockedByMe: false,
     messages: sent.map((body, i) => ({
       id: `m${i}`,
       body,
@@ -44,4 +46,23 @@ test('escribir al autor de un aviso abre la conversación', async ({ page }) => 
   await box.press('Enter')
   await expect(page.getByText('¿Sigue sin aparecer?')).toBeVisible()
   expect(sent).toEqual(['Creo que lo he visto en la plaza', '¿Sigue sin aparecer?'])
+})
+
+test('con un bloqueo la conversación se ve pero no se puede responder', async ({ page }) => {
+  await logIn(page)
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /conversations/:id': () => ({
+      id: 'c1',
+      other: { username: 'pesado', displayName: 'Pesado', avatarUrl: null },
+      olderCursor: null,
+      canReply: false,
+      blockedByMe: true,
+      messages: [{ id: 'm0', body: 'Hola', fromMe: false, createdAt: new Date().toISOString(), report: null }],
+    }),
+  })
+
+  await page.goto('/mensajes/c1')
+  await expect(page.getByText('Has bloqueado a @pesado: no podéis escribiros.')).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Mensaje' })).toHaveCount(0)
 })
