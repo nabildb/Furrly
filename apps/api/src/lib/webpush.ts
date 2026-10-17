@@ -89,8 +89,15 @@ export async function vapidAuthorization(endpoint: string, keys: VapidKeys) {
   return `vapid t=${jwt}, k=${keys.publicKey}`
 }
 
-/** Envía un mensaje push. Devuelve el código HTTP del servicio de push (201 = aceptado; 404/410 = suscripción caducada). */
-export async function sendWebPush(target: PushTarget, payload: unknown, keys: VapidKeys) {
+export interface PushResult {
+  /** Código HTTP del servicio de push: 201 = aceptado; 404/410 = suscripción caducada; 403 = VAPID rechazado. */
+  status: number
+  /** Motivo que da el servicio cuando rechaza el envío (p. ej. Apple: {"reason":"BadJwtToken"}). */
+  reason?: string
+}
+
+/** Envía un mensaje push y devuelve lo que contestó el servicio de push. */
+export async function sendWebPush(target: PushTarget, payload: unknown, keys: VapidKeys): Promise<PushResult> {
   const body = encryptPayload(Buffer.from(JSON.stringify(payload)), target)
   const res = await fetch(target.endpoint, {
     method: 'POST',
@@ -104,7 +111,8 @@ export async function sendWebPush(target: PushTarget, payload: unknown, keys: Va
     body,
     signal: AbortSignal.timeout(5000),
   })
-  return res.status
+  if (res.ok) return { status: res.status }
+  return { status: res.status, reason: (await res.text().catch(() => '')).slice(0, 200) || undefined }
 }
 
 /**

@@ -136,7 +136,7 @@ describe('suscripciones y envío', () => {
     const calls = mockPushService(201)
 
     const res = await request.post('/push/test').set(user.auth)
-    expect(res.body).toEqual({ sent: 1 })
+    expect(res.body).toEqual({ sent: 1, results: [{ service: 'fcm.googleapis.com', status: 201 }] })
     expect(decrypt(calls[0].body, browser)).toMatchObject({ title: 'Furrly', url: '/perfil' })
     expect((await request.post('/push/test')).status).toBe(401)
   })

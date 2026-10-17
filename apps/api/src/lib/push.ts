@@ -1,6 +1,6 @@
 import { env } from './env.js'
 import { prisma } from './prisma.js'
-import { sendWebPush, type VapidKeys } from './webpush.js'
+import { sendWebPush, type PushResult, type VapidKeys } from './webpush.js'
 
 export interface PushMessage {
   title: string
@@ -22,19 +22,28 @@ export const vapidKeys: VapidKeys | null =
  * fallido no debe romper la acción que lo provocó. Devuelve cuántos aceptó el servicio de push.
  */
 export async function pushToUsers(userIds: string[], message: PushMessage) {
-  if (!vapidKeys || userIds.length === 0) return 0
+  const results = await pushToUsersDetailed(userIds, message)
+  return results.filter((r) => r.status >= 200 && r.status < 300).length
+}
+
+/** Igual que pushToUsers, pero devuelve qué contestó el servicio de push de cada dispositivo (para diagnosticar). */
+export async function pushToUsersDetailed(userIds: string[], message: PushMessage) {
+  if (!vapidKeys || userIds.length === 0) return []
   const keys = vapidKeys
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId: { in: userIds } } })
-  const results = await Promise.allSettled(subscriptions.map((s) => sendWebPush(s, message, keys)))
-
-  const expired = subscriptions.filter((_, i) => {
-    const r = results[i]
-    return r.status === 'fulfilled' && (r.value === 404 || r.value === 410)
+  const settled = await Promise.allSettled(subscriptions.map((s) => sendWebPush(s, message, keys)))
+  const results = subscriptions.map((s, i) => {
+    const r = settled[i]
+    const outcome: PushResult =
+      r.status === 'fulfilled' ? r.value : { status: 0, reason: r.reason instanceof Error ? r.reason.message : 'Error de red' }
+    return { service: new URL(s.endpoint).hostname, subscriptionId: s.id, ...outcome }
   })
+
+  const expired = results.filter((r) => r.status === 404 || r.status === 410)
   if (expired.length > 0) {
-    await prisma.pushSubscription.deleteMany({ where: { id: { in: expired.map((s) => s.id) } } })
+    await prisma.pushSubscription.deleteMany({ where: { id: { in: expired.map((r) => r.subscriptionId) } } })
   }
-  return results.filter((r) => r.status === 'fulfilled' && r.value >= 200 && r.value < 300).length
+  return results.map(({ subscriptionId: _, ...r }) => r)
 }
 
 /** Texto del push para cada notificación (los likes no mandan push: serían demasiados). */
