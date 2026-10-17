@@ -10,7 +10,7 @@ import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
 import { CountBadge } from '../components/ui/CountBadge'
-import { ArrowRightIcon, BellIcon, CheckIcon, ListIcon, LogoutIcon, MessageIcon, UserIcon } from '../components/ui/icons'
+import { ArrowRightIcon, BellIcon, CheckIcon, ListIcon, LogoutIcon, MessageIcon, ShieldIcon, UserIcon } from '../components/ui/icons'
 import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import type { LatLng } from '../lib/reports'
@@ -106,6 +106,9 @@ export function Profile() {
             </MenuLink>
             <MenuLink to={`/u/${me.username}`} icon={<UserIcon />}>
               Ver mi perfil público
+            </MenuLink>
+            <MenuLink to="/privacidad" icon={<ShieldIcon />}>
+              Privacidad
             </MenuLink>
           </Card>
 
