@@ -1,0 +1,42 @@
+# Regenera los datos de demo de producción cada semana, para que los avisos y publicaciones de ejemplo
+# no parezcan de hace meses (las fechas son relativas al momento de ejecutarlo). Solo toca los perfiles
+# de demo (UUIDs fijos f0f0f0f0-…); ver apps/api/src/scripts/seed-demo.ts.
+# También se puede lanzar a mano: Actions → Refrescar demo → Run workflow.
+name: Refrescar demo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1'
+
+permissions:
+  contents: read
+
+# Nunca dos a la vez sobre la misma base de datos.
+concurrency: demo
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    env:
+      # Secreto del repositorio (Settings → Secrets and variables → Actions). Es la URL del pooler de Supabase.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DATABASE_URL }}
+      SUPABASE_URL: https://dgaiisrusilbieffjcdh.supabase.co
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Comprobar el secreto
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Falta el secreto DATABASE_URL en Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npx prisma generate
+        working-directory: apps/api
+      - run: npx tsx src/scripts/seed-demo.ts --yes
+        working-directory: apps/api
