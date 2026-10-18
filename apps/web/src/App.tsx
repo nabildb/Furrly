@@ -31,6 +31,8 @@ const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.P
 const ReportEdit = lazy(() => import('./pages/ReportEdit').then((m) => ({ default: m.ReportEdit })))
 const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
 const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
+// El cartel lleva la librería del código QR: solo se descarga al abrirlo.
+const Poster = lazy(() => import('./pages/Poster').then((m) => ({ default: m.Poster })))
 
 // Guía de componentes: solo en desarrollo (en producción Vite elimina esta rama).
 const StyleGuide = import.meta.env.DEV
@@ -44,6 +46,9 @@ export function App() {
         <Routes>
           {/* La portada es el mapa: es lo primero que necesita quien ha perdido o encontrado un animal. */}
           <Route index element={<Navigate to="/avisos" replace />} />
+
+          {/* Cartel para imprimir: sin navegación ni barra lateral. */}
+          <Route path="avisos/:id/cartel" element={<Poster />} />
 
           {/* Con la navegación flotante */}
           <Route element={<Layout />}>

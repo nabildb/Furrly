@@ -91,3 +91,9 @@
     @apply border-0! bg-transparent!;
   }
 }
+
+/* Cartel de un aviso (/avisos/:id/cartel): una hoja A4. */
+@page {
+  size: A4;
+  margin: 12mm;
+}

@@ -286,6 +286,20 @@ export function ReportDetail() {
             </p>
           </Card>
 
+          {isActive && (
+            <Card className="flex items-center gap-4">
+              <div className="min-w-0 flex-1">
+                <SectionTitle>Cartel para imprimir</SectionTitle>
+                <p className="mt-1 text-sm font-semibold text-muted">
+                  {isLost ? 'Pégalo por el barrio' : 'Pégalo donde lo encontraste'}: el código QR abre este aviso.
+                </p>
+              </div>
+              <ButtonLink to={`/avisos/${report.id}/cartel`} variant="secondary" size="md" className="flex-none">
+                Ver cartel
+              </ButtonLink>
+            </Card>
+          )}
+
           {!isReporter && (
             <Card className="space-y-3">
               <SectionTitle>Contactar con @{report.reporter.username}</SectionTitle>
