@@ -1,6 +1,8 @@
 # Auditoría de Lighthouse contra la web de producción (rendimiento, accesibilidad, buenas prácticas y SEO).
 # Se lanza a mano (Actions → Lighthouse → Run workflow) y cada lunes. Las notas salen en el resumen de la
 # ejecución y los informes completos (HTML) quedan como artefacto.
+# Cada página se mide 3 veces y se toma la mediana del rendimiento: en las máquinas compartidas de GitHub
+# una sola medición varía mucho (el mismo código ha sacado de 56 a 75 en el mapa en móvil).
 name: Lighthouse
 
 on:
@@ -26,26 +28,38 @@ jobs:
           for page in avisos comunidad login; do
             for device in mobile desktop; do
               preset=$([ "$device" = desktop ] && echo "--preset=desktop" || echo "")
-              # Lighthouse a veces falla al grabar la carga en las máquinas de GitHub (NO_NAVSTART): hasta 3 intentos.
-              for attempt in 1 2 3; do
-                npx --yes lighthouse@13.5.0 "$SITE/$page" $preset \
-                  --chrome-flags="--headless=new --no-sandbox" --quiet \
-                  --output=json --output=html --output-path="informes/$page-$device" && break
-                [ "$attempt" = 3 ] && exit 1
+              for run in 1 2 3; do
+                # Lighthouse a veces falla al grabar la carga en las máquinas de GitHub (NO_NAVSTART): hasta 3 intentos.
+                for attempt in 1 2 3; do
+                  npx --yes lighthouse@13.5.0 "$SITE/$page" $preset \
+                    --chrome-flags="--headless=new --no-sandbox" --quiet \
+                    --output=json --output=html --output-path="informes/$page-$device-$run" && break
+                  [ "$attempt" = 3 ] && exit 1
+                done
               done
             done
           done
-      - name: Resumen de notas
+      - name: Resumen de notas (mediana de 3)
         run: |
           node -e '
             const fs = require("fs")
-            const rows = fs.readdirSync("informes").filter((f) => f.endsWith(".report.json")).sort().map((f) => {
-              const { categories } = JSON.parse(fs.readFileSync("informes/" + f))
-              const score = (c) => Math.round(categories[c].score * 100)
-              return `| ${f.replace(".report.json", "")} | ${score("performance")} | ${score("accessibility")} | ${score("best-practices")} | ${score("seo")} |`
+            const runs = {}
+            for (const f of fs.readdirSync("informes").filter((f) => f.endsWith(".report.json"))) {
+              const name = f.replace(/-\d\.report\.json$/, "")
+              ;(runs[name] ??= []).push({ file: f, report: JSON.parse(fs.readFileSync("informes/" + f)) })
+            }
+            const score = (r, c) => Math.round(r.categories[c].score * 100)
+            const rows = Object.keys(runs).sort().map((name) => {
+              const sorted = runs[name].sort((a, b) => score(a.report, "performance") - score(b.report, "performance"))
+              const { report, file } = sorted[Math.floor(sorted.length / 2)]
+              // El informe de la mediana se guarda sin número para encontrarlo fácil en el artefacto.
+              for (const ext of ["json", "html"]) fs.copyFileSync("informes/" + file.replace("json", ext), `informes/${name}.mediana.report.${ext}`)
+              const all = sorted.map((r) => score(r.report, "performance")).join(", ")
+              const lcp = report.audits["largest-contentful-paint"].displayValue
+              return `| ${name} | ${score(report, "performance")} (${all}) | ${lcp} | ${score(report, "accessibility")} | ${score(report, "best-practices")} | ${score(report, "seo")} |`
             })
-            const table = ["| Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO |", "|---|---|---|---|---|", ...rows].join("\n")
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "## Lighthouse\n\n" + table + "\n")
+            const table = ["| Página | Rendimiento (las 3) | LCP | Accesibilidad | Buenas prácticas | SEO |", "|---|---|---|---|---|---|", ...rows].join("\n")
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "## Lighthouse (mediana de 3)\n\n" + table + "\n")
             console.log(table)
           '
       - uses: actions/upload-artifact@v7
