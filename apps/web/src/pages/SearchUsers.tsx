@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Avatar } from '../components/Avatar'
 import { ErrorText, Field } from '../components/Field'
@@ -21,11 +21,14 @@ export function SearchUsers() {
   const [results, setResults] = useState<FoundUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const q = text.trim().replace(/^@/, '')
+  // Al guardar la búsqueda en la URL, React Router da un setParams nuevo y el efecto se repetiría.
+  const searched = useRef<string | null>(null)
 
   useEffect(() => {
-    if (q.length < 2) return
+    if (q.length < 2 || q === searched.current) return
     // Se espera a que deje de escribir: una petición por búsqueda, no por letra.
     const timer = setTimeout(() => {
+      searched.current = q
       setParams({ q }, { replace: true })
       setError(null)
       api<FoundUser[]>(`/users?q=${encodeURIComponent(q)}`)

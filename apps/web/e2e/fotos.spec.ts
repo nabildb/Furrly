@@ -1,6 +1,8 @@
 import { expect, logIn, mockApi, test } from './fixtures'
 
 test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', async ({ page }) => {
+  // Generar y comprimir una foto de 12 megapíxeles lleva unos segundos en la máquina de la CI.
+  test.setTimeout(60_000)
   await logIn(page)
   await mockApi(page, {
     'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
@@ -50,7 +52,7 @@ test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', a
   expect(original.length).toBeGreaterThan(2_000_000)
 
   await page.locator('input[type=file]').setInputFiles({ name: 'IMG_0001.jpg', mimeType: 'image/jpeg', buffer: original })
-  await expect.poll(() => uploads.length).toBe(1)
+  await expect.poll(() => uploads.length, { timeout: 30_000 }).toBe(1)
 
   const [upload] = uploads
   expect(upload.type).toBe('image/webp')
