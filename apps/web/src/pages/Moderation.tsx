@@ -155,6 +155,31 @@ function SuspendedUsers({ refreshKey }: { refreshKey: number }) {
   )
 }
 
+/** Lanza un error 500 a propósito en la API para comprobar que llega a Sentry. */
+function SentryTest() {
+  const [result, setResult] = useState<string | null>(null)
+
+  async function run() {
+    setResult(null)
+    try {
+      await api('/admin/sentry-test', { method: 'POST' })
+    } catch {
+      setResult('Error enviado. Debería aparecer en Sentry (proyecto furrly-api) en unos segundos.')
+    }
+  }
+
+  return (
+    <Card className="space-y-2">
+      <SectionTitle>Errores en producción</SectionTitle>
+      <p className="text-sm font-semibold text-muted">Comprueba que los errores de la API llegan a Sentry.</p>
+      <Button variant="secondary" size="md" onClick={run}>
+        Enviar error de prueba a Sentry
+      </Button>
+      {result && <p className="text-sm font-bold text-resolved-text">{result}</p>}
+    </Card>
+  )
+}
+
 /** Panel de moderación: denuncias agrupadas por contenido. Solo para administradores (la API lo comprueba). */
 export function Moderation() {
   const [tab, setTab] = useState<Tab>('pendientes')
@@ -200,6 +225,7 @@ export function Moderation() {
           ))
         )}
         <SuspendedUsers refreshKey={refreshKey} />
+        <SentryTest />
       </div>
     </Page>
   )

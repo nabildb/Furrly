@@ -172,3 +172,8 @@ adminRouter.delete('/suspended/:username', async (req, res) => {
   if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${user.id}::uuid`
   res.status(204).end()
 })
+
+/** Error de prueba: para comprobar desde el panel que los 500 llegan a Sentry. */
+adminRouter.post('/sentry-test', () => {
+  throw new Error('Prueba de Sentry desde la API de Furrly')
+})

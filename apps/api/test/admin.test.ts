@@ -107,6 +107,15 @@ describe('panel de moderación', () => {
     expect((await request.get('/me').set(vecina.auth)).status).toBe(200)
   })
 
+  it('el error de prueba de Sentry es un 500 y solo lo pueden lanzar los moderadores', async () => {
+    const admin = await createAdmin()
+    const user = await createUser('vecina')
+    expect((await request.post('/admin/sentry-test').set(user.auth)).status).toBe(403)
+    const res = await request.post('/admin/sentry-test').set(admin.auth)
+    expect(res.status).toBe(500)
+    expect(res.body).toEqual({ error: 'Error interno del servidor' })
+  })
+
   it('no se puede suspender a un moderador ni borrar usuarios o conversaciones', async () => {
     const admin = await createAdmin()
     const otherAdmin = await createAdmin('moderadora')
