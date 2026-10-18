@@ -40,7 +40,12 @@ export function ReportCard({ report: r, fromYou, selected, onHover, className, r
           isLost ? 'bg-[#F6D9C8] text-lost/40' : 'bg-[#D5E2F5] text-found/40',
         )}
       >
-        {r.photoUrl ? <img src={r.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={36} />}
+        {/* lazy: las tarjetas que quedan fuera del carrusel no descargan su foto hasta que se ven. */}
+        {r.photoUrl ? (
+          <img src={r.photoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        ) : (
+          <PawIcon size={36} />
+        )}
       </div>
       <div className="flex min-w-0 flex-col gap-1 pt-0.5">
         <Badge tone={r.type} className="self-start">

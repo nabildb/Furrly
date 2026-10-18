@@ -7,7 +7,8 @@ import { InboxProvider } from './inbox/InboxProvider'
 import { registerServiceWorker } from './lib/push'
 import { initSentry, reportError } from './lib/sentry'
 // Fuentes servidas desde nuestro dominio (antes Google Fonts: dos dominios más y un CSS que bloqueaba el pintado).
-import '@fontsource-variable/nunito-sans/opsz.css'
+// De Nunito Sans solo el eje de grosor (wght): con el de tamaño óptico (opsz) pesaba 50 kB en vez de 31 kB.
+import '@fontsource-variable/nunito-sans/wght.css'
 import '@fontsource-variable/unbounded/wght.css'
 import './index.css'
 
