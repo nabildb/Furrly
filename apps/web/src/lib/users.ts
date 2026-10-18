@@ -5,6 +5,8 @@ export interface Me {
   username: string
   /** false = entró con Google/Apple y aún no ha elegido su username (tiene uno provisional). */
   usernameConfirmed: boolean
+  /** Moderador: ve el panel de denuncias (/moderacion). */
+  isAdmin: boolean
   displayName: string
   avatarUrl: string | null
   bio: string | null

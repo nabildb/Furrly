@@ -10,7 +10,7 @@ import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
 import { CountBadge } from '../components/ui/CountBadge'
-import { ArrowRightIcon, BellIcon, CheckIcon, ListIcon, LogoutIcon, MessageIcon, ShieldIcon, UserIcon } from '../components/ui/icons'
+import { ArrowRightIcon, BellIcon, CheckIcon, FlagIcon, ListIcon, LogoutIcon, MessageIcon, ShieldIcon, UserIcon } from '../components/ui/icons'
 import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import type { LatLng } from '../lib/reports'
@@ -39,6 +39,7 @@ export function Profile() {
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [pendingFlags, setPendingFlags] = useState(0)
 
   useEffect(() => {
     api<Me>('/me')
@@ -46,6 +47,11 @@ export function Profile() {
         setMe(data)
         setAvatar(data.avatarUrl ? [data.avatarUrl] : [])
         setAlertLocation(data.alertLocation)
+        if (data.isAdmin) {
+          api<{ pending: number }>('/admin/flags/count')
+            .then((r) => setPendingFlags(r.pending))
+            .catch(() => {})
+        }
       })
       .catch((e: Error) => setError(e.message))
   }, [])
@@ -107,6 +113,11 @@ export function Profile() {
             <MenuLink to={`/u/${me.username}`} icon={<UserIcon />}>
               Ver mi perfil público
             </MenuLink>
+            {me.isAdmin && (
+              <MenuLink to="/moderacion" icon={<FlagIcon />} count={pendingFlags}>
+                Moderación
+              </MenuLink>
+            )}
             <MenuLink to="/privacidad" icon={<ShieldIcon />}>
               Privacidad
             </MenuLink>

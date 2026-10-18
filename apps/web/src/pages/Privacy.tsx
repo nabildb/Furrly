@@ -17,7 +17,7 @@ export function Privacy() {
       <div className="space-y-7">
         <p className="text-[15px] leading-relaxed text-body">
           Furrly es un proyecto educativo de portfolio (2.º de DAW) para ayudar a encontrar mascotas perdidas. Aquí se explica
-          qué datos guarda, para qué y cómo borrarlos. Última actualización: 17 de octubre de 2026.
+          qué datos guarda, para qué y cómo borrarlos. Última actualización: 18 de octubre de 2026.
         </p>
 
         <Section title="Qué datos guardamos">
@@ -43,7 +43,7 @@ export function Privacy() {
         <Section title="Para qué los usamos">
           <p>
             Solo para que la app funcione: mostrar avisos en el mapa, avisar a los vecinos de la zona, enviar mensajes y
-            notificaciones, y prevenir abusos (bloqueos, denuncias y límites contra el spam). No hay publicidad, no se venden
+            notificaciones, y prevenir abusos (bloqueos, denuncias, límites contra el spam y, si se incumplen las normas, suspender la cuenta). No hay publicidad, no se venden
             datos y no se usan para otros fines.
           </p>
         </Section>
@@ -53,7 +53,10 @@ export function Privacy() {
             <li>Tus avisos, mascotas y publicaciones son públicos, como en cualquier red social.</li>
             <li>El teléfono o email de contacto de un aviso solo lo ven usuarios con sesión iniciada.</li>
             <li>El microchip de tu mascota, tu zona de alertas y tu email solo los ves tú.</li>
-            <li>Los mensajes solo los ven las dos personas de la conversación.</li>
+            <li>
+              Los mensajes solo los ven las dos personas de la conversación. Si una de ellas la denuncia, la moderación
+              puede leerla para revisar la denuncia.
+            </li>
           </ul>
         </Section>
 

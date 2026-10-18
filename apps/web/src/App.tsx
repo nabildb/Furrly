@@ -7,6 +7,7 @@ import { ForgotPassword } from './pages/ForgotPassword'
 import { Login } from './pages/Login'
 import { MyPets } from './pages/MyPets'
 import { MyReports } from './pages/MyReports'
+import { Moderation } from './pages/Moderation'
 import { Conversation, NewConversation } from './pages/Conversation'
 import { Feed } from './pages/Feed'
 import { Messages } from './pages/Messages'
@@ -63,6 +64,7 @@ export function App() {
               <Route path="perfil" element={<Profile />} />
               <Route path="mensajes" element={<Messages />} />
               <Route path="notificaciones" element={<Notifications />} />
+              <Route path="moderacion" element={<Moderation />} />
             </Route>
             {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
             <Route path="*" element={<NotFound />} />
