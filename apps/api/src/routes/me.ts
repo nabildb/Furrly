@@ -29,7 +29,7 @@ const updateMeSchema = z.object({
 async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, usernameConfirmed: true, isAdmin: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
+    select: { id: true, username: true, usernameConfirmed: true, isAdmin: true, onboardedAt: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
   })
   if (!user) throw new HttpError(404, 'Perfil no encontrado')
 
@@ -37,7 +37,8 @@ async function getMe(userId: string) {
     SELECT ST_Y(alert_location::geometry) AS lat, ST_X(alert_location::geometry) AS lng
     FROM users WHERE id = ${userId}::uuid`
 
-  return { ...user, alertLocation: lat === null || lng === null ? null : { lat, lng } }
+  const { onboardedAt, ...rest } = user
+  return { ...rest, onboardingDone: onboardedAt !== null, alertLocation: lat === null || lng === null ? null : { lat, lng } }
 }
 
 export const meRouter = Router()
@@ -94,6 +95,12 @@ meRouter.put('/username', requireAuth, async (req, res) => {
 
   await prisma.user.update({ where: { id: userId }, data: { username, displayName, usernameConfirmed: true } })
   res.json(await getMe(userId))
+})
+
+/** Terminar (o saltar) la guía de primeros pasos: ya no vuelve a salir en ningún dispositivo. */
+meRouter.put('/onboarding', requireAuth, async (req, res) => {
+  await prisma.user.updateMany({ where: { id: req.userId, onboardedAt: null }, data: { onboardedAt: new Date() } })
+  res.json(await getMe(req.userId!))
 })
 
 /** Usuarios que he bloqueado (para poder desbloquearlos desde el perfil). */

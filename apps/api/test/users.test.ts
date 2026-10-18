@@ -74,3 +74,15 @@ describe('buscar perfiles', () => {
     expect((await request.get('/users').query({ q: 'a' })).status).toBe(400)
   })
 })
+
+describe('guía de primeros pasos', () => {
+  it('una cuenta nueva la tiene pendiente hasta que la termina, y no se puede volver atrás', async () => {
+    const user = await createUser('nueva')
+    expect((await request.get('/me').set(user.auth)).body.onboardingDone).toBe(false)
+
+    const done = await request.put('/me/onboarding').set(user.auth)
+    expect(done.body.onboardingDone).toBe(true)
+    expect((await request.put('/me/onboarding').set(user.auth)).body.onboardingDone).toBe(true)
+    expect((await request.get('/me').set(user.auth)).body).not.toHaveProperty('onboardedAt')
+  })
+})
