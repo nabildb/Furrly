@@ -27,6 +27,8 @@ para compartir fotos de tus mascotas.
 - **"La he visto"**: los avistamientos se numeran y dibujan en el mapa el recorrido de la mascota.
 - **Alertas por zona**: cada usuario marca su barrio y un radio, y recibe una notificación cuando se publica un aviso dentro,
   también como **aviso push** en el móvil aunque no tenga Furrly abierta (la web es una PWA instalable).
+- **Coincidencias automáticas**: si alguien encuentra un animal de la misma especie cerca de donde se perdió otro, y las fechas encajan,
+  Furrly avisa a los dos dueños y lo enseña en la ficha («Puede que sea el mismo»).
 - **Cartel para imprimir** en A4 con la foto y un **código QR** que abre el aviso (el teléfono solo sale si lo imprime el dueño).
 - **Compartir por WhatsApp** con vista previa: foto, título y zona del aviso (los robots de vista previa reciben las etiquetas Open Graph desde la API).
 - **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso.
@@ -75,6 +77,9 @@ flowchart LR
 
 - **Búsquedas geoespaciales con PostGIS.** `ST_DWithin` sobre columnas `geography` con índice GiST para "avisos en X km".
   Las alertas por zona usan el radio **de cada usuario**; antes se filtra por el radio máximo (50 km) para que Postgres pueda usar el índice.
+- **Coincidencias perdido ↔ encontrado en una sola consulta.** Misma especie, `ST_DWithin` de 5 km y una ventana de fechas
+  asimétrica (lo encontrado, de un día antes a 30 días después de la pérdida), sin avisos de la misma persona ni con bloqueos.
+  No se guardan: se calculan al vuelo con el índice GiST, así que nunca quedan desfasadas al editar o resolver un aviso.
 - **Reglas de negocio en la base de datos.** `CHECK` (un aviso de pérdida siempre tiene mascota, `resolved_at` solo si está resuelto),
   claves compuestas que hacen imposibles los likes o seguidores duplicados y una conversación única por pareja de usuarios
   (par ordenado con `CHECK user_a < user_b` + `UNIQUE`).
