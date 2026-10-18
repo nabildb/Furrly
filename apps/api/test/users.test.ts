@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { prisma } from '../src/lib/prisma.js'
 import { createPet, createUser, mediaUrl, request, RETIRO } from './helpers.js'
 
 describe('PATCH /me', () => {
@@ -43,5 +44,33 @@ describe('GET /users/:username', () => {
     const unknown = await request.get('/no-existe')
     expect(unknown.status).toBe(404)
     expect(unknown.body.error).toBe('Ruta no encontrada')
+  })
+})
+
+describe('buscar perfiles', () => {
+  const search = async (q: string) => (await request.get('/users').query({ q })).body
+
+  it('busca por username o nombre visible, con el username exacto primero', async () => {
+    await createUser('ana')
+    await createUser('anabel')
+    await createUser('juana')
+    await createUser('ana_g')
+    const luna = await createUser('duena_de_luna')
+    await prisma.user.update({ where: { id: luna.id }, data: { displayName: 'Ana Martín' } })
+
+    const found = (await search('ana')).map((u: { username: string }) => u.username)
+    expect(found[0]).toBe('ana')
+    expect(found.slice(1, 3).sort()).toEqual(['ana_g', 'anabel'])
+    expect(found.slice(3)).toEqual(['duena_de_luna', 'juana'])
+    expect((await search('@ANA_G'))[0]).toMatchObject({ username: 'ana_g', displayName: 'ana_g', petsCount: 0 })
+    expect(await search('martín')).toEqual([expect.objectContaining({ username: 'duena_de_luna' })])
+  })
+
+  it('los comodines de SQL se buscan como texto y hacen falta 2 letras', async () => {
+    await createUser('ana_g')
+    await createUser('anabel')
+    expect((await search('a_')).map((u: { username: string }) => u.username)).toEqual(['ana_g'])
+    expect(await search('%')).toEqual([])
+    expect((await request.get('/users').query({ q: 'a' })).status).toBe(400)
   })
 })

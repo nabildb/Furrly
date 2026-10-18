@@ -1,5 +1,6 @@
 import { Router } from 'express'
-import { HttpError } from '../lib/http.js'
+import { z } from 'zod'
+import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { optionalAuth, requireAuth } from '../middleware/auth.js'
 
@@ -11,6 +12,37 @@ async function findUserId(username: string) {
 
 /** Perfil público: nunca incluye la zona de alertas (es la ubicación aproximada de su casa). */
 export const usersRouter = Router()
+
+const searchSchema = z.object({
+  q: z
+    .string()
+    .trim()
+    .transform((q) => q.replace(/^@/, ''))
+    .pipe(z.string().min(2, 'Escribe al menos 2 letras').max(50)),
+})
+
+/** "%" y "_" son comodines en LIKE: se escapan para buscarlos como texto. */
+const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`)
+
+/**
+ * Buscar perfiles por nombre de usuario o nombre visible. Primero el username exacto, luego los que
+ * empiezan por lo buscado y después el resto. Los perfiles son públicos, así que no hace falta sesión.
+ */
+usersRouter.get('/', async (req, res) => {
+  const { q } = parse(searchSchema, req.query)
+  const contains = `%${escapeLike(q)}%`
+  const startsWith = `${escapeLike(q.toLowerCase())}%`
+  const users = await prisma.$queryRaw<
+    { username: string; displayName: string; avatarUrl: string | null; petsCount: number }[]
+  >`
+    SELECT u.username, u.display_name AS "displayName", u.avatar_url AS "avatarUrl",
+           (SELECT count(*)::int FROM pets p WHERE p.owner_id = u.id) AS "petsCount"
+    FROM users u
+    WHERE u.username ILIKE ${contains} OR u.display_name ILIKE ${contains}
+    ORDER BY u.username = ${q.toLowerCase()} DESC, u.username LIKE ${startsWith} DESC, u.username
+    LIMIT 20`
+  res.json(users)
+})
 
 usersRouter.get('/:username', optionalAuth, async (req, res) => {
   const user = await prisma.user.findUnique({
