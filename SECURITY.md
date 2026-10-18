@@ -46,6 +46,8 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
 - Todo cuerpo, parámetro y *query* se valida con `zod`: tipos, longitudes máximas, formatos (UUID, email, URL)
   y rangos (coordenadas, radios). Los campos que no están en el esquema se descartan, así que no se puede
   colar `userId`, `status` o `createdAt`.
+- Las fotos se **redibujan en el navegador** antes de subirlas: así se eliminan los metadatos EXIF, incluida la
+  ubicación GPS de donde se hizo la foto (que en una foto hecha en casa revelaría dónde vive el usuario).
 - Las fotos solo se aceptan si son URLs de **la carpeta del propio usuario** en Supabase Storage. El bucket solo deja
   subir a tu carpeta, imágenes jpg/png/webp y de 5 MB como máximo.
 
@@ -57,6 +59,13 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
 - **Límites anti-spam por usuario:** 30 mensajes por hora y 10 conversaciones nuevas al día
   (contestar a quien te escribe no cuenta).
 - Se puede **denunciar una conversación**, pero solo quien participa en ella.
+
+## Tareas programadas
+
+- La limpieza nocturna de fotos (`/api/cron/storage-cleanup`) solo la puede lanzar Vercel Cron: exige el
+  `CRON_SECRET` (comparación en tiempo constante) y responde 401 a cualquier otra llamada.
+- La clave de servicio de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) solo existe en las variables de entorno del servidor
+  y solo se usa para borrar fotos huérfanas; nunca llega al navegador.
 
 ## Moderación
 

@@ -91,6 +91,9 @@ flowchart LR
 - **Login con Google sin tocar el formulario.** Los botones solo aparecen para los proveedores activados en Supabase
   (la web lee sus ajustes públicos), así que activar Apple el día de mañana no requiere cambiar código. Como Google no da
   nombre de usuario, el trigger que crea el perfil genera uno provisional a partir del email y la web pide confirmarlo una sola vez.
+- **Fotos ligeras y sin rastro.** Se comprimen en el navegador antes de subirlas (1600 px, WebP; de 3-5 MB a unos cientos de kB)
+  y al redibujarlas se pierden los metadatos EXIF, incluida la ubicación GPS. Un cron nocturno de Vercel borra de Storage las
+  fotos que ya no usa nadie (avisos borrados, formularios abandonados).
 - **UI optimista** en los likes: el corazón cambia al instante y se corrige con la respuesta de la API, o se deshace si falla.
 - **Asistente de 3 pasos con un solo `<form>`.** Los pasos ocultos siguen montados, así `FormData` lo lee todo al final y volver atrás no pierde nada.
   Cada paso se valida con `reportValidity()`.
