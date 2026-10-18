@@ -1,0 +1,51 @@
+# Auditoría de Lighthouse contra la web de producción (rendimiento, accesibilidad, buenas prácticas y SEO).
+# Se lanza a mano (Actions → Lighthouse → Run workflow) y cada lunes. Las notas salen en el resumen de la
+# ejecución y los informes completos (HTML) quedan como artefacto.
+name: Lighthouse
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://furrly-rouge.vercel.app
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Auditar móvil y escritorio
+        run: |
+          mkdir -p informes
+          for page in avisos comunidad login; do
+            for device in mobile desktop; do
+              preset=$([ "$device" = desktop ] && echo "--preset=desktop" || echo "")
+              npx --yes lighthouse@13.5.0 "$SITE/$page" $preset \
+                --chrome-flags="--headless=new --no-sandbox" --quiet \
+                --output=json --output=html --output-path="informes/$page-$device"
+            done
+          done
+      - name: Resumen de notas
+        run: |
+          node -e '
+            const fs = require("fs")
+            const rows = fs.readdirSync("informes").filter((f) => f.endsWith(".report.json")).sort().map((f) => {
+              const { categories } = JSON.parse(fs.readFileSync("informes/" + f))
+              const score = (c) => Math.round(categories[c].score * 100)
+              return `| ${f.replace(".report.json", "")} | ${score("performance")} | ${score("accessibility")} | ${score("best-practices")} | ${score("seo")} |`
+            })
+            const table = ["| Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO |", "|---|---|---|---|---|", ...rows].join("\n")
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "## Lighthouse\n\n" + table + "\n")
+            console.log(table)
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse
+          path: informes
+          retention-days: 30
