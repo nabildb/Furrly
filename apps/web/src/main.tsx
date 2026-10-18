@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
@@ -16,6 +17,8 @@ createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <InboxProvider>
         <App />
+        {/* Vercel Web Analytics: sin cookies. Se quita la query (?q=… en Buscar perfiles) para no enviar lo que busca la gente. */}
+        <Analytics beforeSend={(event) => ({ ...event, url: event.url.split('?')[0] })} />
       </InboxProvider>
     </AuthProvider>
   </StrictMode>,

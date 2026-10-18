@@ -63,7 +63,9 @@ export function Privacy() {
         <Section title="Dónde se guardan">
           <p>
             En <strong>Supabase</strong> (base de datos, cuentas y fotos) y <strong>Vercel</strong> (web y API), ambos en
-            servidores de la Unión Europea (Fráncfort). El mapa usa OpenStreetMap.
+            servidores de la Unión Europea (Fráncfort). El mapa usa OpenStreetMap. Para saber cuántas visitas tiene Furrly se usa
+            Vercel Web Analytics, que <strong>no usa cookies</strong> ni identifica a nadie: solo cuenta páginas vistas, país y
+            tipo de dispositivo.
           </p>
         </Section>
 
