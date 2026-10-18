@@ -7,6 +7,12 @@
   "regions": [
     "fra1"
   ],
+  "crons": [
+    {
+      "path": "/api/cron/storage-cleanup",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

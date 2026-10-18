@@ -6,6 +6,7 @@ import { errorHandler } from './lib/http.js'
 import { apiLimiter, writeLimiter } from './middleware/rateLimit.js'
 import { adminRouter } from './routes/admin.js'
 import { conversationsRouter, inboxRouter } from './routes/conversations.js'
+import { cronRouter } from './routes/cron.js'
 import { flagsRouter } from './routes/flags.js'
 import { meRouter } from './routes/me.js'
 import { notificationsRouter } from './routes/notifications.js'
@@ -46,6 +47,7 @@ app.use('/notifications', notificationsRouter)
 app.use('/flags', flagsRouter)
 app.use('/push', pushRouter)
 app.use('/admin', adminRouter)
+app.use('/cron', cronRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {
