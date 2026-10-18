@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { jwtVerify } from 'jose'
 import { issuer, jwks } from '../lib/jwks.js'
+import { prisma } from '../lib/prisma.js'
 
 declare global {
   namespace Express {
@@ -27,12 +28,34 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return
   }
 
+  let userId: string
   try {
-    req.userId = await verify(header)
-    next()
+    userId = await verify(header)
   } catch {
     res.status(401).json({ error: 'Token inválido o caducado' })
+    return
   }
+
+  // Una cuenta suspendida no puede hacer nada, aunque su token aún no haya caducado.
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { suspendedAt: true } })
+  if (user?.suspendedAt) {
+    res.status(403).json({ error: 'Tu cuenta está suspendida por incumplir las normas de Furrly.' })
+    return
+  }
+  req.userId = userId
+  next()
+}
+
+/** Como requireAuth, pero además exige ser administrador. */
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  await requireAuth(req, res, async () => {
+    const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { isAdmin: true } })
+    if (!user?.isAdmin) {
+      res.status(403).json({ error: 'Solo para moderadores' })
+      return
+    }
+    next()
+  })
 }
 
 /**

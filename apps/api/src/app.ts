@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import { env } from './lib/env.js'
 import { errorHandler } from './lib/http.js'
 import { apiLimiter, writeLimiter } from './middleware/rateLimit.js'
+import { adminRouter } from './routes/admin.js'
 import { conversationsRouter, inboxRouter } from './routes/conversations.js'
 import { flagsRouter } from './routes/flags.js'
 import { meRouter } from './routes/me.js'
@@ -44,6 +45,7 @@ app.use('/conversations', conversationsRouter)
 app.use('/notifications', notificationsRouter)
 app.use('/flags', flagsRouter)
 app.use('/push', pushRouter)
+app.use('/admin', adminRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {

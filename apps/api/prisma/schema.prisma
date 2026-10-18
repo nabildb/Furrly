@@ -61,6 +61,10 @@ model User {
   username      String                                 @unique @db.VarChar(30)
   /// false = username provisional (registro con Google/Apple) que aún no ha confirmado.
   usernameConfirmed Boolean                            @default(true) @map("username_confirmed")
+  /// Moderador: ve y resuelve las denuncias. Solo se activa a mano en la base de datos.
+  isAdmin       Boolean                                @default(false) @map("is_admin")
+  /// Suspendida por moderación: no puede entrar ni usar la API.
+  suspendedAt   DateTime?                              @map("suspended_at") @db.Timestamptz
   displayName   String                                 @map("display_name") @db.VarChar(60)
   avatarUrl     String?                                @map("avatar_url")
   bio           String?                                @db.VarChar(300)
@@ -310,7 +314,7 @@ enum FlagReason {
   @@map("flag_reason")
 }
 
-/// Denuncia de contenido. Se revisa a mano (de momento desde el panel de Supabase).
+/// Denuncia de contenido. La revisan los administradores desde /moderacion.
 model ContentFlag {
   id         String     @id @default(uuid()) @db.Uuid
   reporterId String     @map("reporter_id") @db.Uuid
@@ -325,6 +329,7 @@ model ContentFlag {
 
   @@unique([reporterId, targetType, targetId])
   @@index([resolvedAt, createdAt])
+  @@index([targetType, targetId], map: "content_flags_target_idx")
   @@map("content_flags")
 }
 

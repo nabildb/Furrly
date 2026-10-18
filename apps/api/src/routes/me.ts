@@ -29,7 +29,7 @@ const updateMeSchema = z.object({
 async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, usernameConfirmed: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
+    select: { id: true, username: true, usernameConfirmed: true, isAdmin: true, displayName: true, avatarUrl: true, bio: true, alertRadiusKm: true },
   })
   if (!user) throw new HttpError(404, 'Perfil no encontrado')
 

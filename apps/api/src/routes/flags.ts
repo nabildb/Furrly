@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { FlagReason } from '../generated/prisma/enums.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
+import { pushToUsers } from '../lib/push.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const flagSchema = z.discriminatedUnion('targetType', [
@@ -34,7 +35,7 @@ async function resolveTarget(target: z.infer<typeof flagSchema>, userId: string)
   return found.id
 }
 
-/** Denuncias de contenido. De momento se revisan a mano desde el panel de Supabase. Se monta en /flags. */
+/** Denuncias de contenido. Las revisan los moderadores en /admin (ver admin.ts). Se monta en /flags. */
 export const flagsRouter = Router()
 
 flagsRouter.post('/', requireAuth, async (req, res) => {
@@ -43,9 +44,14 @@ flagsRouter.post('/', requireAuth, async (req, res) => {
   if (data.targetType === 'user' && targetId === req.userId) throw new HttpError(400, 'No puedes denunciarte a ti mismo')
 
   // Una denuncia por persona y contenido: repetirla no duplica nada (y no da pistas de si ya existía).
-  await prisma.contentFlag.createMany({
+  const { count } = await prisma.contentFlag.createMany({
     data: [{ reporterId: req.userId!, targetType: data.targetType, targetId, reason: data.reason, details: data.details }],
     skipDuplicates: true,
   })
+  // Aviso a los moderadores (solo la primera vez que esa persona lo denuncia).
+  if (count > 0) {
+    const admins = await prisma.user.findMany({ where: { isAdmin: true }, select: { id: true } })
+    await pushToUsers(admins.map((a) => a.id), { title: 'Nueva denuncia', body: 'Hay contenido pendiente de revisar.', url: '/moderacion', tag: 'moderacion' })
+  }
   res.status(201).json({ ok: true })
 })
