@@ -18,10 +18,14 @@ function securityHeaders() {
   const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8')) as VercelHeaders
   const web = vercel.headers?.find((h) => h.source === '/((?!api/).*)')
   // Si la web apunta a otro Supabase (el falso de los tests e2e), la CSP lo permite a él en vez del de producción.
-  const supabase = process.env.VITE_SUPABASE_URL ? new URL(process.env.VITE_SUPABASE_URL).origin : null
-  return Object.fromEntries(
-    (web?.headers ?? []).map((h) => [h.key, supabase ? h.value.replaceAll(PRODUCTION_SUPABASE, supabase) : h.value]),
-  )
+  const supabase = process.env.VITE_SUPABASE_URL ? new URL(process.env.VITE_SUPABASE_URL) : null
+  const swap = (value: string) =>
+    supabase
+      ? value
+          .replaceAll(PRODUCTION_SUPABASE, supabase.origin)
+          .replaceAll(PRODUCTION_SUPABASE.replace('https:', 'wss:'), `${supabase.protocol === 'https:' ? 'wss' : 'ws'}://${supabase.host}`)
+      : value
+  return Object.fromEntries((web?.headers ?? []).map((h) => [h.key, swap(h.value)]))
 }
 
 // https://vite.dev/config/

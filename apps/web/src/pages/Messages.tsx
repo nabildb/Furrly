@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '../components/Avatar'
 import { ErrorText } from '../components/Field'
@@ -8,6 +8,7 @@ import { CountBadge } from '../components/ui/CountBadge'
 import { MessageIcon } from '../components/ui/icons'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
+import { useRing } from '../lib/realtime'
 import type { ConversationSummary } from '../lib/inbox'
 import { formatTimeAgo } from '../lib/reports'
 
@@ -16,11 +17,15 @@ export function Messages() {
   const [conversations, setConversations] = useState<ConversationSummary[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api<ConversationSummary[]>('/conversations')
       .then(setConversations)
       .catch((e: Error) => setError(e.message))
   }, [])
+
+  useEffect(load, [load])
+  // Mensaje nuevo: la conversación sube arriba con su globo al momento.
+  useRing((event) => event === 'message' && load())
 
   if (!conversations && !error) return <Loading />
 

@@ -8,11 +8,13 @@ import { Loading, PageError } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
+import { useRing } from '../lib/realtime'
 import type { ChatMessage, ConversationDetail } from '../lib/inbox'
 import type { Report } from '../lib/reports'
 import type { PublicProfile } from '../lib/users'
 
-const POLL_MS = 8_000
+// Red de seguridad: lo normal es que el timbre de tiempo real avise al momento (ver lib/realtime.ts).
+const POLL_MS = 30_000
 
 /** Lleva el scroll al final cuando llegan mensajes nuevos. */
 function useScrollToEnd(dep: unknown) {
@@ -45,6 +47,8 @@ export function Conversation() {
     const timer = setInterval(() => document.visibilityState === 'visible' && load(), POLL_MS)
     return () => clearInterval(timer)
   }, [load])
+  // Mensaje nuevo en esta conversación: se carga al momento.
+  useRing((event, payload) => event === 'message' && payload.conversationId === id && load())
 
   useScrollToEnd(lastId)
 
