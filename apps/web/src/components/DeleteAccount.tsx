@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { api } from '../lib/api'
 import { disablePush } from '../lib/push'
@@ -20,7 +19,6 @@ const normalizeUsername = (text: string) => text.trim().replace(/^@/, '').toLowe
 /** "Zona de peligro" del perfil: borrar la cuenta y todo lo asociado (derecho de supresión del RGPD). */
 export function DeleteAccount({ username }: { username: string }) {
   const { session } = useAuth()
-  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -37,9 +35,10 @@ export function DeleteAccount({ username }: { username: string }) {
       await removeUserFolder(session.user.id)
       await disablePush().catch(() => {})
       await api('/me', { method: 'DELETE' })
-      // Primero salir del perfil (exige sesión): si no, al cerrar la sesión te mandaría al login.
-      navigate('/avisos', { replace: true })
       await supabase.auth.signOut()
+      // Recarga completa en el mapa: no queda nada de la cuenta en memoria, y el perfil (que exige
+      // sesión) no llega a mandarte al login.
+      window.location.replace('/avisos')
     } catch (e) {
       setError((e as Error).message)
       setDeleting(false)
