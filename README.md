@@ -157,7 +157,7 @@ Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows
   generada en cada ejecución, igual que hace Supabase Auth.
 - **Web: 27 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
   (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos y redirecciones seguras.
-- **End-to-end: 24 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
+- **End-to-end: 24 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, sobre la web compilada y con la API
   simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa escribir un mensaje, una conversación bloqueada y entrar con Google (botón, vuelta y elegir nombre de usuario).
 
 ## Calidad
