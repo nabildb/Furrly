@@ -5,11 +5,17 @@ const withoutQuery = (url?: string) => url?.split('?')[0].split('#')[0]
 
 let sentry: Promise<typeof import('@sentry/react')> | null = null
 
-/** Cuando la página ha terminado de cargar y el navegador está libre. */
+/**
+ * Unos segundos después de cargar, cuando el navegador está libre. En una SPA el evento `load` llega
+ * antes de que se pidan la página y las teselas del mapa: por eso la espera extra.
+ */
 function whenIdle() {
   return new Promise<void>((resolve) => {
     const idle = () =>
-      'requestIdleCallback' in window ? requestIdleCallback(() => resolve(), { timeout: 5000 }) : setTimeout(resolve, 2000)
+      setTimeout(() => {
+        if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 5000 })
+        else resolve()
+      }, 3000)
     if (document.readyState === 'complete') idle()
     else window.addEventListener('load', idle, { once: true })
   })
