@@ -24,10 +24,17 @@ test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', a
   })
 
   // Lo que llega a Supabase Storage.
+  // supabase-js envía el archivo en un formulario multipart: se saca su tipo y sus bytes.
   const uploads: { type: string; body: Buffer }[] = []
   await page.route('http://supabase.test/storage/v1/object/media/**', (route) => {
     const request = route.request()
-    uploads.push({ type: request.headers()['content-type'], body: request.postDataBuffer()! })
+    const boundary = `--${request.headers()['content-type'].split('boundary=')[1]}`
+    const raw = request.postDataBuffer()!
+    const fileType = /Content-Type: (image\/[a-z]+)/.exec(raw.toString('latin1'))![1]
+    const start = raw.indexOf(`Content-Type: ${fileType}`)
+    const bodyStart = raw.indexOf('\r\n\r\n', start) + 4
+    const bodyEnd = raw.indexOf(`\r\n${boundary}`, bodyStart)
+    uploads.push({ type: fileType, body: raw.subarray(bodyStart, bodyEnd) })
     return route.fulfill({ json: { Key: 'media/x', Id: 'x' } })
   })
 
