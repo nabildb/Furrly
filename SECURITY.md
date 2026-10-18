@@ -54,6 +54,8 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
 ## Mensajes
 
 - Solo los dos participantes pueden leer o escribir en una conversación.
+- **Tiempo real:** el aviso de mensaje nuevo va por el canal privado de Supabase Realtime de cada usuario. Una política RLS
+  en `realtime.messages` hace que solo él pueda escucharlo, y por el canal no viaja el contenido: solo el id de la conversación.
 - **Bloquear** a alguien impide escribirse en ambos sentidos, comentar, dar like o seguir sus mascotas,
   y deja de notificarte lo que hace. El bloqueado no sabe que lo han bloqueado.
 - **Límites anti-spam por usuario:** 30 mensajes por hora y 10 conversaciones nuevas al día

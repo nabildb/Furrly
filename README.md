@@ -31,7 +31,7 @@ para compartir fotos de tus mascotas.
   Furrly avisa a los dos dueños y lo enseña en la ficha («Puede que sea el mismo»).
 - **Cartel para imprimir** en A4 con la foto y un **código QR** que abre el aviso (el teléfono solo sale si lo imprime el dueño).
 - **Compartir por WhatsApp** con vista previa: foto, título y zona del aviso (los robots de vista previa reciben las etiquetas Open Graph desde la API).
-- **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso.
+- **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso. Los mensajes llegan **en tiempo real**.
 
 **Comunidad**
 - Carnet de cada mascota, publicaciones con foto, likes, comentarios y seguir mascotas.
@@ -90,6 +90,10 @@ flowchart LR
 - **No leídos calculados, no almacenados.** Cada conversación guarda hasta cuándo ha leído cada lado; el número de no leídos sale de una consulta (`LATERAL` + subconsulta).
 - **Privacidad por defecto.** El microchip solo se devuelve al dueño, la zona de alertas nunca es pública
   y el contacto de un aviso solo se ve con sesión (la API usa un middleware de **sesión opcional**).
+- **Tiempo real sin abrir la base de datos.** Las tablas tienen RLS sin políticas, así que no se puede usar el "escuchar cambios"
+  de Supabase. En su lugar, la API **toca un timbre** por el canal privado de Supabase Realtime del destinatario (`user:<id>`) y la
+  web vuelve a pedir los datos a la API. Por el canal no viaja contenido, y una política RLS en `realtime.messages` hace que cada
+  usuario solo pueda escuchar el suyo. La consulta periódica queda como red de seguridad.
 - **Web Push sin librerías.** El cifrado de extremo a extremo del RFC 8291 (ECDH P-256 + HKDF + AES-128-GCM) y la firma VAPID
   del RFC 8292 están implementados con `node:crypto` y `jose`, y se comprueban con el **vector de prueba oficial del RFC**.
   Solo se aceptan endpoints de servicios de push conocidos, para que nadie use la API para hacer peticiones a otros servidores (SSRF).
