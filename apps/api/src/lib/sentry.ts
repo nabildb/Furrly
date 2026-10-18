@@ -6,9 +6,22 @@ if (env.SENTRY_DSN) {
   Sentry.init({
     dsn: env.SENTRY_DSN,
     environment: env.VERCEL_ENV,
-    // Sin datos personales (IP, cabeceras, cuerpos) ni trazas de rendimiento: solo los errores.
-    sendDefaultPii: false,
+    // Sentry 11 lo recoge todo por defecto: aquí se apaga todo lo que pueda llevar datos de usuarios.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      databaseQueryData: false,
+      stackFrameVariables: false,
+    },
+    // Solo los errores: nada de trazas de rendimiento.
     tracesSampleRate: 0,
+    beforeSend(event) {
+      delete event.user
+      return event
+    },
   })
 }
 

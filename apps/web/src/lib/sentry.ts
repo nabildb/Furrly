@@ -15,10 +15,20 @@ export function initSentry() {
     Sentry.init({
       dsn,
       environment: import.meta.env.MODE,
-      sendDefaultPii: false,
+      // Sentry 11 lo recoge todo por defecto: aquí se apaga todo lo que pueda llevar datos de usuarios.
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: false,
+        httpBodies: [],
+        urlQueryParams: false,
+        databaseQueryData: false,
+        stackFrameVariables: false,
+      },
       // Solo errores: nada de trazas de rendimiento ni grabación de sesiones.
       tracesSampleRate: 0,
       beforeSend(event) {
+        delete event.user
         if (event.request) event.request.url = withoutQuery(event.request.url)
         return event
       },

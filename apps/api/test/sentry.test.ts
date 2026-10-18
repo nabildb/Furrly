@@ -30,7 +30,9 @@ describe('errores en Sentry', () => {
       tags: { method: 'GET', route: '/usernames/:username/available' },
     })
     expect(sentry.flush).toHaveBeenCalled()
-    expect(sentry.init).toHaveBeenCalledWith(expect.objectContaining({ sendDefaultPii: false }))
+    expect(sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({ dataCollection: expect.objectContaining({ userInfo: false, httpBodies: [], databaseQueryData: false }) }),
+    )
   })
 
   it('los errores de quien hace la petición (400, 404) no se envían', async () => {
