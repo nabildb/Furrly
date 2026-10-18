@@ -60,7 +60,6 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 
 ### Hoja de ruta (de más a menos importante)
 1. **Dominio propio** (actualizando las URLs de Supabase Auth)
-2. **Pulido técnico**: `tailwind-merge` y geocodificación a través de la API
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
@@ -71,6 +70,8 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - **Supabase Auth**: contraseña de 8 caracteres mínimo también en el servidor. La protección contra contraseñas filtradas requiere el plan Pro (no activada). El captcha no se activa sin añadirlo antes a los formularios
 - **Fotos**: se comprimen en el navegador (lib/compressImage.ts). Cron de Vercel a las 4:00 (`/api/cron/storage-cleanup`) que borra las huérfanas de más de un día; necesita `SUPABASE_SERVICE_ROLE_KEY` y `CRON_SECRET` en Vercel
 - **Tiempo real** (lib/realtime.ts en API y web): timbre por el canal privado `user:<id>` de Supabase Realtime; usa `SUPABASE_SERVICE_ROLE_KEY`. Política RLS en `realtime.messages` creada por la migración `realtime_channels`
+- **Capturas del README**: workflow «Capturas» (apps/web/scripts/capturas.mjs) contra producción; descargar el artefacto y copiarlo a docs/capturas
+- **Geocodificación** por la API (`GET /geocode`, caché de Vercel un día) y `cx` con tailwind-merge
 - **Sentry** (región UE): `SENTRY_DSN` (API) y `VITE_SENTRY_DSN` (web) en Vercel; sin ellas no se envía nada. La web lo carga en segundo plano
 - **Moderadores**: `UPDATE users SET is_admin = true WHERE username = '...'` en Supabase (ahora solo @nabil)
 - **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase

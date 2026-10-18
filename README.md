@@ -11,9 +11,14 @@ para compartir fotos de tus mascotas.
 
 <p align="center">
   <img src="docs/capturas/mapa.jpg" alt="Mapa de avisos cerca" width="230">
-  <img src="docs/capturas/ficha.jpg" alt="Ficha de un aviso de mascota perdida" width="230">
+  <img src="docs/capturas/coincidencias.jpg" alt="Ficha de un perro perdido con un posible encontrado cerca" width="230">
   <img src="docs/capturas/comunidad.jpg" alt="Feed de la comunidad" width="230">
 </p>
+<p align="center">
+  <img src="docs/capturas/escritorio.jpg" alt="Mapa y lista de avisos en escritorio" width="560">
+  <img src="docs/capturas/cartel.jpg" alt="Cartel A4 para imprimir con código QR" width="250">
+</p>
+<p align="center"><sub>Capturas hechas contra producción con Playwright (workflow <a href=".github/workflows/capturas.yml">Capturas</a>).</sub></p>
 
 > Móvil primero; en escritorio la navegación pasa a una barra lateral y las páginas a dos columnas.
 > La demo tiene datos de ejemplo (vecinos, mascotas, avisos y publicaciones alrededor de Madrid centro).
