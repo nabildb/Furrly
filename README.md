@@ -27,6 +27,8 @@ para compartir fotos de tus mascotas.
 - **"La he visto"**: los avistamientos se numeran y dibujan en el mapa el recorrido de la mascota.
 - **Alertas por zona**: cada usuario marca su barrio y un radio, y recibe una notificación cuando se publica un aviso dentro,
   también como **aviso push** en el móvil aunque no tenga Furrly abierta (la web es una PWA instalable).
+- **Cartel para imprimir** en A4 con la foto y un **código QR** que abre el aviso (el teléfono solo sale si lo imprime el dueño).
+- **Compartir por WhatsApp** con vista previa: foto, título y zona del aviso (los robots de vista previa reciben las etiquetas Open Graph desde la API).
 - **Contacto y mensajes**: el autor puede dejar teléfono o email (solo visibles con sesión), y cualquiera puede escribirle por mensaje privado desde el aviso.
 
 **Comunidad**
