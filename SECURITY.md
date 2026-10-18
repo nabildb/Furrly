@@ -67,6 +67,14 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
 - La clave de servicio de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) solo existe en las variables de entorno del servidor
   y solo se usa para borrar fotos huérfanas; nunca llega al navegador.
 
+## Errores en producción (Sentry)
+
+- La web y la API envían a Sentry (región UE) los errores inesperados para poder arreglarlos. Solo los 500 de la API:
+  los 400/404 son errores de quien hace la petición.
+- Sentry 11 recoge por defecto cabeceras, cuerpos, cookies, consultas SQL y variables locales: todo eso está **apagado**
+  (`dataCollection`), se borra cualquier dato de usuario y se quita la query de las URLs. Un test lo comprueba.
+- Sin `SENTRY_DSN` / `VITE_SENTRY_DSN` no se envía nada (local y tests).
+
 ## Moderación
 
 - Los moderadores (`users.is_admin`) solo se pueden nombrar desde la base de datos: la API ignora ese campo

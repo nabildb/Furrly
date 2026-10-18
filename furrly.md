@@ -60,7 +60,7 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 
 ### Hoja de ruta (de más a menos importante)
 1. **Dominio propio** (actualizando las URLs de Supabase Auth)
-2. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API y Sentry para errores en producción
+2. **Pulido técnico**: `tailwind-merge` y geocodificación a través de la API
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
@@ -70,6 +70,7 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - **Tests de la web**: solo en la CI (`npm test -w @furrly/web` y `npm run e2e -w @furrly/web`); sus dependencias no se instalan en local. Para añadir dependencias sin instalarlas: `npm install --package-lock-only`
 - **Supabase Auth**: contraseña de 8 caracteres mínimo también en el servidor. La protección contra contraseñas filtradas requiere el plan Pro (no activada). El captcha no se activa sin añadirlo antes a los formularios
 - **Fotos**: se comprimen en el navegador (lib/compressImage.ts). Cron de Vercel a las 4:00 (`/api/cron/storage-cleanup`) que borra las huérfanas de más de un día; necesita `SUPABASE_SERVICE_ROLE_KEY` y `CRON_SECRET` en Vercel
+- **Sentry** (región UE): `SENTRY_DSN` (API) y `VITE_SENTRY_DSN` (web) en Vercel; sin ellas no se envía nada. La web lo carga en segundo plano
 - **Moderadores**: `UPDATE users SET is_admin = true WHERE username = '...'` en Supabase (ahora solo @nabil)
 - **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase
 - **Dependabot** abre PRs cada semana: las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
