@@ -65,7 +65,8 @@ export function Privacy() {
             En <strong>Supabase</strong> (base de datos, cuentas y fotos) y <strong>Vercel</strong> (web y API), ambos en
             servidores de la Unión Europea (Fráncfort). El mapa usa OpenStreetMap. Para saber cuántas visitas tiene Furrly se usa
             Vercel Web Analytics, que <strong>no usa cookies</strong> ni identifica a nadie: solo cuenta páginas vistas, país y
-            tipo de dispositivo.
+            tipo de dispositivo. Si la web falla, el error se envía a Sentry (servidores en la UE) sin datos personales, solo para
+            poder arreglarlo.
           </p>
         </Section>
 
