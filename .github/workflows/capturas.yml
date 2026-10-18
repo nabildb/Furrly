@@ -1,0 +1,29 @@
+# Capturas del README contra producción (ver apps/web/scripts/capturas.mjs). Se lanza a mano:
+# Actions → Capturas → Run workflow, y las imágenes quedan como artefacto para copiarlas a docs/capturas.
+name: Capturas
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capturas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: node scripts/capturas.mjs
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v7
+        with:
+          name: capturas
+          path: apps/web/capturas
+          retention-days: 7
