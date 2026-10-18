@@ -5,13 +5,31 @@ const withoutQuery = (url?: string) => url?.split('?')[0].split('#')[0]
 
 let sentry: Promise<typeof import('@sentry/react')> | null = null
 
+/** Cuando la página ha terminado de cargar y el navegador está libre. */
+function whenIdle() {
+  return new Promise<void>((resolve) => {
+    const idle = () =>
+      'requestIdleCallback' in window ? requestIdleCallback(() => resolve(), { timeout: 5000 }) : setTimeout(resolve, 2000)
+    if (document.readyState === 'complete') idle()
+    else window.addEventListener('load', idle, { once: true })
+  })
+}
+
 /**
- * Sentry recoge los errores de JavaScript que les pasan a los usuarios. Se carga en segundo plano
- * y solo si hay DSN (en local y en los tests no hay), para no añadir peso a la carga inicial.
+ * Sentry recoge los errores de JavaScript que les pasan a los usuarios. Solo si hay DSN (en local y
+ * en los tests no hay). Su SDK pesa ~150 kB: si se pidiera al arrancar competiría con la página y las
+ * teselas del mapa en un móvil lento, así que se descarga cuando la página ya ha cargado. Los errores
+ * de antes se guardan y se envían en cuanto está listo.
  */
 export function initSentry() {
   if (!dsn || sentry) return
-  sentry = import('@sentry/react').then((Sentry) => {
+  const early: unknown[] = []
+  const onError = (e: ErrorEvent) => early.push(e.error ?? e.message)
+  const onRejection = (e: PromiseRejectionEvent) => early.push(e.reason)
+  window.addEventListener('error', onError)
+  window.addEventListener('unhandledrejection', onRejection)
+
+  sentry = whenIdle().then(() => import('@sentry/react')).then((Sentry) => {
     Sentry.init({
       dsn,
       environment: import.meta.env.MODE,
@@ -39,6 +57,10 @@ export function initSentry() {
         return breadcrumb
       },
     })
+    // Desde aquí los captura el propio Sentry: se envían los de antes y se quitan los avisadores.
+    window.removeEventListener('error', onError)
+    window.removeEventListener('unhandledrejection', onRejection)
+    for (const error of early) Sentry.captureException(error)
     return Sentry
   })
 }
