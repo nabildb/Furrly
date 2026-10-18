@@ -8,6 +8,7 @@ import { adminRouter } from './routes/admin.js'
 import { conversationsRouter, inboxRouter } from './routes/conversations.js'
 import { cronRouter } from './routes/cron.js'
 import { flagsRouter } from './routes/flags.js'
+import { geocodeRouter } from './routes/geocode.js'
 import { meRouter } from './routes/me.js'
 import { notificationsRouter } from './routes/notifications.js'
 import { pushRouter } from './routes/push.js'
@@ -59,6 +60,7 @@ app.use('/push', mountedAt('/push'), pushRouter)
 app.use('/admin', mountedAt('/admin'), adminRouter)
 app.use('/cron', mountedAt('/cron'), cronRouter)
 app.use('/share', mountedAt('/share'), shareRouter)
+app.use('/geocode', mountedAt('/geocode'), geocodeRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {
