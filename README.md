@@ -32,6 +32,7 @@ para compartir fotos de tus mascotas.
 **Comunidad**
 - Carnet de cada mascota, publicaciones con foto, likes, comentarios y seguir mascotas.
 - Feed "Siguiendo" (las mascotas que sigues) y "Explorar" (todo lo reciente) con scroll infinito.
+- Buscar perfiles por nombre o @usuario.
 - Notificaciones de likes, comentarios, seguidores, avistamientos y avisos resueltos.
 
 **Cuenta y moderación**
@@ -129,13 +130,13 @@ docs/                      → modelo de datos, diseño y capturas
 
 Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows/ci.yml)):
 
-- **API: 75 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
+- **API: 77 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
   reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
   paginación, Web Push (incluido el vector del RFC 8291), bloqueos y límites anti-spam, ataques (inyección SQL, tokens falsos), el trigger que crea el perfil al entrar con Google y casos límite. Los tokens se firman con una clave ES256
   generada en cada ejecución, igual que hace Supabase Auth.
-- **Web: 23 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
+- **Web: 24 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
   (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos y redirecciones seguras.
-- **End-to-end: 14 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
+- **End-to-end: 16 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
   simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa escribir un mensaje, una conversación bloqueada y entrar con Google (botón, vuelta y elegir nombre de usuario).
 
 ## Puesta en marcha
