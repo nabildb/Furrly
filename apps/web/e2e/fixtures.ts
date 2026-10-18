@@ -1,4 +1,4 @@
-import { test as base, type Page, type Request } from '@playwright/test'
+import { test as base, expect, type Page, type Request } from '@playwright/test'
 
 type Handler = (request: Request, params: Record<string, string>) => unknown
 
@@ -50,16 +50,24 @@ export async function logIn(page: Page, username = 'nabil') {
   await page.addInitScript((value) => localStorage.setItem('sb-supabase-auth-token', value), JSON.stringify(session))
 }
 
-/** Sin red externa: ni teselas del mapa ni Supabase. */
+/**
+ * Sin red externa (ni teselas del mapa ni Supabase), y cualquier violación de la CSP hace fallar el
+ * test: la web compilada se sirve con las mismas cabeceras que en producción (ver vite.config.ts).
+ */
 export const test = base.extend({
   // El segundo parámetro de una fixture se suele llamar "use"; aquí "run" para no confundir al linter de React.
   page: async ({ page }, run) => {
+    const cspViolations: string[] = []
+    page.on('console', (message) => {
+      if (message.type() === 'error' && message.text().includes('Content Security Policy')) cspViolations.push(message.text().slice(0, 300))
+    })
     await page.route(/tile\.openstreetmap\.org|supabase\.test/, (route) => route.abort())
     await run(page)
+    expect(cspViolations, 'La CSP ha bloqueado algo').toEqual([])
   },
 })
 
-export { expect } from '@playwright/test'
+export { expect }
 
 /** Datos de ejemplo. */
 export const nearbyReports = [

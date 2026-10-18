@@ -27,6 +27,10 @@ function securityHeaders() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    // Vite incrusta los archivos pequeños como data:. Las fuentes no: la CSP solo permite font-src 'self'.
+    assetsInlineLimit: (file) => (file.endsWith('.woff2') || file.endsWith('.woff') ? false : undefined),
+  },
   preview: {
     headers: securityHeaders(),
     // En local, `vite preview` sirve la web compilada; /api se reenvía a la API de desarrollo.
