@@ -1,6 +1,7 @@
 import type { NotificationType } from '../generated/prisma/enums.js'
 import { prisma } from './prisma.js'
 import { pushNotifications } from './push.js'
+import { ringNotifications } from './realtime.js'
 
 /** Radio máximo de alerta (CHECK users_alert_radius_km_check): sirve de prefiltro para el índice GiST. */
 const MAX_ALERT_RADIUS_M = 50_000
@@ -20,7 +21,7 @@ export async function notify({ userId, actorId, ...rest }: NotifyInput) {
   // Quien ha bloqueado a alguien no recibe notificaciones de lo que hace.
   if (await prisma.userBlock.count({ where: { blockerId: userId, blockedId: actorId } })) return
   const { id } = await prisma.notification.create({ data: { userId, actorId, ...rest }, select: { id: true } })
-  await pushNotifications([id])
+  await Promise.all([pushNotifications([id]), ringNotifications([id])])
 }
 
 /**
@@ -40,7 +41,8 @@ export async function notifyReportNearby(reportId: string, reporterId: string) {
     WHERE r.id = ${reportId}::uuid AND u.id <> ${reporterId}::uuid
       AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE b.blocker_id = u.id AND b.blocked_id = ${reporterId}::uuid)
     RETURNING id`
-  await pushNotifications(created.map((n) => n.id))
+  const ids = created.map((n) => n.id)
+  await Promise.all([pushNotifications(ids), ringNotifications(ids)])
   return created.length
 }
 
@@ -53,5 +55,6 @@ export async function notifyReportResolved(reportId: string, reporterId: string)
     WHERE s.user_id <> ${reporterId}::uuid
       AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE b.blocker_id = s.user_id AND b.blocked_id = ${reporterId}::uuid)
     RETURNING id`
-  await pushNotifications(created.map((n) => n.id))
+  const ids = created.map((n) => n.id)
+  await Promise.all([pushNotifications(ids), ringNotifications(ids)])
 }

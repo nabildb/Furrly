@@ -1,5 +1,6 @@
 import { prisma } from './prisma.js'
 import { pushNotifications } from './push.js'
+import { ringNotifications } from './realtime.js'
 
 /** Distancia máxima entre donde se perdió y donde se encontró para proponerlo como coincidencia. */
 export const MATCH_RADIUS_M = 5000
@@ -64,6 +65,7 @@ export async function notifyMatches(reportId: string, reporterId: string) {
     ]),
     select: { id: true },
   })
-  await pushNotifications(created.map((n) => n.id))
+  const ids = created.map((n) => n.id)
+  await Promise.all([pushNotifications(ids), ringNotifications(ids)])
   return matches.length
 }

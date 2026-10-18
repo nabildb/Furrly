@@ -39,6 +39,8 @@ function decrypt(body: Buffer, browser: ReturnType<typeof fakeBrowser>) {
 function mockPushService(status = 201) {
   const calls: { url: string; headers: Record<string, string>; body: Buffer }[] = []
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    // El timbre de tiempo real (Supabase Realtime) no es un push: aquí no cuenta.
+    if (String(input).includes('/realtime/')) return new Response(null, { status: 202 })
     calls.push({ url: String(input), headers: init?.headers as Record<string, string>, body: Buffer.from(init?.body as Uint8Array) })
     return new Response(null, { status })
   })

@@ -4,6 +4,7 @@ import { assertNotBlocked, isBlockedEitherWay } from '../lib/blocks.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { pushToUsers } from '../lib/push.js'
+import { ring } from '../lib/realtime.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const PAGE_SIZE = 50
@@ -77,6 +78,8 @@ async function pushMessage(conversationId: string, senderId: string, body: strin
   const sender = await prisma.user.findUnique({ where: { id: senderId }, select: { username: true } })
   if (!conversation || !sender) return
   const recipient = conversation.userAId === senderId ? conversation.userBId : conversation.userAId
+  // Timbre en tiempo real (si tiene Furrly abierta) y push (si no).
+  await ring([recipient], 'message', { conversationId })
   await pushToUsers([recipient], {
     title: `Mensaje de @${sender.username}`,
     body: body.length > 120 ? `${body.slice(0, 117)}…` : body,
