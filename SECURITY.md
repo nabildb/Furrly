@@ -58,6 +58,14 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
   (contestar a quien te escribe no cuenta).
 - Se puede **denunciar una conversación**, pero solo quien participa en ella.
 
+## Moderación
+
+- Los moderadores (`users.is_admin`) solo se pueden nombrar desde la base de datos: la API ignora ese campo
+  si alguien intenta enviarlo.
+- Una cuenta suspendida no puede usar la API aunque su token no haya caducado (se comprueba en cada petición)
+  ni volver a entrar: se le pone `banned_until` en Supabase Auth y se cierran sus sesiones.
+- Las conversaciones privadas solo las puede leer un moderador si alguien que participa en ellas la ha denunciado.
+
 ## Navegador
 
 Cabeceras en [vercel.json](vercel.json):
