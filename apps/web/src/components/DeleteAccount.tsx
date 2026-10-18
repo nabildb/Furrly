@@ -37,8 +37,9 @@ export function DeleteAccount({ username }: { username: string }) {
       await removeUserFolder(session.user.id)
       await disablePush().catch(() => {})
       await api('/me', { method: 'DELETE' })
-      await supabase.auth.signOut()
+      // Primero salir del perfil (exige sesión): si no, al cerrar la sesión te mandaría al login.
       navigate('/avisos', { replace: true })
+      await supabase.auth.signOut()
     } catch (e) {
       setError((e as Error).message)
       setDeleting(false)
