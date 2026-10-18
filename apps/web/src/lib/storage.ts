@@ -1,15 +1,23 @@
+import { compressImage } from './compressImage'
 import { supabase } from './supabase'
 
 const BUCKET = 'media'
+/** Límite del bucket (después de comprimir). Antes de comprimir se admite más: una foto de móvil pesa 3-5 MB o más. */
 const MAX_BYTES = 5 * 1024 * 1024
+const MAX_ORIGINAL_BYTES = 25 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 /**
  * Sube una imagen a Storage en <userId>/<folder>/<uuid>.<ext> y devuelve su URL pública.
- * Las políticas del bucket solo dejan escribir en la carpeta del propio usuario.
+ * Antes se comprime en el navegador (ver compressImage). Las políticas del bucket solo dejan
+ * escribir en la carpeta del propio usuario.
  */
-export async function uploadImage(file: File, userId: string, folder: string) {
-  if (!ALLOWED_TYPES.includes(file.type)) throw new Error('La imagen debe ser JPG, PNG o WebP')
+export async function uploadImage(original: File, userId: string, folder: string) {
+  if (!ALLOWED_TYPES.includes(original.type)) throw new Error('La imagen debe ser JPG, PNG o WebP')
+  if (original.size > MAX_ORIGINAL_BYTES) throw new Error('La imagen es demasiado grande')
+
+  // Los avatares se ven pequeños: con 512 px sobra.
+  const file = await compressImage(original, folder === 'avatars' ? 512 : 1600)
   if (file.size > MAX_BYTES) throw new Error('La imagen no puede pesar más de 5 MB')
 
   const ext = file.type.split('/')[1]
