@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { z, type ZodType } from 'zod'
+import { reportError } from './sentry.js'
 
 z.config(z.locales.es())
 
@@ -21,7 +22,7 @@ export function parse<T>(schema: ZodType<T>, data: unknown): T {
 }
 
 // Express 5 pasa aquí también los errores de los handlers async.
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export async function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message })
     return
@@ -34,5 +35,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return
   }
   console.error(err)
+  await reportError(err, req)
   res.status(500).json({ error: 'Error interno del servidor' })
 }

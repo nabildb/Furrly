@@ -21,6 +21,10 @@ const envSchema = z.object({
   // Limpieza de fotos huérfanas (cron nocturno de Vercel). Sin ellas, la limpieza no se hace.
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),
+  // Sentry: errores 500 de la API. Sin DSN no se envía nada (local, tests).
+  SENTRY_DSN: z.url().optional(),
+  // Lo pone Vercel: production, preview o development.
+  VERCEL_ENV: z.string().default('local'),
   RATE_LIMIT_ENABLED: z
     .enum(['true', 'false'])
     .default('true')
