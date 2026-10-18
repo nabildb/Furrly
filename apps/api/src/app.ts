@@ -1,5 +1,5 @@
 import cors from 'cors'
-import express from 'express'
+import express, { type RequestHandler } from 'express'
 import helmet from 'helmet'
 import { env } from './lib/env.js'
 import { errorHandler } from './lib/http.js'
@@ -19,6 +19,15 @@ import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
 import { usersRouter } from './routes/users.js'
 
+/**
+ * Apunta bajo qué prefijo está el router (p. ej. /reports): al llegar al manejador de errores,
+ * Express ya lo ha olvidado, y sin él Sentry agruparía mal las rutas. Es el patrón, nunca la URL real.
+ */
+const mountedAt = (path: string): RequestHandler => (_req, res, next) => {
+  res.locals.mountPath = path
+  next()
+}
+
 export const app = express()
 
 app.set('trust proxy', env.TRUST_PROXY)
@@ -31,25 +40,25 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
-app.use('/me/pets', myPetsRouter)
-app.use('/me/reports', myReportsRouter)
-app.use('/me/inbox', inboxRouter)
-app.use('/me', meRouter)
-app.use('/usernames', usernamesRouter)
-app.use('/pets', petsRouter)
-app.use('/users/:username/pets', userPetsRouter)
-app.use('/users', usersRouter)
-app.use('/reports/:reportId/sightings', sightingsRouter)
-app.use('/reports', reportsRouter)
-app.use('/posts', postsRouter)
-app.use('/feed', feedRouter)
-app.use('/conversations', conversationsRouter)
-app.use('/notifications', notificationsRouter)
-app.use('/flags', flagsRouter)
-app.use('/push', pushRouter)
-app.use('/admin', adminRouter)
-app.use('/cron', cronRouter)
-app.use('/share', shareRouter)
+app.use('/me/pets', mountedAt('/me/pets'), myPetsRouter)
+app.use('/me/reports', mountedAt('/me/reports'), myReportsRouter)
+app.use('/me/inbox', mountedAt('/me/inbox'), inboxRouter)
+app.use('/me', mountedAt('/me'), meRouter)
+app.use('/usernames', mountedAt('/usernames'), usernamesRouter)
+app.use('/pets', mountedAt('/pets'), petsRouter)
+app.use('/users/:username/pets', mountedAt('/users/:username/pets'), userPetsRouter)
+app.use('/users', mountedAt('/users'), usersRouter)
+app.use('/reports/:reportId/sightings', mountedAt('/reports/:reportId/sightings'), sightingsRouter)
+app.use('/reports', mountedAt('/reports'), reportsRouter)
+app.use('/posts', mountedAt('/posts'), postsRouter)
+app.use('/feed', mountedAt('/feed'), feedRouter)
+app.use('/conversations', mountedAt('/conversations'), conversationsRouter)
+app.use('/notifications', mountedAt('/notifications'), notificationsRouter)
+app.use('/flags', mountedAt('/flags'), flagsRouter)
+app.use('/push', mountedAt('/push'), pushRouter)
+app.use('/admin', mountedAt('/admin'), adminRouter)
+app.use('/cron', mountedAt('/cron'), cronRouter)
+app.use('/share', mountedAt('/share'), shareRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {

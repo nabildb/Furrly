@@ -35,6 +35,6 @@ export async function errorHandler(err: unknown, req: Request, res: Response, _n
     return
   }
   console.error(err)
-  await reportError(err, req)
+  await reportError(err, req, res)
   res.status(500).json({ error: 'Error interno del servidor' })
 }
