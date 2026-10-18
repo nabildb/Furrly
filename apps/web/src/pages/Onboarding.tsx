@@ -92,7 +92,8 @@ export function Onboarding() {
             </div>
           </div>
           {error && <ErrorText>{error}</ErrorText>}
-          <Button className="w-full" disabled={busy} onClick={saveZone}>
+          {/* Sin zona marcada, el botón grande no debe invitar a saltarse lo importante. */}
+          <Button variant={location ? 'primary' : 'secondary'} className="w-full" disabled={busy} onClick={saveZone}>
             {location ? 'Guardar y seguir' : 'Ahora no'}
           </Button>
         </section>
