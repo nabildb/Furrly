@@ -5,8 +5,8 @@
  * --color-lost → bg-lost, text-lost, border-lost...; --font-display → font-display.
  */
 @theme {
-  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nunito Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Unbounded Variable", ui-sans-serif, system-ui, sans-serif;
 
   --color-ink: #1b2430;
   --color-bg: #fbfaf7;

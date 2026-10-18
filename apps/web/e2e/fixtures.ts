@@ -50,11 +50,11 @@ export async function logIn(page: Page, username = 'nabil') {
   await page.addInitScript((value) => localStorage.setItem('sb-supabase-auth-token', value), JSON.stringify(session))
 }
 
-/** Sin red externa: ni teselas del mapa, ni fuentes, ni Supabase. */
+/** Sin red externa: ni teselas del mapa ni Supabase. */
 export const test = base.extend({
   // El segundo parámetro de una fixture se suele llamar "use"; aquí "run" para no confundir al linter de React.
   page: async ({ page }, run) => {
-    await page.route(/tile\.openstreetmap\.org|fonts\.(googleapis|gstatic)\.com|supabase\.test/, (route) => route.abort())
+    await page.route(/tile\.openstreetmap\.org|supabase\.test/, (route) => route.abort())
     await run(page)
   },
 })
