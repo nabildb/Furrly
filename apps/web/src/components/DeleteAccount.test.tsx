@@ -8,9 +8,9 @@ import { renderRoutes } from '../test/render'
 import { DeleteAccount } from './DeleteAccount'
 
 vi.mock('../lib/api', () => ({ api: vi.fn() }))
-vi.mock('../lib/storage', () => ({ removeUserFolder: vi.fn() }))
-vi.mock('../lib/push', () => ({ disablePush: vi.fn() }))
-vi.mock('../lib/supabase', () => ({ supabase: { auth: { signOut: vi.fn() } } }))
+vi.mock('../lib/storage', () => ({ removeUserFolder: vi.fn(async () => {}) }))
+vi.mock('../lib/push', () => ({ disablePush: vi.fn(async () => {}) }))
+vi.mock('../lib/supabase', () => ({ supabase: { auth: { signOut: vi.fn(async () => ({})) } } }))
 
 describe('borrar la cuenta', () => {
   it('acepta el nombre de usuario como lo escribe el teclado del móvil (mayúscula, espacio, @)', async () => {
@@ -31,6 +31,6 @@ describe('borrar la cuenta', () => {
     await userEvent.click(confirm)
 
     expect(removeUserFolder).toHaveBeenCalledWith('u-nabil')
-    expect(api).toHaveBeenCalledWith('/me', { method: 'DELETE' })
+    await vi.waitFor(() => expect(api).toHaveBeenCalledWith('/me', { method: 'DELETE' }))
   })
 })

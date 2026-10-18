@@ -70,7 +70,7 @@ describe('buscar perfiles', () => {
     await createUser('ana_g')
     await createUser('anabel')
     expect((await search('a_')).map((u: { username: string }) => u.username)).toEqual(['ana_g'])
-    expect(await search('%')).toEqual([])
+    expect(await search('%%')).toEqual([])
     expect((await request.get('/users').query({ q: 'a' })).status).toBe(400)
   })
 })
