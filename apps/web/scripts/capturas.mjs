@@ -28,9 +28,9 @@ await shoot('ficha', `/avisos/${ROCKY}`)
 await shoot('comunidad', '/comunidad')
 await shoot('coincidencias', `/avisos/${ROCKY}`, {
   before: async (page) => {
-    await page.getByText('Puede que sea el mismo').scrollIntoViewIfNeeded()
-    await page.evaluate(() => window.scrollBy(0, -140))
-    await page.waitForTimeout(500)
+    // Centrar el apartado (scrollIntoViewIfNeeded no baja si ya asoma un poco).
+    await page.getByText('Puede que sea el mismo').evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await page.waitForTimeout(800)
   },
 })
 await shoot('cartel', `/avisos/${KIWI}/cartel`, { viewport: { width: 900, height: 1300 }, mobile: false, element: 'article' })
