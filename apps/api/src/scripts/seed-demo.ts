@@ -294,7 +294,9 @@ async function main() {
           VALUES (gen_random_uuid(), ${demoId(post.n)}::uuid, ${demoId(c.user)}::uuid, ${c.body}, ${hoursAgo(c.hoursAgo)})`
       }
     }
-  })
+    // Son ~100 consultas una detrás de otra: desde GitHub Actions (EE. UU.) a Supabase (Fráncfort)
+    // tardan más que los 5 s por defecto de una transacción.
+  }, { timeout: 120_000, maxWait: 20_000 })
 
   const sightings = reports.reduce((sum, r) => sum + (r.sightings?.length ?? 0), 0)
   console.log(
