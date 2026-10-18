@@ -16,6 +16,8 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default('https://furrly-rouge.vercel.app'),
+  // Dirección pública de la web: para las URLs absolutas de las vistas previas al compartir.
+  PUBLIC_SITE_URL: z.url().default('https://furrly-rouge.vercel.app'),
   // Limpieza de fotos huérfanas (cron nocturno de Vercel). Sin ellas, la limpieza no se hace.
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),

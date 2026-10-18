@@ -7,4 +7,10 @@ import { app } from '../apps/api/dist/app.js'
 const server = express()
 server.use('/api', app)
 
+// Vistas previas para WhatsApp, Telegram... (vercel.json solo manda aquí a sus robots).
+server.get('/avisos/:id', (req, res, next) => {
+  req.url = `/share${req.originalUrl}`
+  app(req, res, next)
+})
+
 export default server

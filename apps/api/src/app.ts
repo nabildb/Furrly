@@ -14,6 +14,7 @@ import { pushRouter } from './routes/push.js'
 import { myPetsRouter, petsRouter, userPetsRouter } from './routes/pets.js'
 import { feedRouter, postsRouter } from './routes/posts.js'
 import { myReportsRouter, reportsRouter } from './routes/reports.js'
+import { shareRouter } from './routes/share.js'
 import { sightingsRouter } from './routes/sightings.js'
 import { usernamesRouter } from './routes/usernames.js'
 import { usersRouter } from './routes/users.js'
@@ -48,6 +49,7 @@ app.use('/flags', flagsRouter)
 app.use('/push', pushRouter)
 app.use('/admin', adminRouter)
 app.use('/cron', cronRouter)
+app.use('/share', shareRouter)
 
 // Cualquier otra ruta: 404 en JSON (en vez del HTML por defecto de Express).
 app.use((_req, res) => {
