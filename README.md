@@ -167,13 +167,17 @@ Notas de **Lighthouse** en producción (móvil / escritorio), medidas cada seman
 
 | Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
 |---|---|---|---|---|
-| Mapa de avisos | 72 / 98 | 100 / 100 | 96 / 100 | 100 / 100 |
-| Comunidad | 93 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
-| Entrar | 98 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
+| Mapa de avisos | 88 / 98 | 100 / 100 | 96 / 100 | 100 / 100 |
+| Comunidad | 94 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
+| Entrar | 97 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
 
 - **Accesibilidad comprobada en cada push:** los tests end-to-end pasan **axe** (WCAG 2.1 AA) por las pantallas principales
   en móvil y escritorio, y fallan si la CSP bloquea cualquier cosa.
-- El mapa en móvil es lo más lento: lo que más pesa son las teselas de OpenStreetMap y Leaflet en un móvil lento simulado.
+- **El mapa en móvil pasó de 72 a 88** (LCP de 4,9 a 3,7 s). Lighthouse simula un 4G lento, así que lo que cuenta son los kB que se
+  descargan antes de pintar la primera tesela: cada página se carga bajo demanda (el JS inicial ya no lleva mensajes, moderación…),
+  Nunito Sans solo con el eje de grosor (50 → 31 kB) y Sentry (~150 kB) se descarga unos segundos después de cargar la página.
+  Lo que queda son sobre todo las ~500 kB de teselas de OpenStreetMap, que no dependen de la web.
+- Cada página se mide **3 veces y se toma la mediana**: en las máquinas de GitHub una sola medición del mismo código variaba de 56 a 75.
 - Fuentes servidas desde el propio dominio, estáticos con caché de un año (nombres con hash) y fotos comprimidas.
 
 ## Puesta en marcha

@@ -56,7 +56,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - **Seguridad en los mensajes**: bloquear usuarios (en los dos sentidos, también likes, comentarios, seguir y avisos), 30 mensajes/hora y 10 conversaciones nuevas/día por usuario, denunciar conversaciones
 - **Seguridad de la web** (ver SECURITY.md): SQL siempre parametrizado con guarda en la CI, tests de ataques (inyección SQL, tokens falsos, mass assignment, cuerpos rotos), CSP y cabeceras en Vercel (los e2e corren con la misma CSP), anti open-redirect en el login, CodeQL, Dependabot y `npm audit`
 - **Buscar perfiles** (`/buscar`, `GET /users?q=`), **guía de primeros pasos**, **Web Analytics** (sin cookies) y **Sentry** (web y API, sin datos personales)
-- **Calidad**: axe (WCAG 2.1 AA) en los e2e, Lighthouse semanal (accesibilidad y SEO 100; rendimiento 72-100), fuentes propias, caché de estáticos, fotos comprimidas en el navegador y sin EXIF/GPS
+- **Calidad**: axe (WCAG 2.1 AA) en los e2e, Lighthouse semanal (accesibilidad y SEO 100; rendimiento 88-100, mediana de 3 mediciones), fuentes propias, caché de estáticos, fotos comprimidas en el navegador y sin EXIF/GPS
 - **Automatizaciones**: refresco de la demo cada lunes, Lighthouse cada lunes, limpieza nocturna de fotos huérfanas, Dependabot, capturas del README a mano (workflow «Capturas»)
 - Rate limiting, validación con zod, RLS sin políticas (todo pasa por la API), CI con GitHub Actions
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
@@ -66,7 +66,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - **Limpiar datos de prueba de los amigos** cuando terminen de probar (avisos, mascotas, publicaciones que no sean de demo ni de @nabil)
 - **Encuesta de feedback**: https://forms.gle/Xa3SoB33fpuB89iX7 (script en docs/feedback/crear-encuesta.gs, sin subir a git). Solo 2 respuestas (notas 5/5 y 4/5; una dijo «No lo sé» a si la usaría y un 7). Esperar 5-8 y convertirlas en mejoras
 - **Dominio propio** (~10 €/año): actualizar URLs de Supabase Auth, Google OAuth (orígenes), `PUBLIC_SITE_URL`, `VAPID_SUBJECT`, CSP y capturas. Con dominio se puede poner logo en la pantalla de Google (requiere verificar la marca)
-- Ideas futuras: rendimiento del mapa en móvil (72 en Lighthouse: teselas de OSM + Leaflet), versión en valenciano/inglés, Apple login si algún día hay cuenta de Apple Developer
+- Ideas futuras: versión en valenciano/inglés, Apple login si algún día hay cuenta de Apple Developer
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
@@ -86,6 +86,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - **Dependabot** abre PRs cada semana: las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
 - **Secretos**: en Vercel (VAPID, `SUPABASE_SERVICE_ROLE_KEY` = clave `sb_secret_` «limpieza-fotos», `CRON_SECRET`, `SENTRY_DSN`) y en GitHub (`DATABASE_URL`, sin comillas). Nunca en el repo ni en el chat
 - **Lecciones**: probar los componentes **en la página real** (el borrado de cuenta fallaba solo dentro del perfil por un `<form>` anidado; ahora los Sheet van en portal). Los e2e fallan ante cualquier violación de la CSP
+- **Rendimiento** (18-10-2026): el mapa en móvil subió de 72 a 88 cargando las páginas bajo demanda, aligerando Nunito Sans y retrasando Sentry 3 s tras el `load` (en una SPA el `load` llega antes que las teselas). El límite ahora son las ~500 kB de teselas de OSM; las de CARTO (más ligeras) piden clave de API
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar
