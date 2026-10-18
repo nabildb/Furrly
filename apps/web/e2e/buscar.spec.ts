@@ -23,7 +23,10 @@ test('desde Comunidad se busca un perfil y se abre', async ({ page }) => {
 
   await page.goto('/comunidad')
   await page.getByRole('link', { name: 'Buscar perfiles' }).click()
-  await page.getByRole('searchbox', { name: 'Nombre o usuario' }).fill('@Ana')
+  await page.getByRole('searchbox', { name: 'Buscar por nombre' }).fill('@Ana')
+
+  // Es un buscador, no un login: el gestor de contraseñas no debe ofrecerse a rellenarlo.
+  await expect(page.getByRole('search').getByRole('searchbox')).toHaveAttribute('autocomplete', 'off')
 
   const result = page.getByRole('link', { name: /Ana García/ })
   await expect(result).toContainText('@ana_g · 2 mascotas')

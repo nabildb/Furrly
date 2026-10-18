@@ -40,18 +40,30 @@ export function SearchUsers() {
 
   return (
     <Page title="Buscar perfiles" back="/comunidad">
-      <Field
-        label="Nombre o usuario"
-        type="search"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Ej.: ana o @ana_g"
-        autoFocus
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        enterKeyHint="search"
-      />
+      {/*
+        Un buscador, no un login: role="search", sin autocompletar y sin la palabra «usuario» en la
+        etiqueta. Si no, el gestor de contraseñas (Safari, Chrome, 1Password...) ofrece rellenarlo.
+      */}
+      <form role="search" onSubmit={(e) => e.preventDefault()}>
+        <Field
+          label="Buscar por nombre"
+          type="search"
+          name="q"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Ej.: ana o @ana_g"
+          autoFocus
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="search"
+          data-1p-ignore
+          data-lpignore="true"
+          data-bwignore
+          data-form-type="other"
+        />
+      </form>
 
       <div className="mt-5">
         {error && <ErrorText>{error}</ErrorText>}
