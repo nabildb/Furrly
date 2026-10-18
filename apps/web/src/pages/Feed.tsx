@@ -6,7 +6,8 @@ import { PostList } from '../components/PostList'
 import { ButtonLink } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
 import { Chip } from '../components/ui/Chip'
-import { CameraIcon, CommunityIcon } from '../components/ui/icons'
+import { CameraIcon, CommunityIcon, SearchIcon } from '../components/ui/icons'
+import { iconButtonClass } from '../components/ui/styles'
 import { usePostsPages } from '../lib/usePostsPages'
 
 type Tab = 'siguiendo' | 'explorar'
@@ -22,7 +23,15 @@ export function Feed() {
   )
 
   return (
-    <Page title="Comunidad" width="feed">
+    <Page
+      title="Comunidad"
+      width="feed"
+      action={
+        <Link to="/buscar" aria-label="Buscar perfiles" className={iconButtonClass()}>
+          <SearchIcon size={20} />
+        </Link>
+      }
+    >
       <div className="mb-5 flex items-center gap-2">
         {session && (
           <>

@@ -20,6 +20,7 @@ import { PostNew } from './pages/PostNew'
 import { Privacy } from './pages/Privacy'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
+import { SearchUsers } from './pages/SearchUsers'
 import { UserProfile } from './pages/UserProfile'
 import { Welcome } from './pages/Welcome'
 
@@ -55,6 +56,7 @@ export function App() {
             <Route path="comunidad" element={<Feed />} />
             <Route path="publicaciones/:id" element={<PostDetail />} />
             <Route path="privacidad" element={<Privacy />} />
+            <Route path="buscar" element={<SearchUsers />} />
             <Route element={<RequireAuth />}>
               <Route path="mascotas" element={<MyPets />} />
               <Route path="avisos/mios" element={<MyReports />} />
