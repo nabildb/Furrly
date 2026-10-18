@@ -1,44 +1,52 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Layout } from './components/Layout'
 import { Loading } from './components/Page'
 import { RequireAuth } from './components/RequireAuth'
-import { ForgotPassword } from './pages/ForgotPassword'
-import { Login } from './pages/Login'
-import { MyPets } from './pages/MyPets'
-import { MyReports } from './pages/MyReports'
-import { Moderation } from './pages/Moderation'
-import { Conversation, NewConversation } from './pages/Conversation'
-import { Feed } from './pages/Feed'
-import { Messages } from './pages/Messages'
-import { NotFound } from './pages/NotFound'
-import { Notifications } from './pages/Notifications'
-import { PetDetail } from './pages/PetDetail'
-import { PetEdit } from './pages/PetEdit'
-import { PetNew } from './pages/PetNew'
-import { PostDetail } from './pages/PostDetail'
-import { PostNew } from './pages/PostNew'
-import { Privacy } from './pages/Privacy'
-import { Register } from './pages/Register'
-import { ResetPassword } from './pages/ResetPassword'
-import { SearchUsers } from './pages/SearchUsers'
-import { UserProfile } from './pages/UserProfile'
-import { Welcome } from './pages/Welcome'
 
-// Las páginas con mapa (avisos y perfil) cargan Leaflet (~150 kB): se descargan solo cuando hacen falta.
-const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
-const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })))
-const ReportEdit = lazy(() => import('./pages/ReportEdit').then((m) => ({ default: m.ReportEdit })))
-const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ default: m.ReportDetail })))
-const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
-// El cartel lleva la librería del código QR: solo se descarga al abrirlo.
-const Poster = lazy(() => import('./pages/Poster').then((m) => ({ default: m.Poster })))
-// La guía de primeros pasos lleva el mapa (Leaflet).
-const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })))
+/**
+ * Cada página es su propio archivo JS y se descarga al abrirla: quien entra al mapa (la portada)
+ * no descarga el código de mensajes, moderación, comunidad... Las del mapa, además, cargan Leaflet
+ * (~150 kB) y el cartel la librería del código QR. Al navegar, React Router usa transiciones:
+ * la página anterior se queda en pantalla mientras llega la nueva, sin parpadeos.
+ */
+function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  return lazy(() => load().then((m) => ({ default: m[name] })))
+}
+
+const Conversation = page(() => import('./pages/Conversation'), 'Conversation')
+const NewConversation = page(() => import('./pages/Conversation'), 'NewConversation')
+const Feed = page(() => import('./pages/Feed'), 'Feed')
+const ForgotPassword = page(() => import('./pages/ForgotPassword'), 'ForgotPassword')
+const Login = page(() => import('./pages/Login'), 'Login')
+const Messages = page(() => import('./pages/Messages'), 'Messages')
+const Moderation = page(() => import('./pages/Moderation'), 'Moderation')
+const MyPets = page(() => import('./pages/MyPets'), 'MyPets')
+const MyReports = page(() => import('./pages/MyReports'), 'MyReports')
+const NotFound = page(() => import('./pages/NotFound'), 'NotFound')
+const Notifications = page(() => import('./pages/Notifications'), 'Notifications')
+const Onboarding = page(() => import('./pages/Onboarding'), 'Onboarding')
+const PetDetail = page(() => import('./pages/PetDetail'), 'PetDetail')
+const PetEdit = page(() => import('./pages/PetEdit'), 'PetEdit')
+const PetNew = page(() => import('./pages/PetNew'), 'PetNew')
+const PostDetail = page(() => import('./pages/PostDetail'), 'PostDetail')
+const PostNew = page(() => import('./pages/PostNew'), 'PostNew')
+const Poster = page(() => import('./pages/Poster'), 'Poster')
+const Privacy = page(() => import('./pages/Privacy'), 'Privacy')
+const Profile = page(() => import('./pages/Profile'), 'Profile')
+const Register = page(() => import('./pages/Register'), 'Register')
+const ReportDetail = page(() => import('./pages/ReportDetail'), 'ReportDetail')
+const ReportEdit = page(() => import('./pages/ReportEdit'), 'ReportEdit')
+const ReportNew = page(() => import('./pages/ReportNew'), 'ReportNew')
+const Reports = page(() => import('./pages/Reports'), 'Reports')
+const ResetPassword = page(() => import('./pages/ResetPassword'), 'ResetPassword')
+const SearchUsers = page(() => import('./pages/SearchUsers'), 'SearchUsers')
+const UserProfile = page(() => import('./pages/UserProfile'), 'UserProfile')
+const Welcome = page(() => import('./pages/Welcome'), 'Welcome')
 
 // Guía de componentes: solo en desarrollo (en producción Vite elimina esta rama).
 const StyleGuide = import.meta.env.DEV
-  ? lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })))
+  ? page(() => import('./pages/StyleGuide'), 'StyleGuide')
   : null
 
 export function App() {
