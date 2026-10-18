@@ -36,13 +36,13 @@ Prefiero conversar en español.
 - URL de producción: https://furrly-rouge.vercel.app (el dominio propio sigue pendiente)
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
-## Estado actual (17-10-2026)
-Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desplegado:
+## Estado actual (18-10-2026)
+Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); página de privacidad en /privacidad, perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
 - Avistamientos con recorrido en el mapa
-- **Contacto y mensajes**: teléfono/email opcionales en el aviso (solo visibles con sesión) y mensajes privados entre usuarios (una conversación por pareja, no leídos calculados, polling)
+- **Contacto y mensajes**: teléfono/email opcionales en el aviso (solo visibles con sesión) y mensajes privados entre usuarios (una conversación por pareja, no leídos calculados, **en tiempo real** con Supabase Realtime y consulta periódica de respaldo)
 - **Alertas por zona y notificaciones**: aviso nuevo dentro de tu zona, avistamientos, avisos resueltos, likes, comentarios y seguidores; campana y globos de no leídos
 - **Guía de primeros pasos** (`/empezar`, `users.onboarded_at`): zona de alertas, push y mascota; solo cuentas nuevas (las anteriores se marcaron como hechas en la migración). La guarda de cuenta (lib/accountGate.ts) lleva primero a `/bienvenida` si falta el username y luego aquí
 - **Coincidencias perdido ↔ encontrado** (lib/matches.ts): notificación `possible_match` a los dos dueños y apartado «Puede que sea el mismo» en la ficha
@@ -55,11 +55,18 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - **Datos de demo** en producción con fotos libres (ver Notas operativas) y README de portfolio con capturas
 - **Seguridad en los mensajes**: bloquear usuarios (en los dos sentidos, también likes, comentarios, seguir y avisos), 30 mensajes/hora y 10 conversaciones nuevas/día por usuario, denunciar conversaciones
 - **Seguridad de la web** (ver SECURITY.md): SQL siempre parametrizado con guarda en la CI, tests de ataques (inyección SQL, tokens falsos, mass assignment, cuerpos rotos), CSP y cabeceras en Vercel (los e2e corren con la misma CSP), anti open-redirect en el login, CodeQL, Dependabot y `npm audit`
+- **Buscar perfiles** (`/buscar`, `GET /users?q=`), **guía de primeros pasos**, **Web Analytics** (sin cookies) y **Sentry** (web y API, sin datos personales)
+- **Calidad**: axe (WCAG 2.1 AA) en los e2e, Lighthouse semanal (accesibilidad y SEO 100; rendimiento 72-100), fuentes propias, caché de estáticos, fotos comprimidas en el navegador y sin EXIF/GPS
+- **Automatizaciones**: refresco de la demo cada lunes, Lighthouse cada lunes, limpieza nocturna de fotos huérfanas, Dependabot, capturas del README a mano (workflow «Capturas»)
 - Rate limiting, validación con zod, RLS sin políticas (todo pasa por la API), CI con GitHub Actions
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
-### Hoja de ruta (de más a menos importante)
-1. **Dominio propio** (actualizando las URLs de Supabase Auth)
+### Pendiente
+- **Comprobar la limpieza de fotos** (19-10-2026 por la mañana): había 2 fotos huérfanas en Storage creadas el 17-10; el cron de las 4:00 debería haberlas borrado. Mirar `storage.objects` (bucket `media`) y los logs de `/api/cron/storage-cleanup` en Vercel (si falla el borrado, probablemente sea la clave `sb_secret_` en la API de Storage)
+- **Limpiar datos de prueba de los amigos** cuando terminen de probar (avisos, mascotas, publicaciones que no sean de demo ni de @nabil)
+- **Encuesta de feedback**: https://forms.gle/Xa3SoB33fpuB89iX7 (script en docs/feedback/crear-encuesta.gs, sin subir a git). Solo 2 respuestas (notas 5/5 y 4/5; una dijo «No lo sé» a si la usaría y un 7). Esperar 5-8 y convertirlas en mejoras
+- **Dominio propio** (~10 €/año): actualizar URLs de Supabase Auth, Google OAuth (orígenes), `PUBLIC_SITE_URL`, `VAPID_SUBJECT`, CSP y capturas. Con dominio se puede poner logo en la pantalla de Google (requiere verificar la marca)
+- Ideas futuras: rendimiento del mapa en móvil (72 en Lighthouse: teselas de OSM + Leaflet), versión en valenciano/inglés, Apple login si algún día hay cuenta de Apple Developer
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
@@ -72,10 +79,13 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - **Tiempo real** (lib/realtime.ts en API y web): timbre por el canal privado `user:<id>` de Supabase Realtime; usa `SUPABASE_SERVICE_ROLE_KEY`. Política RLS en `realtime.messages` creada por la migración `realtime_channels`
 - **Capturas del README**: workflow «Capturas» (apps/web/scripts/capturas.mjs) contra producción; descargar el artefacto y copiarlo a docs/capturas
 - **Geocodificación** por la API (`GET /geocode`, caché de Vercel un día) y `cx` con tailwind-merge
-- **Sentry** (región UE): `SENTRY_DSN` (API) y `VITE_SENTRY_DSN` (web) en Vercel; sin ellas no se envía nada. La web lo carga en segundo plano
+- **Sentry** (región UE): `SENTRY_DSN` (API, Secret) y `VITE_SENTRY_DSN` (web, tipo Config: las `VITE_` son públicas) en Vercel; sin ellas no se envía nada. La web lo carga en segundo plano
+- **Sentry**: organización `nabil-cc` (región UE, `de.sentry.io`), proyectos `furrly-web` y `furrly-api`, sin guardar IPs. Botón de error de prueba en /moderacion
 - **Moderadores**: `UPDATE users SET is_admin = true WHERE username = '...'` en Supabase (ahora solo @nabil)
 - **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase
 - **Dependabot** abre PRs cada semana: las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
+- **Secretos**: en Vercel (VAPID, `SUPABASE_SERVICE_ROLE_KEY` = clave `sb_secret_` «limpieza-fotos», `CRON_SECRET`, `SENTRY_DSN`) y en GitHub (`DATABASE_URL`, sin comillas). Nunca en el repo ni en el chat
+- **Lecciones**: probar los componentes **en la página real** (el borrado de cuenta fallaba solo dentro del perfil por un `<form>` anidado; ahora los Sheet van en portal). Los e2e fallan ante cualquier violación de la CSP
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar
