@@ -44,6 +44,7 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - Avistamientos con recorrido en el mapa
 - **Contacto y mensajes**: teléfono/email opcionales en el aviso (solo visibles con sesión) y mensajes privados entre usuarios (una conversación por pareja, no leídos calculados, polling)
 - **Alertas por zona y notificaciones**: aviso nuevo dentro de tu zona, avistamientos, avisos resueltos, likes, comentarios y seguidores; campana y globos de no leídos
+- **Guía de primeros pasos** (`/empezar`, `users.onboarded_at`): zona de alertas, push y mascota; solo cuentas nuevas (las anteriores se marcaron como hechas en la migración). La guarda de cuenta (lib/accountGate.ts) lleva primero a `/bienvenida` si falta el username y luego aquí
 - **Coincidencias perdido ↔ encontrado** (lib/matches.ts): notificación `possible_match` a los dos dueños y apartado «Puede que sea el mismo» en la ficha
 - **Cartel A4 con QR** (`/avisos/:id/cartel`) y **vista previa al compartir** (vercel.json manda a los robots de WhatsApp, Telegram... a `/api`, que devuelve Open Graph)
 - **Comunidad (feed social)**: publicaciones con foto, likes, comentarios y seguir mascotas; "Siguiendo" y "Explorar" con paginación por cursor

@@ -40,6 +40,7 @@ para compartir fotos de tus mascotas.
 - Notificaciones de likes, comentarios, seguidores, avistamientos y avisos resueltos.
 
 **Cuenta y moderación**
+- **Guía de primeros pasos** para cuentas nuevas: marcar tu zona en el mapa, activar los avisos en el móvil y crear el carnet de tu mascota.
 - Registro con email o **con Google** (la primera vez se elige el nombre de usuario), login y recuperación de contraseña.
   Perfil público y zona de alertas privada. [Política de privacidad](https://furrly-rouge.vercel.app/privacidad).
 - Denunciar avisos, publicaciones, comentarios, usuarios o conversaciones, y un **panel de moderación** para revisarlas:
