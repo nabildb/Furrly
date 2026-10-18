@@ -5,6 +5,7 @@ import { ReportType, Species } from '../generated/prisma/enums.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
+import { findMatches, notifyMatches } from '../lib/matches.js'
 import { notifyReportNearby, notifyReportResolved } from '../lib/notifications.js'
 import { optionalAuth, requireAuth } from '../middleware/auth.js'
 
@@ -201,6 +202,7 @@ reportsRouter.post('/', requireAuth, async (req, res) => {
 
   // Después de guardar (fuera de la transacción): si fallase, el aviso ya está publicado igualmente.
   await notifyReportNearby(reportId, userId)
+  await notifyMatches(reportId, userId)
 
   res.status(201).json(await getReport(reportId, userId))
 })
@@ -260,6 +262,13 @@ reportsRouter.patch('/:id/status', requireAuth, async (req, res) => {
   if (status === 'resolved') await notifyReportResolved(id, req.userId!)
 
   res.json(await getReport(id, req.userId))
+})
+
+/** Avisos que podrían ser el mismo animal (perdido ↔ encontrado). Ver lib/matches.ts. */
+reportsRouter.get('/:id/matches', async (req, res) => {
+  const id = parse(z.uuid(), req.params.id)
+  const matches = await findMatches(id)
+  res.json(matches.map(({ reporterId: _, ...m }) => m))
 })
 
 reportsRouter.get('/:id', optionalAuth, async (req, res) => {

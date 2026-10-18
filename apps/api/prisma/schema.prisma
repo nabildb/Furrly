@@ -51,6 +51,7 @@ enum NotificationType {
   new_follower
   new_comment
   new_like
+  possible_match
 
   @@map("notification_type")
 }

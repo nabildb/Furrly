@@ -79,6 +79,12 @@ export async function pushNotifications(notificationIds: string[]) {
       message = { title: '¡Buenas noticias!', body: `«${n.report.title}» se ha resuelto. Gracias por ayudar`, url: `/avisos/${n.report.id}` }
     } else if (n.type === 'new_comment' && n.post) {
       message = { title: 'Nuevo comentario', body: `${who} ha comentado la foto de ${n.post.pet.name}`, url: `/publicaciones/${n.post.id}` }
+    } else if (n.type === 'possible_match' && n.report) {
+      // n.report es el OTRO aviso: el que podría ser el mismo animal que el tuyo.
+      message =
+        n.report.type === 'found'
+          ? { title: 'Puede que sea tu mascota', body: `Han encontrado un animal cerca: «${n.report.title}»`, url: `/avisos/${n.report.id}` }
+          : { title: '¿Es el animal que encontraste?', body: `«${n.report.title}» se perdió cerca`, url: `/avisos/${n.report.id}` }
     } else if (n.type === 'new_follower' && n.pet) {
       message = { title: 'Nuevo seguidor', body: `${who} sigue a ${n.pet.name}`, url: `/mascotas/${n.pet.id}` }
     }
