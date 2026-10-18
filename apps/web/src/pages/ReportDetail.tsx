@@ -4,6 +4,7 @@ import { Marker, Polyline, useMap } from 'react-leaflet'
 import { useAuth } from '../auth/useAuth'
 import { ErrorText } from '../components/Field'
 import { FlagButton } from '../components/FlagButton'
+import { ReportMatches } from '../components/ReportMatches'
 import { originIcon, sightingIcon } from '../components/mapMarkers'
 import { MapView } from '../components/MapView'
 import { BackButton, Loading, PageError } from '../components/Page'
@@ -285,6 +286,8 @@ export function ReportDetail() {
               </Link>
             </p>
           </Card>
+
+          {isActive && <ReportMatches reportId={report.id} type={report.type} />}
 
           {isActive && (
             <Card className="flex items-center gap-4">

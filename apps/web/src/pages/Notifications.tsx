@@ -6,7 +6,7 @@ import { Loading, Page } from '../components/Page'
 import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
-import { BellIcon, CheckIcon, CommentIcon, EyeIcon, HeartIcon, PinIcon, PlusIcon } from '../components/ui/icons'
+import { BellIcon, CheckIcon, CommentIcon, EyeIcon, HeartIcon, PawIcon, PinIcon, PlusIcon } from '../components/ui/icons'
 import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
@@ -57,6 +57,19 @@ function describe(n: AppNotification): { text: ReactNode; icon: ReactNode; to: s
         icon: <CommentIcon size={18} />,
         to: n.post && `/publicaciones/${n.post.id}`,
         tone: 'bg-ink text-white',
+      }
+    case 'possible_match':
+      // n.report es el OTRO aviso: el que podría ser el mismo animal que el tuyo.
+      return {
+        text:
+          n.report?.type === 'found' ? (
+            <>Puede que sea tu mascota: han encontrado un animal cerca, {quote(n.report.title)}</>
+          ) : (
+            <>¿Es el animal que encontraste? {n.report ? quote(n.report.title) : 'Una mascota'} se perdió cerca</>
+          ),
+        icon: <PawIcon size={18} />,
+        to: n.report && `/avisos/${n.report.id}`,
+        tone: 'bg-sighting text-ink',
       }
     case 'new_like':
       return {

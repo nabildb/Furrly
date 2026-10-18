@@ -12,6 +12,7 @@ export type NotificationType =
   | 'new_follower'
   | 'new_comment'
   | 'new_like'
+  | 'possible_match'
 
 export interface AppNotification {
   id: string
