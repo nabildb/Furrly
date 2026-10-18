@@ -26,9 +26,13 @@ jobs:
           for page in avisos comunidad login; do
             for device in mobile desktop; do
               preset=$([ "$device" = desktop ] && echo "--preset=desktop" || echo "")
-              npx --yes lighthouse@13.5.0 "$SITE/$page" $preset \
-                --chrome-flags="--headless=new --no-sandbox" --quiet \
-                --output=json --output=html --output-path="informes/$page-$device"
+              # Lighthouse a veces falla al grabar la carga en las máquinas de GitHub (NO_NAVSTART): hasta 3 intentos.
+              for attempt in 1 2 3; do
+                npx --yes lighthouse@13.5.0 "$SITE/$page" $preset \
+                  --chrome-flags="--headless=new --no-sandbox" --quiet \
+                  --output=json --output=html --output-path="informes/$page-$device" && break
+                [ "$attempt" = 3 ] && exit 1
+              done
             done
           done
       - name: Resumen de notas
