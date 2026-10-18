@@ -5,6 +5,8 @@ export interface Me {
   username: string
   /** false = entró con Google/Apple y aún no ha elegido su username (tiene uno provisional). */
   usernameConfirmed: boolean
+  /** false = cuenta nueva que aún no ha pasado por la guía de primeros pasos (/empezar). */
+  onboardingDone: boolean
   /** Moderador: ve el panel de denuncias (/moderacion). */
   isAdmin: boolean
   displayName: string

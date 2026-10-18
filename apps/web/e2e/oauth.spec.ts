@@ -25,7 +25,7 @@ test('sin proveedores activados no se muestra ningún botón', async ({ page }) 
 
 test('la primera vez con Google se elige el nombre de usuario y se sigue donde iba', async ({ page }) => {
   await logIn(page)
-  let me = { id: 'u1', username: 'nabildaiday1', usernameConfirmed: false, displayName: 'Nabil Daiday', avatarUrl: null, bio: null, alertRadiusKm: 5, alertLocation: null }
+  let me = { id: 'u1', username: 'nabildaiday1', usernameConfirmed: false, onboardingDone: true, displayName: 'Nabil Daiday', avatarUrl: null, bio: null, alertRadiusKm: 5, alertLocation: null }
   let sent: unknown = null
   await mockApi(page, {
     'GET /me': () => me,

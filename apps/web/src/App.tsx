@@ -33,6 +33,8 @@ const ReportDetail = lazy(() => import('./pages/ReportDetail').then((m) => ({ de
 const ReportNew = lazy(() => import('./pages/ReportNew').then((m) => ({ default: m.ReportNew })))
 // El cartel lleva la librería del código QR: solo se descarga al abrirlo.
 const Poster = lazy(() => import('./pages/Poster').then((m) => ({ default: m.Poster })))
+// La guía de primeros pasos lleva el mapa (Leaflet).
+const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })))
 
 // Guía de componentes: solo en desarrollo (en producción Vite elimina esta rama).
 const StyleGuide = import.meta.env.DEV
@@ -49,6 +51,10 @@ export function App() {
 
           {/* Cartel para imprimir: sin navegación ni barra lateral. */}
           <Route path="avisos/:id/cartel" element={<Poster />} />
+          {/* Guía de primeros pasos de las cuentas nuevas: a pantalla completa, sin navegación. */}
+          <Route element={<RequireAuth />}>
+            <Route path="empezar" element={<Onboarding />} />
+          </Route>
 
           {/* Con la navegación flotante */}
           <Route element={<Layout />}>

@@ -5,7 +5,6 @@ import { ErrorText, Field } from '../components/Field'
 import { Loading } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { api } from '../lib/api'
-import { markUsernameConfirmed } from '../lib/usernameGate'
 import { safeRedirect } from '../lib/redirect'
 import type { Me } from '../lib/users'
 
@@ -40,8 +39,8 @@ export function Welcome() {
         method: 'PUT',
         body: JSON.stringify({ username: String(form.get('username')).toLowerCase(), displayName: form.get('displayName') }),
       })
-      markUsernameConfirmed(updated.id)
-      navigate(next, { replace: true })
+      // Cuenta nueva: después del nombre, la guía de primeros pasos.
+      navigate(updated.onboardingDone ? next : `/empezar?next=${encodeURIComponent(next)}`, { replace: true })
     } catch (e) {
       setError((e as Error).message)
     } finally {

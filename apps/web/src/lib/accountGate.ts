@@ -5,29 +5,37 @@ import { api } from './api'
 import type { Me } from './users'
 
 // Usuarios ya comprobados en esta pestaña: /me se pide una vez por sesión, no en cada página.
-const checked = new Set<string>()
+const ready = new Set<string>()
 
-export function markUsernameConfirmed(userId: string) {
-  checked.add(userId)
+/** La cuenta ya no tiene nada pendiente (username elegido y guía hecha): no hace falta volver a mirar. */
+export function markAccountReady(userId: string) {
+  ready.add(userId)
 }
 
+/** Páginas que forman parte de lo pendiente: desde ellas no se redirige. */
+const SETUP_PAGES = ['/bienvenida', '/empezar']
+
 /**
- * Quien entra por primera vez con Google/Apple tiene un username provisional:
- * se le lleva a /bienvenida para elegirlo antes de seguir, vuelva a la página que vuelva.
+ * Lo que una cuenta nueva tiene que hacer antes de seguir, vuelva a la página que vuelva:
+ * 1. Si entró con Google/Apple, elegir su nombre de usuario (/bienvenida).
+ * 2. La guía de primeros pasos: zona de alertas, avisos push y mascota (/empezar).
  */
-export function useUsernameGate() {
+export function useAccountGate() {
   const { session } = useAuth()
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const userId = session?.user.id
 
   useEffect(() => {
-    if (!userId || checked.has(userId) || pathname === '/bienvenida') return
+    if (!userId || ready.has(userId) || SETUP_PAGES.includes(pathname)) return
     let cancelled = false
+    const next = encodeURIComponent(pathname + search)
     api<Me>('/me')
       .then((me) => {
-        if (me.usernameConfirmed) checked.add(userId)
-        else if (!cancelled) navigate(`/bienvenida?next=${encodeURIComponent(pathname + search)}`, { replace: true })
+        if (cancelled) return
+        if (!me.usernameConfirmed) navigate(`/bienvenida?next=${next}`, { replace: true })
+        else if (me.onboardingDone === false) navigate(`/empezar?next=${next}`, { replace: true })
+        else ready.add(userId)
       })
       // Si falla, no se bloquea la navegación: se volverá a comprobar en la siguiente página.
       .catch(() => {})
