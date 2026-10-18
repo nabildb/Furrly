@@ -165,7 +165,8 @@ export function Reports() {
           radius={filters.radiusKm * 1000}
           pathOptions={{ color: '#1B2430', opacity: 0.28, weight: 2, dashArray: '6 6', fillOpacity: 0.04 }}
         />
-        <Marker position={searchCenter} icon={searchCenterIcon} interactive={false} />
+        {/* Decorativo: sin keyboard, Leaflet no le pone role="button" ni lo deja enfocar con el tabulador. */}
+        <Marker position={searchCenter} icon={searchCenterIcon} interactive={false} keyboard={false} />
         {reports?.map((r) => (
           <Marker
             key={r.id}

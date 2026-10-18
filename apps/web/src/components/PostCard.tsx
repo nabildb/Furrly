@@ -23,7 +23,8 @@ export function LikeButton({ likedByMe, likesCount, onToggle }: LikeState & { on
       type="button"
       onClick={onToggle}
       aria-pressed={likedByMe}
-      aria-label={likedByMe ? 'Quitar me gusta' : 'Me gusta'}
+      // El número visible forma parte del nombre (quien usa control por voz dice lo que ve); aria-pressed dice si es tuyo.
+      aria-label={`${likesCount} me gusta`}
       className={cx(
         'flex h-11 items-center gap-1.5 rounded-full px-2 text-[15px] font-extrabold transition active:scale-95',
         likedByMe ? 'text-lost' : 'text-ink hover:text-lost',
@@ -69,7 +70,7 @@ export function PostCard({ post }: { post: Post }) {
           <LikeButton likedByMe={like.likedByMe} likesCount={like.likesCount} onToggle={like.toggle} />
           <Link
             to={`/publicaciones/${post.id}`}
-            aria-label={`Comentarios (${post.commentsCount})`}
+            aria-label={`${post.commentsCount} ${post.commentsCount === 1 ? 'comentario' : 'comentarios'}`}
             className="flex h-11 items-center gap-1.5 rounded-full px-2 text-[15px] font-extrabold hover:text-lost"
           >
             <CommentIcon size={23} />

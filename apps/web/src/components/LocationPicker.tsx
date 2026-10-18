@@ -69,7 +69,7 @@ export function LocationPicker({ value, onChange, tone = 'lost', initialCenter, 
         <MapView center={value ?? initialCenter} zoom={value || initialCenter ? 15 : 13} className={cx('cursor-crosshair', className)}>
           <ClickHandler onChange={onChange} />
           <LocateButton onChange={onChange} />
-          {value && <Marker position={value} icon={originIcon(tone)} interactive={false} />}
+          {value && <Marker position={value} icon={originIcon(tone)} interactive={false} keyboard={false} />}
         </MapView>
       </div>
       <p className={cx('mt-1.5 text-[13px] font-semibold', value ? 'text-muted' : 'text-lost-text')}>
