@@ -62,16 +62,16 @@ export function Poster() {
         </Button>
       </div>
 
-      {/* Hoja A4: en pantalla, una vista previa; al imprimir, la página entera. */}
-      <article className="mx-auto flex aspect-[210/297] max-w-[210mm] flex-col overflow-hidden bg-white shadow-xl print:aspect-auto print:h-[273mm] print:max-w-none print:shadow-none">
+      {/* Hoja A4: en pantalla, una vista previa (en el móvil crece a lo alto para que quepa todo); al imprimir, la página entera. */}
+      <article className="mx-auto flex max-w-[210mm] flex-col sm:aspect-[210/297] overflow-hidden bg-white shadow-xl print:aspect-auto print:h-[273mm] print:max-w-none print:shadow-none">
         <header className={cx('px-[6%] py-[3%] text-center text-white [print-color-adjust:exact]', isLost ? 'bg-lost' : 'bg-found')}>
           <p className="font-display text-[clamp(28px,9vw,76px)] leading-none font-extrabold tracking-[-1px]">
             {isLost ? 'SE BUSCA' : 'ENCONTRADO'}
           </p>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-[3%] px-[6%] py-[4%]">
-          <div className="min-h-0 flex-1 overflow-hidden rounded-[18px] bg-subtle">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 px-[6%] py-[4%] sm:gap-[3%]">
+          <div className="aspect-[4/3] overflow-hidden rounded-[18px] bg-subtle sm:aspect-auto sm:min-h-0 sm:flex-1 print:aspect-auto print:min-h-0 print:flex-1">
             {photo ? (
               <img src={photo} alt={`Foto de ${name}`} className="h-full w-full object-cover" />
             ) : (
