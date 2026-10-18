@@ -60,7 +60,7 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 
 ### Hoja de ruta (de más a menos importante)
 1. **Dominio propio** (actualizando las URLs de Supabase Auth)
-1. **Pulido técnico**: `tailwind-merge` y geocodificación a través de la API
+2. **Pulido técnico**: `tailwind-merge` y geocodificación a través de la API
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
