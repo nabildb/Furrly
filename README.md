@@ -143,6 +143,22 @@ Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows
 - **End-to-end: 16 tests con Playwright** en un Chromium real, en móvil y escritorio, sobre la web compilada y con la API
   simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa escribir un mensaje, una conversación bloqueada y entrar con Google (botón, vuelta y elegir nombre de usuario).
 
+## Calidad
+
+Notas de **Lighthouse** en producción (móvil / escritorio), medidas cada semana por un
+[workflow de GitHub Actions](.github/workflows/lighthouse.yml):
+
+| Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
+|---|---|---|---|---|
+| Mapa de avisos | 72 / 98 | 100 / 100 | 96 / 100 | 100 / 100 |
+| Comunidad | 93 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
+| Entrar | 98 / 100 | 100 / 100 | 100 / 100 | 100 / 100 |
+
+- **Accesibilidad comprobada en cada push:** los tests end-to-end pasan **axe** (WCAG 2.1 AA) por las pantallas principales
+  en móvil y escritorio, y fallan si la CSP bloquea cualquier cosa.
+- El mapa en móvil es lo más lento: lo que más pesa son las teselas de OpenStreetMap y Leaflet en un móvil lento simulado.
+- Fuentes servidas desde el propio dominio, estáticos con caché de un año (nombres con hash) y fotos comprimidas.
+
 ## Puesta en marcha
 
 Requisitos: Node 22+ y un proyecto de Supabase.

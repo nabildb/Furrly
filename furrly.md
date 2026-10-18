@@ -56,10 +56,9 @@ Hecho, probado (75 tests de API, 23 de componentes y 14 end-to-end en CI) y desp
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
 ### Hoja de ruta (de más a menos importante)
-1. **Auditoría de accesibilidad y rendimiento** (Lighthouse/axe) y poner la puntuación en el README
-2. **Refresco automático de la demo**: GitHub Action semanal que ejecute `db:seed-demo`
-3. **Dominio propio** (actualizando las URLs de Supabase Auth)
-4. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API y Sentry para errores en producción
+1. **Refresco automático de la demo**: GitHub Action semanal que ejecute `db:seed-demo`
+2. **Dominio propio** (actualizando las URLs de Supabase Auth)
+3. **Pulido técnico**: `tailwind-merge`, geocodificación a través de la API y Sentry para errores en producción
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
