@@ -30,9 +30,20 @@ describe('errores en Sentry', () => {
       tags: { method: 'GET', route: '/usernames/:username/available' },
     })
     expect(sentry.flush).toHaveBeenCalled()
-    expect(sentry.init).toHaveBeenCalledWith(
-      expect.objectContaining({ dataCollection: expect.objectContaining({ userInfo: false, httpBodies: [], databaseQueryData: false }) }),
-    )
+  })
+
+  it('no recoge datos de usuarios: ni cabeceras, ni cuerpos, ni cookies, ni consultas SQL', async () => {
+    const { sentryOptions } = await import('../src/lib/sentry.js')
+    expect(sentryOptions.dataCollection).toEqual({
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      databaseQueryData: false,
+      stackFrameVariables: false,
+    })
+    expect(sentryOptions.tracesSampleRate).toBe(0)
   })
 
   it('los errores de quien hace la petición (400, 404) no se envían', async () => {

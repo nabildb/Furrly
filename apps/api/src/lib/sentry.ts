@@ -2,28 +2,28 @@ import * as Sentry from '@sentry/node'
 import type { Request, Response } from 'express'
 import { env } from './env.js'
 
-if (env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: env.SENTRY_DSN,
-    environment: env.VERCEL_ENV,
-    // Sentry 11 lo recoge todo por defecto: aquí se apaga todo lo que pueda llevar datos de usuarios.
-    dataCollection: {
-      userInfo: false,
-      cookies: false,
-      httpHeaders: false,
-      httpBodies: [],
-      urlQueryParams: false,
-      databaseQueryData: false,
-      stackFrameVariables: false,
-    },
-    // Solo los errores: nada de trazas de rendimiento.
-    tracesSampleRate: 0,
-    beforeSend(event) {
-      delete event.user
-      return event
-    },
-  })
+export const sentryOptions: Sentry.NodeOptions = {
+  dsn: env.SENTRY_DSN,
+  environment: env.VERCEL_ENV,
+  // Sentry 11 lo recoge todo por defecto: aquí se apaga todo lo que pueda llevar datos de usuarios.
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: false,
+    httpBodies: [],
+    urlQueryParams: false,
+    databaseQueryData: false,
+    stackFrameVariables: false,
+  },
+  // Solo los errores: nada de trazas de rendimiento.
+  tracesSampleRate: 0,
+  beforeSend(event) {
+    delete event.user
+    return event
+  },
 }
+
+if (env.SENTRY_DSN) Sentry.init(sentryOptions)
 
 /**
  * Manda a Sentry un error inesperado (los 500). Espera a que salga antes de responder: en Vercel
