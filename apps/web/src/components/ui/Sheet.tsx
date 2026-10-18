@@ -1,4 +1,5 @@
 import { useEffect, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { CloseIcon } from './icons'
 import { iconButtonClass } from './styles'
 
@@ -8,7 +9,12 @@ interface SheetProps {
   children: ReactNode
 }
 
-/** Hoja modal: sube desde abajo en móvil y es un diálogo centrado en escritorio. Se cierra con Esc. */
+/**
+ * Hoja modal: sube desde abajo en móvil y es un diálogo centrado en escritorio. Se cierra con Esc.
+ * Se pinta en <body> (portal), fuera de la página: si se abre desde dentro de un formulario (p. ej. el
+ * perfil), su propio <form> no queda anidado en el de la página, que es HTML inválido y hacía que el
+ * botón enviase el formulario de fuera. Y sus envíos no se propagan a los formularios de la página.
+ */
 export function Sheet({ title, onClose, children }: SheetProps) {
   const titleId = useId()
 
@@ -24,8 +30,11 @@ export function Sheet({ title, onClose, children }: SheetProps) {
     }
   }, [onClose])
 
-  return (
-    <div className="fixed inset-0 z-[2000] flex items-end justify-center sm:items-center sm:p-6">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[2000] flex items-end justify-center sm:items-center sm:p-6"
+      onSubmit={(e) => e.stopPropagation()}
+    >
       <div className="absolute inset-0 bg-ink/50" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
@@ -43,6 +52,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
