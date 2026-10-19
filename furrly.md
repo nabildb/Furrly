@@ -69,7 +69,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 
 ### Notas operativas
 - Supabase: proyecto `furrly` (ref `dgaiisrusilbieffjcdh`); Auth → URL Configuration ya apunta a la URL de Vercel y a `http://localhost:5173/**`
-- Vercel: un proyecto `furrly` conectado a GitHub; cada push a `main` despliega y aplica migraciones (`prisma migrate deploy`)
+- Vercel: un proyecto `furrly` conectado a GitHub; cada fusión en `main` despliega y aplica migraciones (`prisma migrate deploy`, solo en producción). Cada PR tiene su **preview**: pendiente comprobar qué `DATABASE_URL` usa el entorno Preview y añadir las URLs de preview a Supabase Auth para poder entrar en ellas
 - **Datos de demo**: `npm run db:seed-demo -w @furrly/api -- --yes` (usa la BD de `apps/api/.env`). Crea 5 vecinos de demo (solo perfiles, sin cuenta en Auth: nadie puede entrar con ellos), 9 mascotas con foto, 8 avisos alrededor de Sol con avistamientos y 11 publicaciones con seguidores, likes y comentarios. Las fotos son de Wikimedia Commons (dominio público / CC0) y están en `apps/web/public/demo` (créditos en `CREDITS.md`); la web las sirve en `/demo/…`. Usa UUIDs fijos (`f0f0f0f0-…`): cada ejecución borra y recrea solo esos datos, con fechas relativas a ese momento. Se repite solo cada lunes (workflow "Refrescar demo", necesita el secreto `DATABASE_URL` en GitHub) y se puede lanzar a mano desde Actions
 - **Web Push**: necesita `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en el entorno de la API (en local, `apps/api/.env`; en producción, variables de Vercel). Sin ellas todo funciona menos el push. Se generan con el comando de `apps/api/.env.example`
 - **Tests de la web**: solo en la CI (`npm test -w @furrly/web` y `npm run e2e -w @furrly/web`); sus dependencias no se instalan en local. Para añadir dependencias sin instalarlas: `npm install --package-lock-only`
@@ -92,3 +92,4 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - Primero, ayudarme a cerrar las decisiones pendientes y diseñar el modelo de datos
 - Luego construir el MVP por partes, explicando las decisiones importantes (es para aprender y defenderlo en entrevistas)
 - Código limpio, con README y commits ordenados, pensando en que lo vean reclutadores
+- **Ramas y PRs** (desde el 20-10-2026): una rama por bloque (`feat/…`, `fix/…`, `docs/…`, `perf/…`), PR hacia `main` con la plantilla, prueba en la preview de Vercel y fusión con **squash** (un commit por bloque en `main`, con el título del PR). El ruleset «Proteger main» impide subir directamente a `main`, exige la CI (API, web, e2e y CodeQL) y solo permite squash; la rama se borra al fusionar
