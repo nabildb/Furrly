@@ -62,7 +62,6 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
 
 ### Pendiente
-- **Comprobar la limpieza de fotos** (19-10-2026 por la mañana): había 2 fotos huérfanas en Storage creadas el 17-10; el cron de las 4:00 debería haberlas borrado. Mirar `storage.objects` (bucket `media`) y los logs de `/api/cron/storage-cleanup` en Vercel (si falla el borrado, probablemente sea la clave `sb_secret_` en la API de Storage)
 - **Limpiar datos de prueba de los amigos** cuando terminen de probar (avisos, mascotas, publicaciones que no sean de demo ni de @nabil)
 - **Encuesta de feedback**: https://forms.gle/Xa3SoB33fpuB89iX7 (script en docs/feedback/crear-encuesta.gs, sin subir a git). Solo 2 respuestas (notas 5/5 y 4/5; una dijo «No lo sé» a si la usaría y un 7). Esperar 5-8 y convertirlas en mejoras
 - **Dominio propio** (~10 €/año): actualizar URLs de Supabase Auth, Google OAuth (orígenes), `PUBLIC_SITE_URL`, `VAPID_SUBJECT`, CSP y capturas. Con dominio se puede poner logo en la pantalla de Google (requiere verificar la marca)
@@ -83,7 +82,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - **Sentry**: organización `nabil-cc` (región UE, `de.sentry.io`), proyectos `furrly-web` y `furrly-api`, sin guardar IPs. Botón de error de prueba en /moderacion
 - **Moderadores**: `UPDATE users SET is_admin = true WHERE username = '...'` en Supabase (ahora solo @nabil)
 - **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase
-- **Dependabot** abre PRs cada semana: las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
+- **Dependabot** abre PRs cada semana (las **alertas de seguridad** están desactivadas en el repo: se activan en Settings → Advanced Security): las de versiones mayores (React Router 8, TypeScript 7…) se revisan a mano, no se fusionan a ciegas
 - **Secretos**: en Vercel (VAPID, `SUPABASE_SERVICE_ROLE_KEY` = clave `sb_secret_` «limpieza-fotos», `CRON_SECRET`, `SENTRY_DSN`) y en GitHub (`DATABASE_URL`, sin comillas). Nunca en el repo ni en el chat
 - **Lecciones**: probar los componentes **en la página real** (el borrado de cuenta fallaba solo dentro del perfil por un `<form>` anidado; ahora los Sheet van en portal). Los e2e fallan ante cualquier violación de la CSP
 - **Rendimiento** (18-10-2026): el mapa en móvil subió de 72 a 80-88 (varía según el día con el mismo código) cargando las páginas bajo demanda, aligerando Nunito Sans y retrasando Sentry 3 s tras el `load` (en una SPA el `load` llega antes que las teselas). El límite ahora son las ~500 kB de teselas de OSM; las de CARTO (más ligeras) piden clave de API
