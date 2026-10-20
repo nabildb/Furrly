@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { ErrorText } from '../components/Field'
 import { Loading, Page, PageError } from '../components/Page'
 import { ReportDetailFields, ReportWhereWhenFields } from '../components/ReportFields'
@@ -12,7 +12,7 @@ import { removeImage } from '../lib/storage'
 export function ReportEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { session } = useAuth()
+  const { username: myUsername } = useMe()
   const [report, setReport] = useState<Report | null>(null)
   const [location, setLocation] = useState<LatLng | null>(null)
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
@@ -31,7 +31,9 @@ export function ReportEdit() {
 
   if (error && !report) return <PageError message={error} />
   if (!report || !location) return <Loading />
-  if (report.reporter.username !== session?.user.user_metadata.username || report.status !== 'active') {
+  // Hasta saber quién soy (cuentas de Google: llega con /me) no se puede decidir si el aviso es mío.
+  if (!myUsername) return <Loading />
+  if (report.reporter.username !== myUsername || report.status !== 'active') {
     return <PageError message="Solo puedes editar tus avisos activos." back={`/avisos/${report.id}`} />
   }
 

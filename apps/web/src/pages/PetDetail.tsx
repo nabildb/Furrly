@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { Loading, Page, PageError } from '../components/Page'
 import { LostAlertButton } from '../components/LostAlertButton'
 import { FollowButton, PetStats } from '../components/FollowButton'
@@ -17,7 +17,7 @@ import { useActiveLostReports } from '../lib/useActiveLostReports'
 /** Carnet público de una mascota (/mascotas/:id). */
 export function PetDetail() {
   const { id } = useParams()
-  const { session } = useAuth()
+  const { username: myUsername } = useMe()
   const [pet, setPet] = useState<Pet | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +28,7 @@ export function PetDetail() {
   }, [id])
 
   // Solo decide si se muestran los botones: quien de verdad lo comprueba es la API.
-  const isOwner = !!pet && session?.user.user_metadata.username === pet.owner.username
+  const isOwner = !!pet && myUsername === pet.owner.username
   const activeLost = useActiveLostReports(isOwner)
 
   if (error) return <PageError message={error} />

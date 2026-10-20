@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type UIEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { Marker, Polyline, useMap } from 'react-leaflet'
 import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { ErrorText } from '../components/Field'
 import { FlagButton } from '../components/FlagButton'
 import { ReportMatches } from '../components/ReportMatches'
@@ -56,7 +57,7 @@ export function ReportDetail() {
   const [photoIndex, setPhotoIndex] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const { session } = useAuth()
-  const myUsername = session?.user.user_metadata.username as string | undefined
+  const myUsername = useMe().username ?? undefined
   const closeSightingForm = useCallback(() => setShowSightingForm(false), [])
 
   useEffect(() => {

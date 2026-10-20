@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { AuthProvider } from './auth/AuthProvider'
+import { MeProvider } from './auth/MeProvider'
 import { InboxProvider } from './inbox/InboxProvider'
 import { registerServiceWorker } from './lib/push'
 import { initSentry, reportError } from './lib/sentry'
@@ -24,11 +25,13 @@ createRoot(document.getElementById('root')!, {
 }).render(
   <StrictMode>
     <AuthProvider>
-      <InboxProvider>
-        <App />
-        {/* Vercel Web Analytics: sin cookies. Se quita la query (?q=… en Buscar perfiles) para no enviar lo que busca la gente. */}
-        <Analytics beforeSend={(event) => ({ ...event, url: event.url.split('?')[0] })} />
-      </InboxProvider>
+      <MeProvider>
+        <InboxProvider>
+          <App />
+          {/* Vercel Web Analytics: sin cookies. Se quita la query (?q=… en Buscar perfiles) para no enviar lo que busca la gente. */}
+          <Analytics beforeSend={(event) => ({ ...event, url: event.url.split('?')[0] })} />
+        </InboxProvider>
+      </MeProvider>
     </AuthProvider>
   </StrictMode>,
 )

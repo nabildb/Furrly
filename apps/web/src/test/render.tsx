@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Routes } from 'react-router'
 import { AuthContext } from '../auth/AuthContext'
+import { MeContext } from '../auth/MeContext'
 
 /** Sesión falsa: basta con lo que la web lee de ella (id y username). */
 export const fakeSession = {
@@ -14,9 +15,12 @@ export const fakeSession = {
 export function renderRoutes(routes: ReactNode, { path = '/', session = fakeSession }: { path?: string; session?: Session | null } = {}) {
   return render(
     <AuthContext value={{ session, loading: false }}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>{routes}</Routes>
-      </MemoryRouter>
+      {/* Quién soy: el de la sesión falsa (en la web real lo da MeProvider con /me). */}
+      <MeContext value={session ? { username: 'nabil', displayName: 'Nabil', update: () => {} } : { username: null, displayName: null, update: () => {} }}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>{routes}</Routes>
+        </MemoryRouter>
+      </MeContext>
     </AuthContext>,
   )
 }

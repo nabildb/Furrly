@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { Avatar } from '../components/Avatar'
 import { BlockButton } from '../components/BlockButton'
 import { FlagButton } from '../components/FlagButton'
@@ -16,6 +17,7 @@ import type { PublicProfile } from '../lib/users'
 export function UserProfile() {
   const { username } = useParams()
   const { session } = useAuth()
+  const { username: myUsername } = useMe()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [pets, setPets] = useState<Pet[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +34,7 @@ export function UserProfile() {
   if (error) return <PageError message={error} />
   if (!profile) return <Loading />
 
-  const isMe = session?.user.user_metadata.username === profile.username
+  const isMe = myUsername === profile.username
   const composeLink = `/mensajes/nuevo?para=${profile.username}`
   const since = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(profile.createdAt))
   const stats = [

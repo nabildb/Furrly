@@ -1,7 +1,7 @@
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { ErrorText } from '../components/Field'
 import { Loading } from '../components/Page'
 import { Button } from '../components/ui/Button'
@@ -23,7 +23,7 @@ const longDate = (iso: string) =>
  */
 export function Poster() {
   const { id } = useParams()
-  const { session } = useAuth()
+  const { username: myUsername } = useMe()
   const [report, setReport] = useState<Report | null>(null)
   const [qr, setQr] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +42,7 @@ export function Poster() {
   if (!report || !qr) return <Loading label="Preparando el cartel…" />
 
   const isLost = report.type === 'lost'
-  const isMine = session?.user.user_metadata.username === report.reporter.username
+  const isMine = myUsername === report.reporter.username
   const photo = report.photos[0] ?? report.pet?.photoUrl
   const name = report.pet?.name ?? speciesLabels[report.species]
   const details = [speciesLabels[report.species], report.pet?.breed].filter(Boolean).join(' · ')

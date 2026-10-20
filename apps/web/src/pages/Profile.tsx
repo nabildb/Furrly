@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { useMe } from '../auth/useMe'
 import { BlockedUsers } from '../components/BlockedUsers'
 import { DeleteAccount } from '../components/DeleteAccount'
 import { ErrorText, Field, SelectField, TextAreaField } from '../components/Field'
@@ -33,6 +34,7 @@ function MenuLink({ to, icon, count = 0, children }: { to: string; icon: ReactNo
 
 export function Profile() {
   const inbox = useInbox()
+  const { update: updateMe } = useMe()
   const [me, setMe] = useState<Me | null>(null)
   const [avatar, setAvatar] = useState<string[]>([])
   const [alertLocation, setAlertLocation] = useState<LatLng | null>(null)
@@ -85,6 +87,8 @@ export function Profile() {
       })
       if (me.avatarUrl && me.avatarUrl !== updated.avatarUrl) await removeImage(me.avatarUrl)
       setMe(updated)
+      // La barra lateral y el resto de la web leen el nombre de aquí: que cambie al momento.
+      updateMe({ displayName: updated.displayName })
       setSaved(true)
     } catch (e) {
       setError((e as Error).message)
