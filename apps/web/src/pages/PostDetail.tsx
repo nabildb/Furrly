@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useMe } from '../auth/useMe'
 import { Avatar } from '../components/Avatar'
 import { ErrorText } from '../components/Field'
 import { FlagButton } from '../components/FlagButton'
@@ -18,7 +19,7 @@ import { useLike } from '../lib/useLike'
 
 function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   const { session } = useAuth()
-  const myUsername = session?.user.user_metadata.username as string | undefined
+  const myUsername = useMe().username ?? undefined
   // Solo decide qué botones se ven: quien de verdad lo comprueba es la API.
   const isOwner = myUsername === post.pet.owner.username
   const like = useLike(post)

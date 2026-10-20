@@ -1,5 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { useMe } from '../../auth/useMe'
 import { useInbox } from '../../inbox/useInbox'
 import { cx } from '../../lib/cx'
 import { CountBadge } from './CountBadge'
@@ -11,8 +12,9 @@ import { navItems } from './navItems'
 /** Barra lateral fija de escritorio (≥ 1024 px). En pantallas menores la sustituye BottomNav. */
 export function Sidebar() {
   const { session } = useAuth()
-  const username = session?.user.user_metadata.username as string | undefined
-  const displayName = (session?.user.user_metadata.display_name as string | undefined) ?? username
+  const me = useMe()
+  const username = me.username
+  const displayName = me.displayName ?? username
   const { pathname } = useLocation()
   const inbox = useInbox()
 

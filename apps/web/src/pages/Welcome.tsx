@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
+import { useMe } from '../auth/useMe'
 import { AuthCard } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
 import { Loading } from '../components/Page'
@@ -15,6 +16,7 @@ import type { Me } from '../lib/users'
  */
 export function Welcome() {
   const navigate = useNavigate()
+  const { update: updateMe } = useMe()
   const next = safeRedirect(useSearchParams()[0].get('next'))
   const [me, setMe] = useState<Me | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +42,7 @@ export function Welcome() {
         method: 'PUT',
         body: JSON.stringify({ username: String(form.get('username')).toLowerCase(), displayName: form.get('displayName') }),
       })
+      updateMe({ username: updated.username, displayName: updated.displayName })
       // Cuenta nueva: después del nombre, la guía de primeros pasos.
       navigate(updated.onboardingDone ? next : `/empezar?next=${encodeURIComponent(next)}`, { replace: true })
     } catch (e) {
