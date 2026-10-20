@@ -37,7 +37,7 @@ Prefiero conversar en español.
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Estado actual (18-10-2026)
-Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
+Hecho, probado (100 tests de API, 34 de componentes y 24 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); página de privacidad en /privacidad, perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
@@ -88,6 +88,7 @@ Hecho, probado (100 tests de API, 27 de componentes y 24 end-to-end ×2 —móvi
 - **Secretos**: en Vercel (VAPID, `SUPABASE_SERVICE_ROLE_KEY` = clave `sb_secret_` «limpieza-fotos», `CRON_SECRET`, `SENTRY_DSN`) y en GitHub (`DATABASE_URL`, sin comillas). Nunca en el repo ni en el chat
 - **Lecciones**: probar los componentes **en la página real** (el borrado de cuenta fallaba solo dentro del perfil por un `<form>` anidado; ahora los Sheet van en portal). Los e2e fallan ante cualquier violación de la CSP
 - **Rendimiento** (18-10-2026): el mapa en móvil subió de 72 a 80-88 (varía según el día con el mismo código) cargando las páginas bajo demanda, aligerando Nunito Sans y retrasando Sentry 3 s tras el `load` (en una SPA el `load` llega antes que las teselas). El límite ahora son las ~500 kB de teselas de OSM; las de CARTO (más ligeras) piden clave de API
+- **Registro** (20-10-2026): el `pattern` del nombre de usuario bloqueaba el envío con una mayúscula, espacio o tilde y solo salía la burbuja genérica del navegador. Ahora `UsernameField` lo corrige al escribir y explica lo que sobra; los errores de Supabase se traducen (lib/authErrors.ts) y no se revela si un email ya tiene cuenta
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
 ## Cómo quiero trabajar
