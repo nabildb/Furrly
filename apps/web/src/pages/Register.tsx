@@ -5,10 +5,11 @@ import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
 import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
-import { api } from '../lib/api'
+import { UsernameField } from '../components/UsernameField'
+import { api, ApiError } from '../lib/api'
+import { signUpErrorMessage } from '../lib/authErrors'
+import { usernameProblem } from '../lib/username'
 import { supabase } from '../lib/supabase'
-
-const USERNAME_PATTERN = '[a-z0-9_]{3,30}'
 
 export function Register() {
   const { session } = useAuth()
@@ -25,6 +26,10 @@ export function Register() {
           Te hemos enviado un email a <strong className="font-extrabold">{sentTo}</strong>. Confírmalo y después podrás
           entrar.
         </p>
+        <p className="mt-3 text-sm font-semibold text-muted">
+          ¿No llega en unos minutos? Mira en spam. Si ya tenías cuenta con este email no te llegará nada:{' '}
+          <AuthLink to="/recuperar">recupera la contraseña</AuthLink>.
+        </p>
       </AuthCard>
     )
   }
@@ -33,7 +38,10 @@ export function Register() {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const email = String(form.get('email'))
-    const username = String(form.get('username')).toLowerCase()
+    const username = String(form.get('username'))
+    // El campo ya bloquea el envío, pero por si el navegador no valida (o se salta con novalidate).
+    const problem = usernameProblem(username)
+    if (problem) return setError(problem)
     setSubmitting(true)
     setError(null)
 
@@ -54,13 +62,15 @@ export function Register() {
         },
       })
       if (error) {
-        setError(error.message)
+        setError(signUpErrorMessage(error))
         return
       }
-      // Sin sesión = el proyecto exige confirmar el email.
+      // Sin sesión = el proyecto exige confirmar el email. Si el email ya tenía cuenta, Supabase responde
+      // igual pero no envía nada (así nadie puede averiguar qué emails están registrados): lo avisa la pantalla.
       if (!data.session) setSentTo(email)
     } catch (e) {
-      setError((e as Error).message)
+      // Nuestra API ya responde en español; un fallo de red ("Failed to fetch") no.
+      setError(e instanceof ApiError ? e.message : 'No hemos podido conectar. Revisa tu conexión e inténtalo de nuevo.')
     } finally {
       setSubmitting(false)
     }
@@ -83,15 +93,7 @@ export function Register() {
     >
       <OAuthButtons next="/avisos" />
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field
-          label="Nombre de usuario"
-          name="username"
-          required
-          pattern={USERNAME_PATTERN}
-          autoComplete="username"
-          autoCapitalize="none"
-          hint="3-30 caracteres: minúsculas, números o _"
-        />
+        <UsernameField />
         <Field label="Nombre visible" name="displayName" required maxLength={60} autoComplete="name" />
         <Field label="Email" name="email" type="email" required autoComplete="email" />
         <Field

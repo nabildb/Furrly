@@ -4,6 +4,7 @@ import { AuthCard } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
 import { Loading } from '../components/Page'
 import { Button } from '../components/ui/Button'
+import { UsernameField } from '../components/UsernameField'
 import { api } from '../lib/api'
 import { safeRedirect } from '../lib/redirect'
 import type { Me } from '../lib/users'
@@ -51,14 +52,8 @@ export function Welcome() {
   return (
     <AuthCard title="Te damos la bienvenida" subtitle="Elige cómo te verán los vecinos en Furrly.">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field
-          label="Nombre de usuario"
-          name="username"
+        <UsernameField
           defaultValue={me.username}
-          required
-          pattern="[a-z0-9_]{3,30}"
-          autoComplete="username"
-          autoCapitalize="none"
           hint="3-30 caracteres: minúsculas, números o _. Después no se podrá cambiar."
         />
         <Field label="Nombre visible" name="displayName" defaultValue={me.displayName} required maxLength={60} autoComplete="name" />
