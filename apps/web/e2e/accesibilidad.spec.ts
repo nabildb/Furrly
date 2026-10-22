@@ -39,7 +39,7 @@ const publicApi = {
   'GET /posts': () => ({ posts: [post], nextCursor: null }),
 }
 
-const publicPages = ['/avisos', '/avisos/r-kiwi', '/comunidad', '/login', '/registro', '/buscar', '/privacidad']
+const publicPages = ['/avisos', '/avisos/r-kiwi', '/comunidad', '/login', '/registro', '/buscar', '/aviso-legal', '/privacidad', '/cookies', '/condiciones']
 
 for (const path of publicPages) {
   test(`accesible sin sesión: ${path}`, async ({ page }) => {

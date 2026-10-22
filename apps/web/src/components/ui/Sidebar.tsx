@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useMe } from '../../auth/useMe'
 import { useInbox } from '../../inbox/useInbox'
 import { cx } from '../../lib/cx'
+import { LegalLinks } from '../Legal'
 import { CountBadge } from './CountBadge'
 import { ButtonLink } from './Button'
 import { PlusIcon } from './icons'
@@ -70,6 +71,7 @@ export function Sidebar() {
             </ButtonLink>
           </div>
         )}
+        <LegalLinks className="mt-4 px-2" />
       </div>
     </aside>
   )

@@ -122,8 +122,9 @@ export function Profile() {
                 Moderación
               </MenuLink>
             )}
+            {/* En móvil no hay barra lateral: desde aquí se llega a Privacidad y, en su pie, a las demás. */}
             <MenuLink to="/privacidad" icon={<ShieldIcon />}>
-              Privacidad
+              Privacidad e información legal
             </MenuLink>
           </Card>
 

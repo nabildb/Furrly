@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { useMe } from '../auth/useMe'
 import { AuthCard } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
+import { SignUpNotice } from '../components/Legal'
 import { Loading } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { UsernameField } from '../components/UsernameField'
@@ -64,6 +65,8 @@ export function Welcome() {
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? 'Guardando…' : 'Empezar'}
         </Button>
+        {/* Quien entra con Google desde "Entrar" no ha pasado por el registro: lo acepta aquí. */}
+        <SignUpNotice action="pulsar «Empezar»" />
       </form>
     </AuthCard>
   )

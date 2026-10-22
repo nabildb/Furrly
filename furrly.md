@@ -37,8 +37,8 @@ Prefiero conversar en español.
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Estado actual (22-10-2026)
-Hecho, probado (100 tests de API, 34 de componentes y 24 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
-- Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); página de privacidad en /privacidad, perfil editable con zona de alertas, perfil público `/u/:username`, 404
+Hecho, probado (100 tests de API, 35 de componentes y 27 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
+- Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); **páginas legales** (`/aviso-legal`, `/privacidad`, `/cookies`, `/condiciones`; datos del titular en lib/legal.ts, sin banner de cookies porque no hay cookies), perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
 - Avistamientos con recorrido en el mapa
