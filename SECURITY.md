@@ -119,7 +119,8 @@ Cabeceras en [vercel.json](vercel.json):
 - Guarda contra SQL sin parámetros.
 - `npm audit --omit=dev --audit-level=high`: falla si una dependencia de producción tiene una vulnerabilidad alta.
 - **CodeQL** (`security-extended`) analiza el código en busca de vulnerabilidades.
-- **Dependabot** propone actualizaciones de dependencias cada semana.
+- **Dependabot** propone actualizaciones de dependencias cada semana y avisa en cuanto se publica una vulnerabilidad
+  (alertas y actualizaciones de seguridad activadas). GitHub escanea además el repositorio en busca de secretos y bloquea subirlos.
 
 ## Contraseñas (configuración de Supabase Auth)
 

@@ -124,7 +124,7 @@ flowchart LR
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, React Router 7 |
+| Frontend | React 19, Vite, TypeScript 7, Tailwind CSS v4, React Router 8 |
 | Mapas | Leaflet + OpenStreetMap, geocodificación con Nominatim |
 | API | Node, Express 5, TypeScript, zod |
 | Base de datos | PostgreSQL + PostGIS (Supabase), Prisma 7 con driver adapter `pg` |
