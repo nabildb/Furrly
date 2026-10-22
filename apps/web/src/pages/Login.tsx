@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-route
 import { useAuth } from '../auth/useAuth'
 import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
+import { LegalLinks } from '../components/Legal'
 import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
 import { safeRedirect } from '../lib/redirect'
@@ -48,9 +49,7 @@ export function Login() {
           <p>
             ¿No tienes cuenta? <AuthLink to="/registro">Crea una</AuthLink>
           </p>
-          <p className="text-sm">
-            <AuthLink to="/privacidad">Privacidad</AuthLink>
-          </p>
+          <LegalLinks className="flex justify-center pt-2 lg:hidden" />
         </>
       }
     >

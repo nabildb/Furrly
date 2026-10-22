@@ -47,7 +47,7 @@ para compartir fotos de tus mascotas.
 **Cuenta y moderación**
 - **Guía de primeros pasos** para cuentas nuevas: marcar tu zona en el mapa, activar los avisos en el móvil y crear el carnet de tu mascota.
 - Registro con email o **con Google** (la primera vez se elige el nombre de usuario), login y recuperación de contraseña.
-  Perfil público y zona de alertas privada. [Política de privacidad](https://furrly-rouge.vercel.app/privacidad).
+  Perfil público y zona de alertas privada. Páginas legales: [aviso legal](https://furrly-rouge.vercel.app/aviso-legal), [privacidad](https://furrly-rouge.vercel.app/privacidad), [cookies](https://furrly-rouge.vercel.app/cookies) y [condiciones de uso](https://furrly-rouge.vercel.app/condiciones).
 - Denunciar avisos, publicaciones, comentarios, usuarios o conversaciones, y un **panel de moderación** para revisarlas:
   descartar, borrar el contenido o suspender la cuenta del autor. Los moderadores reciben un push con cada denuncia.
 - **Bloquear** a un usuario: no podéis escribiros ni interactuar con vuestras publicaciones, y dejas de recibir sus avisos.
@@ -95,6 +95,9 @@ flowchart LR
 - **No leídos calculados, no almacenados.** Cada conversación guarda hasta cuándo ha leído cada lado; el número de no leídos sale de una consulta (`LATERAL` + subconsulta).
 - **Privacidad por defecto.** El microchip solo se devuelve al dueño, la zona de alertas nunca es pública
   y el contacto de un aviso solo se ve con sesión (la API usa un middleware de **sesión opcional**).
+- **Sin banner de cookies, y es legal.** Furrly no pone cookies: la sesión de Supabase va en el almacenamiento local y es estrictamente necesaria
+  (exenta de consentimiento por el art. 22.2 de la LSSI), y Vercel Web Analytics cuenta visitas sin guardar nada en el dispositivo.
+  La [política de cookies](https://furrly-rouge.vercel.app/cookies) lo explica, y al crear la cuenta se informa de las condiciones, la edad mínima (14 años) y la privacidad.
 - **Tiempo real sin abrir la base de datos.** Las tablas tienen RLS sin políticas, así que no se puede usar el "escuchar cambios"
   de Supabase. En su lugar, la API **toca un timbre** por el canal privado de Supabase Realtime del destinatario (`user:<id>`) y la
   web vuelve a pedir los datos a la API. Por el canal no viaja contenido, y una política RLS en `realtime.messages` hace que cada
@@ -155,9 +158,9 @@ Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows
   reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
   paginación, Web Push (incluido el vector del RFC 8291), bloqueos y límites anti-spam, ataques (inyección SQL, tokens falsos), el trigger que crea el perfil al entrar con Google y casos límite. Los tokens se firman con una clave ES256
   generada en cada ejecución, igual que hace Supabase Auth.
-- **Web: 34 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
-  (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos, redirecciones seguras y el registro (nombre de usuario que se corrige al escribir y errores en español).
-- **End-to-end: 24 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, sobre la web compilada y con la API
+- **Web: 35 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
+  (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos, redirecciones seguras y el registro (nombre de usuario que se corrige al escribir, errores en español y el aviso de condiciones y privacidad).
+- **End-to-end: 27 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, sobre la web compilada y con la API
   simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa escribir un mensaje, una conversación bloqueada y entrar con Google (botón, vuelta y elegir nombre de usuario).
 
 ## Calidad

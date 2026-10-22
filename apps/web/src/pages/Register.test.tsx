@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -84,5 +84,21 @@ describe('crear cuenta', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Ese nombre de usuario ya está cogido.')
     expect(signUp).not.toHaveBeenCalled()
+  })
+
+  it('avisa de las condiciones, la edad mínima y la privacidad antes de crear la cuenta', () => {
+    renderRegister()
+    const notice = screen.getByText(/aceptas las/)
+    expect(notice).toHaveTextContent('14 años o más')
+    expect(within(notice).getByRole('link', { name: 'condiciones de uso' })).toHaveAttribute('href', '/condiciones')
+    expect(within(notice).getByRole('link', { name: 'Privacidad' })).toHaveAttribute('href', '/privacidad')
+    // Y en el pie, las cuatro páginas legales.
+    const legal = screen.getByRole('navigation', { name: 'Información legal' })
+    expect(within(legal).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '/aviso-legal',
+      '/privacidad',
+      '/cookies',
+      '/condiciones',
+    ])
   })
 })

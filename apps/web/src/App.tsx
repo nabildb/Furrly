@@ -14,10 +14,12 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
   return lazy(() => load().then((m) => ({ default: m[name] })))
 }
 
+const Cookies = page(() => import('./pages/Cookies'), 'Cookies')
 const Conversation = page(() => import('./pages/Conversation'), 'Conversation')
 const NewConversation = page(() => import('./pages/Conversation'), 'NewConversation')
 const Feed = page(() => import('./pages/Feed'), 'Feed')
 const ForgotPassword = page(() => import('./pages/ForgotPassword'), 'ForgotPassword')
+const LegalNotice = page(() => import('./pages/LegalNotice'), 'LegalNotice')
 const Login = page(() => import('./pages/Login'), 'Login')
 const Messages = page(() => import('./pages/Messages'), 'Messages')
 const Moderation = page(() => import('./pages/Moderation'), 'Moderation')
@@ -41,6 +43,7 @@ const ReportNew = page(() => import('./pages/ReportNew'), 'ReportNew')
 const Reports = page(() => import('./pages/Reports'), 'Reports')
 const ResetPassword = page(() => import('./pages/ResetPassword'), 'ResetPassword')
 const SearchUsers = page(() => import('./pages/SearchUsers'), 'SearchUsers')
+const Terms = page(() => import('./pages/Terms'), 'Terms')
 const UserProfile = page(() => import('./pages/UserProfile'), 'UserProfile')
 const Welcome = page(() => import('./pages/Welcome'), 'Welcome')
 
@@ -75,7 +78,10 @@ export function App() {
             <Route path="avisos" element={<Reports />} />
             <Route path="comunidad" element={<Feed />} />
             <Route path="publicaciones/:id" element={<PostDetail />} />
+            <Route path="aviso-legal" element={<LegalNotice />} />
             <Route path="privacidad" element={<Privacy />} />
+            <Route path="cookies" element={<Cookies />} />
+            <Route path="condiciones" element={<Terms />} />
             <Route path="buscar" element={<SearchUsers />} />
             <Route element={<RequireAuth />}>
               <Route path="mascotas" element={<MyPets />} />

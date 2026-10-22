@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { api } from './api'
+import { legalPaths } from './legal'
 import type { Me } from './users'
 
 // Usuarios ya comprobados en esta pestaña: /me se pide una vez por sesión, no en cada página.
@@ -12,8 +13,8 @@ export function markAccountReady(userId: string) {
   ready.add(userId)
 }
 
-/** Páginas que forman parte de lo pendiente: desde ellas no se redirige. */
-const SETUP_PAGES = ['/bienvenida', '/empezar']
+/** Páginas que forman parte de lo pendiente, y las legales (se pueden leer antes de aceptarlas): desde ellas no se redirige. */
+const SETUP_PAGES = ['/bienvenida', '/empezar', ...legalPaths]
 
 /**
  * Lo que una cuenta nueva tiene que hacer antes de seguir, vuelva a la página que vuelva:

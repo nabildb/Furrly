@@ -3,6 +3,7 @@ import { Navigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { AuthCard, AuthLink } from '../components/AuthCard'
 import { ErrorText, Field } from '../components/Field'
+import { LegalLinks, SignUpNotice } from '../components/Legal'
 import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
 import { UsernameField } from '../components/UsernameField'
@@ -85,9 +86,7 @@ export function Register() {
           <p>
             ¿Ya tienes cuenta? <AuthLink to="/login">Entra</AuthLink>
           </p>
-          <p className="text-sm">
-            <AuthLink to="/privacidad">Privacidad</AuthLink>
-          </p>
+          <LegalLinks className="flex justify-center pt-2 lg:hidden" />
         </>
       }
     >
@@ -109,6 +108,8 @@ export function Register() {
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? 'Creando…' : 'Crear cuenta'}
         </Button>
+        {/* Vale también para el botón de Google de arriba: la cuenta se crea igual. */}
+        <SignUpNotice action="crear la cuenta, con email o con Google," />
       </form>
     </AuthCard>
   )
