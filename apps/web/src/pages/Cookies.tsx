@@ -10,9 +10,15 @@ const stored = [
     until: 'Hasta que cierras sesión',
   },
   {
-    name: 'Service worker y suscripción push',
-    what: 'Recibir los avisos de mascotas en tu zona con Furrly cerrada. Solo si los activas y das permiso.',
+    name: 'Service worker (sw.js)',
+    what: 'Permite instalar Furrly como app y recibir avisos con ella cerrada. No guarda datos tuyos ni páginas.',
     where: 'Navegador',
+    until: 'Hasta que borras los datos del sitio',
+  },
+  {
+    name: 'Suscripción a los avisos push',
+    what: 'La dirección a la que tu navegador recibe los avisos de mascotas en tu zona. Solo si los activas y das permiso.',
+    where: 'Navegador y servidor de Furrly',
     until: 'Hasta que desactivas los avisos',
   },
 ]
