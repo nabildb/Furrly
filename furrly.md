@@ -36,7 +36,7 @@ Prefiero conversar en español.
 - URL de producción: https://furrly-rouge.vercel.app (el dominio propio sigue pendiente)
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
-## Estado actual (18-10-2026)
+## Estado actual (22-10-2026)
 Hecho, probado (100 tests de API, 34 de componentes y 24 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); página de privacidad en /privacidad, perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
@@ -60,8 +60,10 @@ Hecho, probado (100 tests de API, 34 de componentes y 24 end-to-end ×2 —móvi
 - **Automatizaciones**: refresco de la demo cada lunes, Lighthouse cada lunes, limpieza nocturna de fotos huérfanas, Dependabot, capturas del README a mano (workflow «Capturas»)
 - Rate limiting, validación con zod, RLS sin políticas (todo pasa por la API), CI con GitHub Actions
 - Tests solo en CI (servicio PostGIS del workflow); no se instala nada en local
+- **Quién soy** (`auth/MeProvider.tsx`, `useMe()`): username y nombre visible salen de `/me`, no del token de Supabase (el token guarda lo del registro y en cuentas de Google no lleva username). Lo usan la barra lateral y las comprobaciones de «es mío» (perfil público, mascota, publicación, aviso, editar aviso, cartel)
 
 ### Pendiente
+- **Confirmar con un amigo de Google** que ve su nombre en la barra lateral y los botones de editar en sus avisos/mascotas (arreglado en el PR nº 12; solo lo cubre el test)
 - **Limpiar datos de prueba de los amigos** cuando terminen de probar (avisos, mascotas, publicaciones que no sean de demo ni de @nabil)
 - **Encuesta de feedback**: https://forms.gle/Xa3SoB33fpuB89iX7 (script en docs/feedback/crear-encuesta.gs, sin subir a git). Solo 2 respuestas (notas 5/5 y 4/5; una dijo «No lo sé» a si la usaría y un 7). Esperar 5-8 y convertirlas en mejoras
 - **Dominio propio** (~10 €/año): actualizar URLs de Supabase Auth, Google OAuth (orígenes), `PUBLIC_SITE_URL`, `VAPID_SUBJECT`, CSP y capturas. Con dominio se puede poner logo en la pantalla de Google (requiere verificar la marca)
@@ -88,6 +90,8 @@ Hecho, probado (100 tests de API, 34 de componentes y 24 end-to-end ×2 —móvi
 - **Secretos**: en Vercel (VAPID, `SUPABASE_SERVICE_ROLE_KEY` = clave `sb_secret_` «limpieza-fotos», `CRON_SECRET`, `SENTRY_DSN`) y en GitHub (`DATABASE_URL`, sin comillas). Nunca en el repo ni en el chat
 - **Lecciones**: probar los componentes **en la página real** (el borrado de cuenta fallaba solo dentro del perfil por un `<form>` anidado; ahora los Sheet van en portal). Los e2e fallan ante cualquier violación de la CSP
 - **Rendimiento** (18-10-2026): el mapa en móvil subió de 72 a 80-88 (varía según el día con el mismo código) cargando las páginas bajo demanda, aligerando Nunito Sans y retrasando Sentry 3 s tras el `load` (en una SPA el `load` llega antes que las teselas). El límite ahora son las ~500 kB de teselas de OSM; las de CARTO (más ligeras) piden clave de API
+- **Sesiones del 19-22-10-2026**: cron de fotos huérfanas comprobado (borró las 2), Dependabot con alertas y actualizaciones de seguridad activadas (0 alertas), ramas + PRs con ruleset, previews de Vercel documentadas, arreglos del registro (PR nº 10/11) y del nombre visible (PR nº 12)
+- **Lecciones de estas sesiones**: (1) `session.user.user_metadata` no es fiable para datos del perfil: usar `useMe()`. (2) Si GitHub da **502 al fusionar**, el commit puede llegar a `main` sin avisar a Vercel ni a la CI: comprobar el despliegue (hash de `index-*.js`) y, si falta, fusionar otro PR para disparar el push. (3) La sesión de Supabase es **por dominio**: en una preview hay que entrar en esa misma URL. (4) El panel del navegador integrado se oculta y muestra solo (`visibilitychange`), así que ahí se ven refrescos de `/me/inbox` cada pocos segundos que no pasan en un navegador normal. (5) Lighthouse varía entre días: comparar medianas, no una medición
 - **Registro** (20-10-2026): el `pattern` del nombre de usuario bloqueaba el envío con una mayúscula, espacio o tilde y solo salía la burbuja genérica del navegador. Ahora `UsernameField` lo corrige al escribir y explica lo que sobra; los errores de Supabase se traducen (lib/authErrors.ts) y no se revela si un email ya tiene cuenta
 - Migraciones nuevas: escribir SQL en `apps/api/prisma/migrations/<timestamp>_<nombre>/` (ver las existentes: lo que Prisma no expresa —PostGIS, CHECKs, triggers, RLS— va a mano)
 
