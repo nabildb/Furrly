@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { Loading } from './components/Page'
 import { RequireAuth } from './components/RequireAuth'
@@ -55,62 +56,64 @@ const StyleGuide = import.meta.env.DEV
 export function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          {/* La portada es el mapa: es lo primero que necesita quien ha perdido o encontrado un animal. */}
-          <Route index element={<Navigate to="/avisos" replace />} />
+      <ErrorBoundary>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            {/* La portada es el mapa: es lo primero que necesita quien ha perdido o encontrado un animal. */}
+            <Route index element={<Navigate to="/avisos" replace />} />
 
-          {/* Cartel para imprimir: sin navegación ni barra lateral. */}
-          <Route path="avisos/:id/cartel" element={<Poster />} />
-          {/* Guía de primeros pasos de las cuentas nuevas: a pantalla completa, sin navegación. */}
-          <Route element={<RequireAuth />}>
-            <Route path="empezar" element={<Onboarding />} />
-          </Route>
-
-          {/* Con la navegación flotante */}
-          <Route element={<Layout />}>
-            <Route path="login" element={<Login />} />
-            <Route path="registro" element={<Register />} />
-            <Route path="recuperar" element={<ForgotPassword />} />
-            <Route path="restablecer" element={<ResetPassword />} />
-            <Route path="u/:username" element={<UserProfile />} />
-            <Route path="mascotas/:id" element={<PetDetail />} />
-            <Route path="avisos" element={<Reports />} />
-            <Route path="comunidad" element={<Feed />} />
-            <Route path="publicaciones/:id" element={<PostDetail />} />
-            <Route path="aviso-legal" element={<LegalNotice />} />
-            <Route path="privacidad" element={<Privacy />} />
-            <Route path="cookies" element={<Cookies />} />
-            <Route path="condiciones" element={<Terms />} />
-            <Route path="buscar" element={<SearchUsers />} />
+            {/* Cartel para imprimir: sin navegación ni barra lateral. */}
+            <Route path="avisos/:id/cartel" element={<Poster />} />
+            {/* Guía de primeros pasos de las cuentas nuevas: a pantalla completa, sin navegación. */}
             <Route element={<RequireAuth />}>
-              <Route path="mascotas" element={<MyPets />} />
-              <Route path="avisos/mios" element={<MyReports />} />
-              <Route path="perfil" element={<Profile />} />
-              <Route path="mensajes" element={<Messages />} />
-              <Route path="notificaciones" element={<Notifications />} />
-              <Route path="moderacion" element={<Moderation />} />
+              <Route path="empezar" element={<Onboarding />} />
             </Route>
-            {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
-            <Route path="*" element={<NotFound />} />
-          </Route>
 
-          {/* Pantallas con su propia barra de acciones abajo */}
-          <Route element={<Layout nav={false} />}>
-            <Route path="avisos/:id" element={<ReportDetail />} />
-            <Route element={<RequireAuth />}>
-              <Route path="avisos/nuevo" element={<ReportNew />} />
-              <Route path="avisos/:id/editar" element={<ReportEdit />} />
-              <Route path="mascotas/nueva" element={<PetNew />} />
-              <Route path="mascotas/:id/editar" element={<PetEdit />} />
-              <Route path="publicaciones/nueva" element={<PostNew />} />
-              <Route path="mensajes/nuevo" element={<NewConversation />} />
-              <Route path="mensajes/:id" element={<Conversation />} />
-              <Route path="bienvenida" element={<Welcome />} />
+            {/* Con la navegación flotante */}
+            <Route element={<Layout />}>
+              <Route path="login" element={<Login />} />
+              <Route path="registro" element={<Register />} />
+              <Route path="recuperar" element={<ForgotPassword />} />
+              <Route path="restablecer" element={<ResetPassword />} />
+              <Route path="u/:username" element={<UserProfile />} />
+              <Route path="mascotas/:id" element={<PetDetail />} />
+              <Route path="avisos" element={<Reports />} />
+              <Route path="comunidad" element={<Feed />} />
+              <Route path="publicaciones/:id" element={<PostDetail />} />
+              <Route path="aviso-legal" element={<LegalNotice />} />
+              <Route path="privacidad" element={<Privacy />} />
+              <Route path="cookies" element={<Cookies />} />
+              <Route path="condiciones" element={<Terms />} />
+              <Route path="buscar" element={<SearchUsers />} />
+              <Route element={<RequireAuth />}>
+                <Route path="mascotas" element={<MyPets />} />
+                <Route path="avisos/mios" element={<MyReports />} />
+                <Route path="perfil" element={<Profile />} />
+                <Route path="mensajes" element={<Messages />} />
+                <Route path="notificaciones" element={<Notifications />} />
+                <Route path="moderacion" element={<Moderation />} />
+              </Route>
+              {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
+              <Route path="*" element={<NotFound />} />
             </Route>
-          </Route>
-        </Routes>
-      </Suspense>
+
+            {/* Pantallas con su propia barra de acciones abajo */}
+            <Route element={<Layout nav={false} />}>
+              <Route path="avisos/:id" element={<ReportDetail />} />
+              <Route element={<RequireAuth />}>
+                <Route path="avisos/nuevo" element={<ReportNew />} />
+                <Route path="avisos/:id/editar" element={<ReportEdit />} />
+                <Route path="mascotas/nueva" element={<PetNew />} />
+                <Route path="mascotas/:id/editar" element={<PetEdit />} />
+                <Route path="publicaciones/nueva" element={<PostNew />} />
+                <Route path="mensajes/nuevo" element={<NewConversation />} />
+                <Route path="mensajes/:id" element={<Conversation />} />
+                <Route path="bienvenida" element={<Welcome />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
