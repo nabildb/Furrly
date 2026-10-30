@@ -69,6 +69,8 @@ model User {
   onboardedAt   DateTime?                              @map("onboarded_at") @db.Timestamptz
   /// Suspendida por moderación: no puede entrar ni usar la API.
   suspendedAt   DateTime?                              @map("suspended_at") @db.Timestamptz
+  /// Fin de una suspensión temporal. null = indefinida.
+  suspendedUntil DateTime?                             @map("suspended_until") @db.Timestamptz
   displayName   String                                 @map("display_name") @db.VarChar(60)
   avatarUrl     String?                                @map("avatar_url")
   bio           String?                                @db.VarChar(300)

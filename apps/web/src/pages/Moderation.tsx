@@ -19,6 +19,8 @@ import { formatTimeAgo } from '../lib/reports'
 
 type Tab = 'pendientes' | 'resueltas' | 'historial'
 
+const dayFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' })
+
 const confirmations: Record<ModerationAction, ((item: FlaggedItem) => string) | null> = {
   dismiss: null,
   remove: (item) => `¿Borrar este ${targetLabels[item.targetType].toLowerCase()}? No se puede deshacer.`,
@@ -143,8 +145,13 @@ function SuspendedUsers({ refreshKey }: { refreshKey: number }) {
       <ul className="divide-y divide-card-line">
         {users.map((u) => (
           <li key={u.username} className="flex items-center gap-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-[15px] font-bold">
-              {u.displayName} <span className="text-muted">@{u.username}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[15px] font-bold">
+                {u.displayName} <span className="text-muted">@{u.username}</span>
+              </span>
+              <span className="block text-[13px] font-semibold text-muted">
+                {u.suspendedUntil ? `Hasta el ${dayFormat.format(new Date(u.suspendedUntil))}` : 'Indefinida'}
+              </span>
             </span>
             <Button variant="secondary" size="md" onClick={() => lift(u.username)}>
               Levantar

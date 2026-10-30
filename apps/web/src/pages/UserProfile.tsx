@@ -9,6 +9,7 @@ import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { PetCard } from '../components/PetCard'
 import { SuspendButton } from '../components/SuspendButton'
+import { WarnButton } from '../components/WarnButton'
 import { ButtonLink } from '../components/ui/Button'
 import { SectionTitle } from '../components/ui/Card'
 import { MessageIcon } from '../components/ui/icons'
@@ -84,6 +85,7 @@ export function UserProfile() {
             </div>
             {isAdmin && (
               <div className="flex flex-wrap items-center justify-center gap-4">
+                <WarnButton key={`warn-${profile.username}`} username={profile.username} />
                 <SuspendButton key={profile.username} username={profile.username} />
                 <DeleteProfileButton username={profile.username} onDeleted={() => navigate('/comunidad', { replace: true })} />
               </div>

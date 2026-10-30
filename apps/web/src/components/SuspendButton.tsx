@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
-import type { Decision, SuspendedUser } from '../lib/moderation'
+import { suspensionOptions, type Decision, type SuspendedUser } from '../lib/moderation'
 import { DecisionSheet } from './DecisionSheet'
-import { ErrorText } from './Field'
+import { ErrorText, SelectField } from './Field'
 
 /** Suspender o readmitir una cuenta desde su perfil, sin esperar a una denuncia. Solo para moderadores. */
 export function SuspendButton({ username }: { username: string }) {
@@ -17,8 +17,8 @@ export function SuspendButton({ username }: { username: string }) {
       .catch((e: Error) => setError(e.message))
   }, [username])
 
-  async function suspend(decision: Decision) {
-    await api(`/admin/suspended/${username}`, { method: 'PUT', body: JSON.stringify(decision) })
+  async function suspend(decision: Decision, form: FormData) {
+    await api(`/admin/suspended/${username}`, { method: 'PUT', body: JSON.stringify({ ...decision, days: Number(form.get('days')) || null }) })
     setSuspended(true)
     setOpen(false)
   }
@@ -44,7 +44,8 @@ export function SuspendButton({ username }: { username: string }) {
       {error && <ErrorText>{error}</ErrorText>}
       {open && (
         <DecisionSheet title={`Suspender a @${username}`} confirmLabel="Suspender" onConfirm={suspend} onClose={() => setOpen(false)}>
-          <p className="text-[15px] font-semibold text-body">No podrá entrar en Furrly hasta que levantes la suspensión.</p>
+          <p className="text-[15px] font-semibold text-body">No podrá entrar en Furrly mientras dure la suspensión.</p>
+          <SelectField label="Duración" name="days" options={suspensionOptions} defaultValue="7" />
         </DecisionSheet>
       )}
     </>

@@ -8,7 +8,8 @@ import { Sheet } from './ui/Sheet'
 interface DecisionSheetProps {
   title: string
   confirmLabel: string
-  onConfirm: (decision: Decision) => Promise<unknown>
+  /** form: por si la hoja lleva algún campo más, como la duración de una suspensión. */
+  onConfirm: (decision: Decision, form: FormData) => Promise<unknown>
   onClose: () => void
   /** Qué va a pasar, antes de pedir el motivo. */
   children: ReactNode
@@ -21,11 +22,11 @@ export function DecisionSheet({ title, confirmLabel, onConfirm, onClose, childre
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const decision = readDecision(new FormData(e.currentTarget))
+    const form = new FormData(e.currentTarget)
     setBusy(true)
     setError(null)
     try {
-      await onConfirm(decision)
+      await onConfirm(readDecision(form), form)
     } catch (e) {
       setError((e as Error).message)
       setBusy(false)

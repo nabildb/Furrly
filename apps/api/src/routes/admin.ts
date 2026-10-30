@@ -56,6 +56,7 @@ async function preview(targetType: FlagTarget, targetId: string, reporterIds: st
 }
 
 const LOG_PAGE_SIZE = 30
+const DAY_MS = 24 * 60 * 60 * 1000
 
 export const adminRouter = Router()
 adminRouter.use(requireAdmin)
@@ -157,16 +158,25 @@ async function assertRegularUser(userId: string, moderatorId: string) {
   if (user?.isAdmin) throw new HttpError(400, 'Eso no se puede hacer con la cuenta de un moderador')
 }
 
-/** Suspende la cuenta: no puede usar la API (requireAuth) ni volver a entrar en Supabase Auth. */
-async function suspend(userId: string, moderatorId: string, decision: Decision) {
+const suspensionSchema = decisionSchema.extend({ days: z.number().int().min(1).max(365).nullable().optional() })
+
+/** Suspende la cuenta: no puede usar la API (requireAuth) ni entrar en Supabase Auth. Sin días, es indefinida. */
+async function suspend(userId: string, moderatorId: string, { days, ...decision }: z.infer<typeof suspensionSchema>) {
   await assertRegularUser(userId, moderatorId)
-  const { username } = await prisma.user.update({ where: { id: userId }, data: { suspendedAt: new Date() }, select: { username: true } })
+  const until = days ? new Date(Date.now() + days * DAY_MS) : null
+  const { username } = await prisma.user.update({
+    where: { id: userId },
+    data: { suspendedAt: new Date(), suspendedUntil: until },
+    select: { username: true },
+  })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
   if (hasAuth) {
-    await prisma.$executeRaw`UPDATE auth.users SET banned_until = 'infinity' WHERE id = ${userId}::uuid`
+    await prisma.$executeRaw`UPDATE auth.users SET banned_until = ${until?.toISOString() ?? 'infinity'}::timestamptz WHERE id = ${userId}::uuid`
     await prisma.$executeRaw`DELETE FROM auth.sessions WHERE user_id = ${userId}::uuid`
   }
-  await recordAction({ moderatorId, action: 'suspend', targetType: 'user', targetId: userId, targetLabel: `@${username}`, targetUserId: userId, ...decision })
+  const duration = days ? ` durante ${days === 1 ? '1 día' : `${days} días`}` : ''
+  await recordAction({ moderatorId, action: 'suspend', targetType: 'user', targetId: userId, targetLabel: `@${username}${duration}`, targetUserId: userId, ...decision })
+  await notifyModeration(userId, `Hemos suspendido tu cuenta${duration} por ${reasonTexts[decision.reason]}.`)
 }
 
 const resolveFlags = (targetType: FlagTarget, targetId: string) =>
@@ -266,9 +276,10 @@ adminRouter.get('/log', async (req, res) => {
 /** Cuentas suspendidas, para poder levantar la suspensión. */
 adminRouter.get('/suspended', async (_req, res) => {
   const users = await prisma.user.findMany({
-    where: { suspendedAt: { not: null } },
+    // Las temporales ya cumplidas no cuentan, aunque esa persona aún no haya vuelto (ver requireAuth).
+    where: { suspendedAt: { not: null }, OR: [{ suspendedUntil: null }, { suspendedUntil: { gt: new Date() } }] },
     orderBy: { suspendedAt: 'desc' },
-    select: { username: true, displayName: true, suspendedAt: true },
+    select: { username: true, displayName: true, suspendedAt: true, suspendedUntil: true },
   })
   res.json(users)
 })
@@ -291,18 +302,29 @@ adminRouter.delete('/users/:username', async (req, res) => {
   res.status(204).end()
 })
 
+/** Advertir: un aviso con el motivo, sin más consecuencias. Queda en su historial. */
+adminRouter.post('/users/:username/warn', async (req, res) => {
+  const decision = parse(decisionSchema, req.body)
+  const moderatorId = req.userId!
+  const user = await findUser(String(req.params.username))
+  await assertRegularUser(user.id, moderatorId)
+  await recordAction({ moderatorId, action: 'warn', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, targetUserId: user.id, ...decision })
+  await notifyModeration(user.id, `Te hemos enviado una advertencia por ${reasonTexts[decision.reason]}. Si se repite, podríamos suspender tu cuenta.`)
+  res.status(204).end()
+})
+
 /** Suspender desde su perfil, sin esperar a una denuncia. Las que tuviera ese perfil quedan resueltas. */
 adminRouter.put('/suspended/:username', async (req, res) => {
-  const decision = parse(decisionSchema, req.body)
+  const suspension = parse(suspensionSchema, req.body)
   const user = await findUser(String(req.params.username))
-  await suspend(user.id, req.userId!, decision)
+  await suspend(user.id, req.userId!, suspension)
   await resolveFlags('user', user.id)
   res.status(204).end()
 })
 
 adminRouter.delete('/suspended/:username', async (req, res) => {
   const user = await findUser(String(req.params.username))
-  await prisma.user.update({ where: { id: user.id }, data: { suspendedAt: null } })
+  await prisma.user.update({ where: { id: user.id }, data: { suspendedAt: null, suspendedUntil: null } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
   if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${user.id}::uuid`
   await recordAction({ moderatorId: req.userId!, action: 'unsuspend', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, targetUserId: user.id })

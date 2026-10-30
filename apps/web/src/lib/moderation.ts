@@ -75,7 +75,12 @@ export interface SuspendedUser {
   username: string
   displayName: string
   suspendedAt: string
+  /** null = indefinida. */
+  suspendedUntil: string | null
 }
+
+/** Cuánto puede durar una suspensión, en días. La clave vacía es indefinida. */
+export const suspensionOptions = { '1': '24 horas', '7': '7 días', '30': '30 días', '': 'Indefinida' }
 
 export const targetLabels: Record<FlagTargetType, string> = {
   report: 'Aviso',
