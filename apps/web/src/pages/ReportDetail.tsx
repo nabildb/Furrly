@@ -32,6 +32,7 @@ import {
 } from '../lib/reports'
 import { shareCurrentPage } from '../lib/share'
 import { removeImage } from '../lib/storage'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 /** Ajusta el zoom para que se vea todo el recorrido. */
 function FitRoute({ points }: { points: LatLng[] }) {
@@ -48,6 +49,7 @@ const overPhotoButton = 'flex h-11 w-11 items-center justify-center rounded-full
 export function ReportDetail() {
   const { id } = useParams()
   const [report, setReport] = useState<Report | null>(null)
+  useDocumentTitle(report?.title)
   const [error, setError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)

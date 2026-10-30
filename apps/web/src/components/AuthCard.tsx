@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { CheckIcon, EyeIcon, PinIcon } from './ui/icons'
 import { Logo, LogoMark } from './ui/Logo'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 interface AuthCardProps {
   title: string
@@ -40,6 +41,8 @@ function BrandPanel() {
 
 /** Marco de login, registro y contraseña: logo y tarjeta centrada; en escritorio, junto al panel de marca. */
 export function AuthCard({ title, subtitle, children, footer }: AuthCardProps) {
+  useDocumentTitle(title)
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 pt-8 pb-32 lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-stretch lg:gap-6 lg:px-10 lg:py-10">
       <BrandPanel />

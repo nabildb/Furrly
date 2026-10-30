@@ -16,6 +16,7 @@ import { cx } from '../lib/cx'
 import { searchPlace } from '../lib/geocode'
 import { speciesLabels, type Species } from '../lib/pets'
 import { DEFAULT_CENTER, reportColors, type LatLng, type NearbyReport, type ReportType } from '../lib/reports'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useMediaQuery } from '../lib/useMediaQuery'
 
 const RADII = [2, 5, 10, 25, 50]
@@ -47,6 +48,7 @@ function FlyTo({ center }: { center: LatLng }) {
 }
 
 export function Reports() {
+  useDocumentTitle('Avisos cerca')
   const { session } = useAuth()
   const inbox = useInbox()
   const [searchCenter, setSearchCenter] = useState<LatLng>(DEFAULT_CENTER)

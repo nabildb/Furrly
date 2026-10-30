@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button'
 import { UsernameField } from '../components/UsernameField'
 import { api } from '../lib/api'
 import { safeRedirect } from '../lib/redirect'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import type { Me } from '../lib/users'
 
 /**
@@ -16,6 +17,7 @@ import type { Me } from '../lib/users'
  * Aquí se confirma o se cambia (solo una vez) y se ajusta el nombre visible.
  */
 export function Welcome() {
+  useDocumentTitle('Bienvenida')
   const navigate = useNavigate()
   const { update: updateMe } = useMe()
   const next = safeRedirect(useSearchParams()[0].get('next'))

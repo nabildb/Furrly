@@ -12,6 +12,7 @@ import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import { speciesLabels } from '../lib/pets'
 import type { Report } from '../lib/reports'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const longDate = (iso: string) =>
   new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(iso))
@@ -25,6 +26,7 @@ export function Poster() {
   const { id } = useParams()
   const { username: myUsername } = useMe()
   const [report, setReport] = useState<Report | null>(null)
+  useDocumentTitle(report ? `Cartel: ${report.title}` : undefined)
   const [qr, setQr] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const url = `${window.location.origin}/avisos/${id}`

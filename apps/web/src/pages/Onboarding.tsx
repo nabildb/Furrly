@@ -12,6 +12,7 @@ import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import { safeRedirect } from '../lib/redirect'
 import type { LatLng } from '../lib/reports'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const RADII = [1, 2, 5, 10]
 const STEPS = ['Tu zona', 'Avisos', 'Tu mascota'] as const
@@ -21,6 +22,7 @@ const STEPS = ['Tu zona', 'Avisos', 'Tu mascota'] as const
  * mascotas perdidas cerca, y la app no sirve de mucho. Cada paso se puede saltar.
  */
 export function Onboarding() {
+  useDocumentTitle('Primeros pasos')
   const navigate = useNavigate()
   const { session } = useAuth()
   const next = safeRedirect(useSearchParams()[0].get('next'))
