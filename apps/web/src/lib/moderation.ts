@@ -82,6 +82,44 @@ export interface SuspendedUser {
 /** Cuánto puede durar una suspensión, en días. La clave vacía es indefinida. */
 export const suspensionOptions = { '1': '24 horas', '7': '7 días', '30': '30 días', '': 'Indefinida' }
 
+/** Ficha de una cuenta en el panel. */
+export interface UserFile {
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  bio: string | null
+  createdAt: string
+  isAdmin: boolean
+  suspendedAt: string | null
+  suspendedUntil: string | null
+  counts: { pets: number; posts: number; reports: number; comments: number; sightings: number }
+  flags: number
+  warnings: number
+  history: LogEntry[]
+}
+
+export interface ModerationCounts {
+  pending: number
+  resolvedLastWeek: number
+  suspended: number
+  decisionsLastWeek: number
+}
+
+/** Lo que se puede quitar de un perfil sin tocar la cuenta. */
+export const cleanFields = { avatar: 'Foto de perfil', bio: 'Biografía', displayName: 'Nombre visible', username: 'Nombre de usuario' }
+
+export const logFilters: Record<LogAction | '', string> = {
+  '': 'Todas las decisiones',
+  remove: 'Contenido borrado',
+  dismiss: 'Denuncias descartadas',
+  warn: 'Advertencias',
+  suspend: 'Suspensiones',
+  unsuspend: 'Readmisiones',
+  delete_account: 'Cuentas borradas',
+  clean_profile: 'Perfiles limpiados',
+  purge_content: 'Cuentas vaciadas',
+}
+
 export const targetLabels: Record<FlagTargetType, string> = {
   report: 'Aviso',
   post: 'Publicación',
