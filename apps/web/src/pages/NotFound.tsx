@@ -1,8 +1,11 @@
 import { ButtonLink } from '../components/ui/Button'
 import { MapIcon } from '../components/ui/icons'
 import { LogoMark } from '../components/ui/Logo'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 export function NotFound() {
+  useDocumentTitle('Página no encontrada')
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-3 px-4 pb-32 text-center">
       <LogoMark size={72} />

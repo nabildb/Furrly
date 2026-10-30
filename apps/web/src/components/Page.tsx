@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { cx } from '../lib/cx'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { ErrorText } from './Field'
 import { BackIcon, PawIcon } from './ui/icons'
 import { iconButtonClass } from './ui/styles'
@@ -32,6 +33,8 @@ export function Page({
   className,
   children,
 }: PageProps) {
+  useDocumentTitle(title)
+
   return (
     <main
       className={cx(

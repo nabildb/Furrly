@@ -14,6 +14,7 @@ import { readReportFields, type LatLng, type Report, type ReportType } from '../
 import { removeImage } from '../lib/storage'
 import { thumbUrl } from '../lib/thumbUrl'
 import { useActiveLostReports } from '../lib/useActiveLostReports'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const STEPS = [
   { title: '¿Qué ha pasado?', next: 'Siguiente: dónde y cuándo' },
@@ -27,6 +28,7 @@ const STEPS = [
  * atrás no se pierde nada. Cada paso se valida por separado al pulsar "Siguiente".
  */
 export function ReportNew() {
+  useDocumentTitle('Nuevo aviso')
   const navigate = useNavigate()
   const routerLocation = useLocation()
   // /avisos/nuevo?mascota=<id> llega desde el carnet ("Avisar de que se ha perdido").

@@ -11,6 +11,7 @@ import { api } from '../lib/api'
 import { useRing } from '../lib/realtime'
 import type { ChatMessage, ConversationDetail } from '../lib/inbox'
 import type { Report } from '../lib/reports'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import type { PublicProfile } from '../lib/users'
 
 // Red de seguridad: lo normal es que el timbre de tiempo real avise al momento (ver lib/realtime.ts).
@@ -25,6 +26,7 @@ function useScrollToEnd(dep: unknown) {
 
 /** Conversación abierta: mensajes, cargar anteriores y responder. Se refresca cada 8 s. */
 export function Conversation() {
+  useDocumentTitle('Conversación')
   const { id } = useParams()
   const { refresh: refreshInbox } = useInbox()
   const [data, setData] = useState<ConversationDetail | null>(null)
