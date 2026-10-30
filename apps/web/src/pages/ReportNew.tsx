@@ -12,6 +12,7 @@ import { cx } from '../lib/cx'
 import { speciesLabels, type Pet, type Species } from '../lib/pets'
 import { readReportFields, type LatLng, type Report, type ReportType } from '../lib/reports'
 import { removeImage } from '../lib/storage'
+import { thumbUrl } from '../lib/thumbUrl'
 import { useActiveLostReports } from '../lib/useActiveLostReports'
 
 const STEPS = [
@@ -222,7 +223,7 @@ export function ReportNew() {
                         className="sr-only"
                       />
                       <span className="flex h-[60px] w-[60px] items-center justify-center overflow-hidden rounded-[20px] bg-[#F6D9C8] text-lost/40">
-                        {pet.photoUrl ? <img src={pet.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={28} />}
+                        {pet.photoUrl ? <img src={thumbUrl(pet.photoUrl)} alt="" className="h-full w-full object-cover" /> : <PawIcon size={28} />}
                       </span>
                       <span className="max-w-full truncate px-1 text-[15px] font-extrabold">{pet.name}</span>
                       {busy && <span className="-mt-1.5 text-xs font-bold text-muted">Ya tiene aviso</span>}

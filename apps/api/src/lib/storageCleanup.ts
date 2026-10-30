@@ -6,7 +6,8 @@ const BUCKET = 'media'
 /**
  * Fotos del bucket que ya no usa nadie: avisos o publicaciones borrados, formularios que se
  * abandonaron después de subir la foto... Solo las de hace más de un día, para no borrar la de
- * alguien que está a medio publicar.
+ * alguien que está a medio publicar. Una miniatura (`<id>-thumb.webp`) cuenta como usada si lo
+ * está su foto (`<id>-t.webp`): en la base de datos solo se guarda la URL de la foto.
  */
 export async function findOrphanPhotos(limit = 500) {
   const [{ hasStorage }] = await prisma.$queryRaw<{ hasStorage: boolean }[]>`
@@ -28,7 +29,7 @@ export async function findOrphanPhotos(limit = 500) {
     SELECT o.name FROM storage.objects o
     WHERE o.bucket_id = ${BUCKET}
       AND o.created_at < now() - interval '1 day'
-      AND NOT EXISTS (SELECT 1 FROM used WHERE used.name = o.name)
+      AND NOT EXISTS (SELECT 1 FROM used WHERE used.name = regexp_replace(o.name, '-thumb(\\.\\w+)$', '-t\\1'))
     ORDER BY o.created_at
     LIMIT ${limit}`
   return rows.map((r) => r.name)

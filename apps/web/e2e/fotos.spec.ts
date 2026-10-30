@@ -25,7 +25,7 @@ test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', a
 
   // Lo que llega a Supabase Storage.
   // supabase-js envía el archivo en un formulario multipart: se saca su tipo y sus bytes.
-  const uploads: { type: string; body: Buffer }[] = []
+  const uploads: { url: string; type: string; body: Buffer }[] = []
   await page.route('http://supabase.test/storage/v1/object/media/**', (route) => {
     const request = route.request()
     const boundary = `--${request.headers()['content-type'].split('boundary=')[1]}`
@@ -34,7 +34,7 @@ test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', a
     const start = raw.indexOf(`Content-Type: ${fileType}`)
     const bodyStart = raw.indexOf('\r\n\r\n', start) + 4
     const bodyEnd = raw.indexOf(`\r\n${boundary}`, bodyStart)
-    uploads.push({ type: fileType, body: raw.subarray(bodyStart, bodyEnd) })
+    uploads.push({ url: request.url(), type: fileType, body: raw.subarray(bodyStart, bodyEnd) })
     return route.fulfill({ json: { Key: 'media/x', Id: 'x' } })
   })
 
@@ -59,14 +59,20 @@ test('una foto grande del móvil se reduce y se pasa a WebP antes de subirla', a
   expect(original.length).toBeGreaterThan(2_000_000)
 
   await page.locator('input[type=file]').setInputFiles({ name: 'IMG_0001.jpg', mimeType: 'image/jpeg', buffer: original })
-  await expect.poll(() => uploads.length, { timeout: 30_000 }).toBe(1)
+  await expect.poll(() => uploads.length, { timeout: 30_000 }).toBe(2)
 
-  const [upload] = uploads
+  // Primero la miniatura: la foto solo lleva la marca -t si esa subida ha ido bien.
+  const [thumb, upload] = uploads
+  expect(thumb.url).toMatch(/-thumb\.webp$/)
+  expect(upload.url).toMatch(/-t\.webp$/)
+  expect(thumb.body.length).toBeLessThan(upload.body.length / 5)
   expect(upload.type).toBe('image/webp')
   expect(upload.body.length).toBeLessThan(original.length / 3)
-  const size = await page.evaluate(async (bytes) => {
-    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: 'image/webp' }))
-    return { width: bitmap.width, height: bitmap.height }
-  }, [...upload.body])
-  expect(size).toEqual({ width: 1600, height: 1200 })
+  const sizeOf = (body: Buffer) =>
+    page.evaluate(async (bytes) => {
+      const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: 'image/webp' }))
+      return { width: bitmap.width, height: bitmap.height }
+    }, [...body])
+  expect(await sizeOf(upload.body)).toEqual({ width: 1600, height: 1200 })
+  expect(await sizeOf(thumb.body)).toEqual({ width: 320, height: 240 })
 })

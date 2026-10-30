@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { cx } from '../lib/cx'
 import { speciesLabels } from '../lib/pets'
 import { formatDistance, formatTimeAgo, reportTypeLabels, type NearbyReport } from '../lib/reports'
+import { thumbUrl } from '../lib/thumbUrl'
 import { Badge } from './ui/Badge'
 import { PawIcon } from './ui/icons'
 
@@ -42,7 +43,7 @@ export function ReportCard({ report: r, fromYou, selected, onHover, className, r
       >
         {/* lazy: las tarjetas que quedan fuera del carrusel no descargan su foto hasta que se ven. */}
         {r.photoUrl ? (
-          <img src={r.photoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+          <img src={thumbUrl(r.photoUrl)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <PawIcon size={36} />
         )}

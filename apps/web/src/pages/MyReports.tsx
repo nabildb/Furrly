@@ -10,6 +10,7 @@ import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import { formatTimeAgo, reportStatusLabels, reportTypeLabels, type MyReport } from '../lib/reports'
+import { thumbUrl } from '../lib/thumbUrl'
 
 export function MyReports() {
   const [reports, setReports] = useState<MyReport[] | null>(null)
@@ -62,7 +63,7 @@ export function MyReports() {
                       r.type === 'lost' ? 'bg-[#F6D9C8] text-lost/40' : 'bg-[#D5E2F5] text-found/40',
                     )}
                   >
-                    {r.photoUrl ? <img src={r.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={30} />}
+                    {r.photoUrl ? <img src={thumbUrl(r.photoUrl)} alt="" className="h-full w-full object-cover" /> : <PawIcon size={30} />}
                   </div>
                   <div className="flex min-w-0 flex-col gap-1">
                     <div className="flex flex-wrap gap-1.5">

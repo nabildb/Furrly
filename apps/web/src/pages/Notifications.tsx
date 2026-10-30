@@ -12,6 +12,7 @@ import { api } from '../lib/api'
 import { cx } from '../lib/cx'
 import type { AppNotification } from '../lib/inbox'
 import { formatTimeAgo } from '../lib/reports'
+import { thumbUrl } from '../lib/thumbUrl'
 
 interface NotificationsPage {
   notifications: AppNotification[]
@@ -99,7 +100,7 @@ function NotificationItem({ n }: { n: AppNotification }) {
         <span className="block text-[15px] leading-snug text-body">{text}</span>
         <span className="block text-xs font-semibold text-muted first-letter:uppercase">{formatTimeAgo(n.createdAt)}</span>
       </span>
-      {n.post && <img src={n.post.imageUrl} alt="" className="h-12 w-12 flex-none rounded-xl object-cover" />}
+      {n.post && <img src={thumbUrl(n.post.imageUrl)} alt="" className="h-12 w-12 flex-none rounded-xl object-cover" />}
       {!n.readAt && <span aria-label="Sin leer" className="h-2.5 w-2.5 flex-none rounded-full bg-lost" />}
     </>
   )
