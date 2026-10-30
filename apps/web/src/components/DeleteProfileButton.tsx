@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { removeProfile } from '../lib/moderation'
+import { readDecision, removeProfile } from '../lib/moderation'
 import { ConfirmUsernameSheet } from './ConfirmUsernameSheet'
+import { DecisionFields } from './DecisionFields'
 
 /** Borrar una cuenta y todo lo suyo desde su perfil. Solo para moderadores. */
 export function DeleteProfileButton({ username, onDeleted }: { username: string; onDeleted: () => void }) {
@@ -8,11 +9,11 @@ export function DeleteProfileButton({ username, onDeleted }: { username: string;
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function remove() {
+  async function remove(form: FormData) {
     setDeleting(true)
     setError(null)
     try {
-      await removeProfile(username)
+      await removeProfile(username, readDecision(form))
       onDeleted()
     } catch (e) {
       setError((e as Error).message)
@@ -40,6 +41,7 @@ export function DeleteProfileButton({ username, onDeleted }: { username: string;
           <p className="text-sm font-semibold text-muted">
             Podría volver a registrarse con el mismo email. Si quieres impedirlo, suspende la cuenta en vez de borrarla.
           </p>
+          <DecisionFields />
         </ConfirmUsernameSheet>
       )}
     </>

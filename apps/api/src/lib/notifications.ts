@@ -24,6 +24,15 @@ export async function notify({ userId, actorId, ...rest }: NotifyInput) {
   await Promise.all([pushNotifications([id]), ringNotifications([id])])
 }
 
+/** Aviso de la moderación: no lo escribe una persona, así que no lleva autor ni lo frena un bloqueo. */
+export async function notifyModeration(userId: string, message: string) {
+  const { id } = await prisma.notification.create({
+    data: { userId, type: 'moderation_notice', message: message.slice(0, 300) },
+    select: { id: true },
+  })
+  await Promise.all([pushNotifications([id]), ringNotifications([id])])
+}
+
 /**
  * Aviso nuevo: avisa a los vecinos cuya zona de alertas lo cubre. Cada uno tiene su propio radio,
  * así que el filtro exacto usa alert_radius_km de cada fila; el ST_DWithin con el radio máximo

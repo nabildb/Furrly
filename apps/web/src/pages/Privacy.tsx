@@ -106,7 +106,9 @@ export function Privacy() {
         <p>
           Mientras tengas la cuenta. Desde <strong>Perfil → Borrar mi cuenta</strong> se eliminan al momento tu cuenta y todo lo
           que has publicado, incluidas las fotos y los mensajes. También puedes editar o borrar cualquier contenido por
-          separado. Las fotos que se suben y no se llegan a usar se borran solas al día siguiente.
+          separado. Las fotos que se suben y no se llegan a usar se borran solas al día siguiente. Si la moderación retira
+          contenido o actúa sobre una cuenta, guardamos qué se hizo, cuándo y por qué, para poder atender reclamaciones,
+          también después de borrarse lo afectado.
         </p>
       </Section>
 

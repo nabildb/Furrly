@@ -52,6 +52,7 @@ enum NotificationType {
   new_comment
   new_like
   possible_match
+  moderation_notice
 
   @@map("notification_type")
 }
@@ -90,6 +91,8 @@ model User {
   pushSubscriptions      PushSubscription[]
   blocking               UserBlock[]        @relation("Blocker")
   blockedBy              UserBlock[]        @relation("Blocked")
+  moderationActions      ModerationLog[]    @relation("ModerationModerator")
+  moderationHistory      ModerationLog[]    @relation("ModerationTarget")
 
   @@index([alertLocation], type: Gist)
   @@map("users")
@@ -250,6 +253,8 @@ model Notification {
   reportId  String?          @map("report_id") @db.Uuid
   postId    String?          @map("post_id") @db.Uuid
   petId     String?          @map("pet_id") @db.Uuid
+  /// Solo en moderation_notice: el texto del aviso (no lleva autor).
+  message   String?          @db.VarChar(300)
   readAt    DateTime?        @map("read_at") @db.Timestamptz
   createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
 
@@ -343,6 +348,43 @@ model ContentFlag {
   @@index([resolvedAt, createdAt])
   @@index([targetType, targetId], map: "content_flags_target_idx")
   @@map("content_flags")
+}
+
+enum ModerationAction {
+  remove
+  dismiss
+  warn
+  suspend
+  unsuspend
+  delete_account
+  clean_profile
+  purge_content
+
+  @@map("moderation_action")
+}
+
+/// Registro de lo que hacen los moderadores: quién, qué, a quién y por qué. Lo afectado va copiado
+/// en targetLabel porque el registro debe seguir siendo legible cuando eso ya no exista.
+model ModerationLog {
+  id           String           @id @default(uuid()) @db.Uuid
+  moderatorId  String?          @map("moderator_id") @db.Uuid
+  action       ModerationAction
+  targetType   String           @map("target_type") @db.VarChar(20)
+  targetId     String?          @map("target_id") @db.Uuid
+  targetLabel  String           @map("target_label") @db.VarChar(200)
+  targetUserId String?          @map("target_user_id") @db.Uuid
+  reason       FlagReason?
+  /// Nota interna: el afectado solo ve el motivo.
+  note         String?          @db.VarChar(500)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  moderator  User? @relation("ModerationModerator", fields: [moderatorId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("ModerationTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([moderatorId])
+  @@index([targetUserId, createdAt(sort: Desc)])
+  @@map("moderation_log")
 }
 
 /// Suscripción de Web Push de un navegador (un usuario puede tener varias: móvil, portátil...).

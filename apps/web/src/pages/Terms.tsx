@@ -70,7 +70,7 @@ export function Terms() {
         <p>
           Cualquiera puede denunciar avisos, publicaciones, comentarios, perfiles o conversaciones. La moderación revisa las
           denuncias y, aunque no las haya, puede borrar el contenido o suspender o eliminar la cuenta de quien incumpla estas
-          normas. Si crees que se ha equivocado, escribe a <ContactEmail />.
+          normas. Si retira algo tuyo, te lo decimos con el motivo. Si crees que se ha equivocado, escribe a <ContactEmail />.
         </p>
       </Section>
 

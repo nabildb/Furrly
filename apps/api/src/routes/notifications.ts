@@ -16,6 +16,7 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
     select: {
       id: true,
       type: true,
+      message: true,
       readAt: true,
       createdAt: true,
       actor: { select: { username: true, displayName: true, avatarUrl: true } },

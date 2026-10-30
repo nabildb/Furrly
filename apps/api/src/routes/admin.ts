@@ -3,6 +3,8 @@ import { z } from 'zod'
 import type { FlagTarget } from '../generated/prisma/enums.js'
 import { deleteAccount } from '../lib/accounts.js'
 import { HttpError, parse } from '../lib/http.js'
+import { decisionSchema, reasonTexts, recordAction, type Decision } from '../lib/moderation.js'
+import { notifyModeration } from '../lib/notifications.js'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/auth.js'
 
@@ -53,6 +55,8 @@ async function preview(targetType: FlagTarget, targetId: string, reporterIds: st
   }
 }
 
+const LOG_PAGE_SIZE = 30
+
 export const adminRouter = Router()
 adminRouter.use(requireAdmin)
 
@@ -102,21 +106,46 @@ const resolveSchema = z.object({
   action: z.enum(['dismiss', 'remove', 'suspend']),
 })
 
-/** Id del autor de lo denunciado (para suspenderlo). */
-async function authorOf(targetType: FlagTarget, targetId: string) {
-  const reporterIds = (await prisma.contentFlag.findMany({ where: { targetType, targetId }, select: { reporterId: true } })).map((f) => f.reporterId)
-  switch (targetType) {
-    case 'report':
-      return (await prisma.report.findUnique({ where: { id: targetId }, select: { reporterId: true } }))?.reporterId
-    case 'post':
-      return (await prisma.post.findUnique({ where: { id: targetId }, select: { pet: { select: { ownerId: true } } } }))?.pet.ownerId
-    case 'comment':
-      return (await prisma.comment.findUnique({ where: { id: targetId }, select: { userId: true } }))?.userId
-    case 'user':
-      return targetId
+const contentSchema = z.object({ type: z.enum(['report', 'post', 'comment', 'sighting', 'pet']), id: z.uuid() })
+type ContentType = z.infer<typeof contentSchema>['type']
+
+/** Qué es y de quién: label va al registro, notice es cómo se le nombra a su autor. null = ya no existe. */
+async function describeTarget(type: FlagTarget | ContentType, id: string) {
+  switch (type) {
+    case 'report': {
+      const r = await prisma.report.findUnique({ where: { id }, select: { title: true, reporterId: true } })
+      return r && { label: `Aviso «${r.title}»`, notice: `tu aviso «${r.title}»`, userId: r.reporterId }
+    }
+    case 'post': {
+      const p = await prisma.post.findUnique({ where: { id }, select: { pet: { select: { name: true, ownerId: true } } } })
+      return p && { label: `Publicación de ${p.pet.name}`, notice: `tu publicación de ${p.pet.name}`, userId: p.pet.ownerId }
+    }
+    case 'comment': {
+      const c = await prisma.comment.findUnique({ where: { id }, select: { body: true, userId: true } })
+      return c && { label: `Comentario «${c.body}»`, notice: 'tu comentario', userId: c.userId }
+    }
+    case 'sighting': {
+      const s = await prisma.sighting.findUnique({ where: { id }, select: { userId: true, report: { select: { title: true } } } })
+      return s && { label: `Avistamiento en «${s.report.title}»`, notice: 'tu avistamiento', userId: s.userId }
+    }
+    case 'pet': {
+      const p = await prisma.pet.findUnique({ where: { id }, select: { name: true, ownerId: true } })
+      return p && { label: `Mascota ${p.name}`, notice: `a tu mascota ${p.name}`, userId: p.ownerId }
+    }
+    case 'user': {
+      const u = await prisma.user.findUnique({ where: { id }, select: { username: true } })
+      return u && { label: `@${u.username}`, notice: 'tu perfil', userId: id }
+    }
     case 'conversation': {
-      const c = await prisma.conversation.findUnique({ where: { id: targetId }, select: { userAId: true, userBId: true } })
-      return c && (reporterIds.includes(c.userAId) ? c.userBId : c.userAId)
+      const c = await prisma.conversation.findUnique({
+        where: { id },
+        select: { userAId: true, userBId: true, userA: { select: { username: true } }, userB: { select: { username: true } } },
+      })
+      if (!c) return null
+      const flags = await prisma.contentFlag.findMany({ where: { targetType: 'conversation', targetId: id }, select: { reporterId: true } })
+      // El denunciado es quien no ha denunciado (si denuncian los dos, el primero).
+      const userId = flags.some((f) => f.reporterId === c.userAId) ? c.userBId : c.userAId
+      return { label: `Conversación entre @${c.userA.username} y @${c.userB.username}`, notice: 'una conversación', userId }
     }
   }
 }
@@ -129,14 +158,15 @@ async function assertRegularUser(userId: string, moderatorId: string) {
 }
 
 /** Suspende la cuenta: no puede usar la API (requireAuth) ni volver a entrar en Supabase Auth. */
-async function suspend(userId: string, moderatorId: string) {
+async function suspend(userId: string, moderatorId: string, decision: Decision) {
   await assertRegularUser(userId, moderatorId)
-  await prisma.user.update({ where: { id: userId }, data: { suspendedAt: new Date() } })
+  const { username } = await prisma.user.update({ where: { id: userId }, data: { suspendedAt: new Date() }, select: { username: true } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
   if (hasAuth) {
     await prisma.$executeRaw`UPDATE auth.users SET banned_until = 'infinity' WHERE id = ${userId}::uuid`
     await prisma.$executeRaw`DELETE FROM auth.sessions WHERE user_id = ${userId}::uuid`
   }
+  await recordAction({ moderatorId, action: 'suspend', targetType: 'user', targetId: userId, targetLabel: `@${username}`, targetUserId: userId, ...decision })
 }
 
 const resolveFlags = (targetType: FlagTarget, targetId: string) =>
@@ -153,53 +183,84 @@ const resolveOrphanFlags = () => prisma.$executeRaw`
     WHEN 'conversation' THEN NOT EXISTS (SELECT 1 FROM conversations WHERE id = f.target_id)
   END`
 
-const contentSchema = z.object({ type: z.enum(['report', 'post', 'comment', 'sighting', 'pet']), id: z.uuid() })
-
-/** Borra un contenido; false si ya no existía. Sus fotos, si las tiene, se van con la limpieza nocturna. */
-async function removeContent(type: z.infer<typeof contentSchema>['type'], id: string) {
+/**
+ * Borra un contenido, cierra las denuncias que quedan sin objeto, lo apunta en el registro y le explica
+ * el motivo a su autor. Las fotos, si las tiene, se van con la limpieza nocturna.
+ */
+async function removeContent(type: ContentType, id: string, moderatorId: string, decision: Decision) {
+  const target = await describeTarget(type, id)
+  if (!target) return false
   const where = { id }
-  switch (type) {
-    case 'pet':
-      return (await prisma.pet.deleteMany({ where })).count > 0
-    case 'report':
-      return (await prisma.report.deleteMany({ where })).count > 0
-    case 'post':
-      return (await prisma.post.deleteMany({ where })).count > 0
-    case 'comment':
-      return (await prisma.comment.deleteMany({ where })).count > 0
-    case 'sighting':
-      return (await prisma.sighting.deleteMany({ where })).count > 0
-  }
+  if (type === 'pet') await prisma.pet.deleteMany({ where })
+  else if (type === 'report') await prisma.report.deleteMany({ where })
+  else if (type === 'post') await prisma.post.deleteMany({ where })
+  else if (type === 'comment') await prisma.comment.deleteMany({ where })
+  else await prisma.sighting.deleteMany({ where })
+
+  await resolveOrphanFlags()
+  await recordAction({ moderatorId, action: 'remove', targetType: type, targetId: id, targetLabel: target.label, targetUserId: target.userId, ...decision })
+  if (target.userId !== moderatorId) await notifyModeration(target.userId, `Hemos retirado ${target.notice} por ${reasonTexts[decision.reason]}.`)
+  return true
 }
 
 adminRouter.post('/flags/resolve', async (req, res) => {
   const { targetType, targetId, action } = parse(resolveSchema, req.body)
-  const pending = await prisma.contentFlag.count({ where: { targetType, targetId, resolvedAt: null } })
-  if (pending === 0) throw new HttpError(404, 'No hay denuncias pendientes de ese contenido')
+  const moderatorId = req.userId!
+  // Desde el panel, el motivo es el de la denuncia.
+  const flag = await prisma.contentFlag.findFirst({ where: { targetType, targetId, resolvedAt: null }, select: { reason: true } })
+  if (!flag) throw new HttpError(404, 'No hay denuncias pendientes de ese contenido')
+  const decision = { reason: flag.reason }
+  const target = await describeTarget(targetType, targetId)
 
   if (action === 'remove') {
     if (targetType === 'user' || targetType === 'conversation') {
       throw new HttpError(400, 'Los usuarios y las conversaciones no se borran: suspende al autor')
     }
-    await removeContent(targetType, targetId)
-    await resolveOrphanFlags()
+    await removeContent(targetType, targetId, moderatorId, decision)
   }
   if (action === 'suspend') {
-    const authorId = await authorOf(targetType, targetId)
-    if (!authorId) throw new HttpError(404, 'El autor ya no existe')
-    await suspend(authorId, req.userId!)
+    if (!target) throw new HttpError(404, 'El autor ya no existe')
+    await suspend(target.userId, moderatorId, decision)
+  }
+  if (action === 'dismiss') {
+    const targetLabel = target?.label ?? 'Contenido que ya no existe'
+    await recordAction({ moderatorId, action, targetType, targetId, targetLabel, targetUserId: target?.userId, ...decision })
   }
 
   await resolveFlags(targetType, targetId)
   res.json({ ok: true })
 })
 
-/** Moderación directa: borrar cualquier contenido sin esperar a una denuncia. Las que tuviera quedan resueltas. */
+/** Moderación directa: borrar cualquier contenido sin esperar a una denuncia. */
 adminRouter.delete('/content/:type/:id', async (req, res) => {
   const { type, id } = parse(contentSchema, req.params)
-  if (!(await removeContent(type, id))) throw new HttpError(404, 'Ese contenido ya no existe')
-  await resolveOrphanFlags()
+  const decision = parse(decisionSchema, req.body)
+  if (!(await removeContent(type, id, req.userId!, decision))) throw new HttpError(404, 'Ese contenido ya no existe')
   res.status(204).end()
+})
+
+/** Historial de decisiones, lo más reciente primero. */
+adminRouter.get('/log', async (req, res) => {
+  const { cursor } = parse(z.object({ cursor: z.uuid().optional() }), req.query)
+  const rows = await prisma.moderationLog.findMany({
+    select: {
+      id: true,
+      action: true,
+      targetType: true,
+      targetLabel: true,
+      reason: true,
+      note: true,
+      createdAt: true,
+      moderator: { select: { username: true } },
+      targetUser: { select: { username: true } },
+    },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: LOG_PAGE_SIZE + 1,
+    ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+  })
+  const hasMore = rows.length > LOG_PAGE_SIZE
+  const entries = rows.slice(0, LOG_PAGE_SIZE)
+  res.json({ entries, nextCursor: hasMore ? entries[entries.length - 1].id : null })
 })
 
 /** Cuentas suspendidas, para poder levantar la suspensión. */
@@ -212,34 +273,39 @@ adminRouter.get('/suspended', async (_req, res) => {
   res.json(users)
 })
 
-async function findUserId(username: string) {
-  const user = await prisma.user.findUnique({ where: { username: username.toLowerCase() }, select: { id: true } })
+async function findUser(username: string) {
+  const user = await prisma.user.findUnique({ where: { username: username.toLowerCase() }, select: { id: true, username: true } })
   if (!user) throw new HttpError(404, 'Usuario no encontrado')
-  return user.id
+  return user
 }
 
 /** Borrar una cuenta y todo lo suyo. A diferencia de suspender, su email queda libre para volver a registrarse. */
 adminRouter.delete('/users/:username', async (req, res) => {
-  const userId = await findUserId(String(req.params.username))
-  await assertRegularUser(userId, req.userId!)
-  await deleteAccount(userId)
+  const decision = parse(decisionSchema, req.body)
+  const moderatorId = req.userId!
+  const user = await findUser(String(req.params.username))
+  await assertRegularUser(user.id, moderatorId)
+  await deleteAccount(user.id)
   await resolveOrphanFlags()
+  await recordAction({ moderatorId, action: 'delete_account', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, ...decision })
   res.status(204).end()
 })
 
 /** Suspender desde su perfil, sin esperar a una denuncia. Las que tuviera ese perfil quedan resueltas. */
 adminRouter.put('/suspended/:username', async (req, res) => {
-  const userId = await findUserId(String(req.params.username))
-  await suspend(userId, req.userId!)
-  await resolveFlags('user', userId)
+  const decision = parse(decisionSchema, req.body)
+  const user = await findUser(String(req.params.username))
+  await suspend(user.id, req.userId!, decision)
+  await resolveFlags('user', user.id)
   res.status(204).end()
 })
 
 adminRouter.delete('/suspended/:username', async (req, res) => {
-  const userId = await findUserId(String(req.params.username))
-  await prisma.user.update({ where: { id: userId }, data: { suspendedAt: null } })
+  const user = await findUser(String(req.params.username))
+  await prisma.user.update({ where: { id: user.id }, data: { suspendedAt: null } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
-  if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${userId}::uuid`
+  if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${user.id}::uuid`
+  await recordAction({ moderatorId: req.userId!, action: 'unsuspend', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, targetUserId: user.id })
   res.status(204).end()
 })
 
