@@ -5,6 +5,7 @@ import { useMe } from '../auth/useMe'
 import { Avatar } from '../components/Avatar'
 import { ErrorText } from '../components/Field'
 import { FlagButton } from '../components/FlagButton'
+import { ModeratorDeleteButton } from '../components/ModeratorDeleteButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { LikeButton, PostHeader } from '../components/PostCard'
 import { Button } from '../components/ui/Button'
@@ -12,6 +13,7 @@ import { SectionTitle } from '../components/ui/Card'
 import { TrashIcon } from '../components/ui/icons'
 import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
+import { removeContent } from '../lib/moderation'
 import type { Post, PostComment } from '../lib/posts'
 import { formatTimeAgo } from '../lib/reports'
 import { removeImage } from '../lib/storage'
@@ -19,7 +21,8 @@ import { useLike } from '../lib/useLike'
 
 function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   const { session } = useAuth()
-  const myUsername = useMe().username ?? undefined
+  const { username, isAdmin } = useMe()
+  const myUsername = username ?? undefined
   // Solo decide qué botones se ven: quien de verdad lo comprueba es la API.
   const isOwner = myUsername === post.pet.owner.username
   const like = useLike(post)
@@ -53,7 +56,8 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   async function deleteComment(comment: PostComment) {
     if (!confirm('¿Borrar este comentario?')) return
     try {
-      await api(`/posts/${post.id}/comments/${comment.id}`, { method: 'DELETE' })
+      if (isOwner || comment.user.username === myUsername) await api(`/posts/${post.id}/comments/${comment.id}`, { method: 'DELETE' })
+      else await removeContent('comment', comment.id)
       setComments((prev) => prev?.filter((c) => c.id !== comment.id) ?? null)
     } catch (e) {
       setError((e as Error).message)
@@ -83,6 +87,15 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
             <button type="button" onClick={deletePost} aria-label="Borrar publicación" className={iconButtonClass('text-danger')}>
               <TrashIcon size={20} />
             </button>
+          ) : isAdmin ? (
+            <ModeratorDeleteButton
+              type="post"
+              id={post.id}
+              label="Borrar publicación"
+              question={`¿Borrar esta publicación de @${post.pet.owner.username}? También se borrarán sus comentarios. No se puede deshacer.`}
+              icon
+              onDeleted={onDeleted}
+            />
           ) : (
             <FlagButton target={{ targetType: 'post', targetId: post.id }} />
           )}
@@ -110,10 +123,10 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
                   </p>
                   <p className="text-xs font-semibold text-muted first-letter:uppercase">{formatTimeAgo(c.createdAt)}</p>
                 </div>
-                {c.user.username !== myUsername && (
+                {c.user.username !== myUsername && !isAdmin && (
                   <FlagButton target={{ targetType: 'comment', targetId: c.id }} label="" className="px-1 py-1" />
                 )}
-                {(c.user.username === myUsername || isOwner) && (
+                {(c.user.username === myUsername || isOwner || isAdmin) && (
                   <button
                     type="button"
                     onClick={() => deleteComment(c)}

@@ -12,11 +12,20 @@ export const fakeSession = {
 } as unknown as Session
 
 /** Renderiza unas rutas en una URL concreta, con o sin sesión. */
-export function renderRoutes(routes: ReactNode, { path = '/', session = fakeSession }: { path?: string; session?: Session | null } = {}) {
+export function renderRoutes(
+  routes: ReactNode,
+  { path = '/', session = fakeSession, isAdmin = false }: { path?: string; session?: Session | null; isAdmin?: boolean } = {},
+) {
   return render(
     <AuthContext value={{ session, loading: false }}>
       {/* Quién soy: el de la sesión falsa (en la web real lo da MeProvider con /me). */}
-      <MeContext value={session ? { username: 'nabil', displayName: 'Nabil', update: () => {} } : { username: null, displayName: null, update: () => {} }}>
+      <MeContext
+        value={
+          session
+            ? { username: 'nabil', displayName: 'Nabil', isAdmin, update: () => {} }
+            : { username: null, displayName: null, isAdmin: false, update: () => {} }
+        }
+      >
         <MemoryRouter initialEntries={[path]}>
           <Routes>{routes}</Routes>
         </MemoryRouter>

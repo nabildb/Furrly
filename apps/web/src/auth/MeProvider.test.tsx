@@ -69,4 +69,17 @@ describe('quién soy (MeProvider)', () => {
     expect(screen.getByText('Nabil')).toBeInTheDocument()
     expect(screen.getByText('@nabil')).toBeInTheDocument()
   })
+
+  it('la barra lateral solo enseña Moderación a los moderadores', async () => {
+    vi.mocked(api).mockResolvedValue({ username: 'nabil_d', displayName: 'Nabil Daiday', isAdmin: true })
+    renderSidebar(googleSession)
+    expect(await screen.findByRole('link', { name: 'Moderación' })).toHaveAttribute('href', '/moderacion')
+  })
+
+  it('una cuenta normal no ve Moderación', async () => {
+    vi.mocked(api).mockResolvedValue({ username: 'nabil_d', displayName: 'Nabil Daiday', isAdmin: false })
+    renderSidebar(googleSession)
+    await screen.findByText('Nabil Daiday')
+    expect(screen.queryByRole('link', { name: 'Moderación' })).not.toBeInTheDocument()
+  })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.js'
-import { createPet, createUser, mediaUrl, request, type TestUser } from './helpers.js'
+import { createLostReport, createPet, createUser, mediaUrl, minutesAgo, request, RETIRO, type TestUser } from './helpers.js'
 
 async function createAdmin(username = 'nabil') {
   const admin = await createUser(username)
@@ -126,5 +126,85 @@ describe('panel de moderación', () => {
       request.post('/admin/flags/resolve').set(admin.auth).send({ targetType: 'user', targetId: otherAdmin.id, action })
     expect((await res('suspend')).status).toBe(400)
     expect((await res('remove')).status).toBe(400)
+  })
+})
+
+describe('moderación directa, sin denuncia', () => {
+  const remove = (user: TestUser, type: string, id: string) => request.delete(`/admin/content/${type}/${id}`).set(user.auth)
+
+  it('un moderador borra publicaciones, comentarios, avisos y avistamientos de cualquiera', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const neighbour = await createUser('vecina')
+    const post = await createPost(author)
+    const comment = await request.post(`/posts/${post.id}/comments`).set(neighbour.auth).send({ body: 'Insulto' })
+    const pet = await createPet(author, { name: 'Toby' })
+    const report = await createLostReport(author, pet.id)
+    const sighting = await request.post(`/reports/${report.id}/sightings`).set(neighbour.auth).send({ ...RETIRO, seenAt: minutesAgo(30) })
+
+    expect((await remove(admin, 'comment', comment.body.id)).status).toBe(204)
+    expect((await request.get(`/posts/${post.id}/comments`)).body).toEqual([])
+    expect((await remove(admin, 'post', post.id)).status).toBe(204)
+    expect((await request.get(`/posts/${post.id}`)).status).toBe(404)
+    expect((await remove(admin, 'sighting', sighting.body.id)).status).toBe(204)
+    expect((await request.get(`/reports/${report.id}/sightings`)).body).toEqual([])
+    expect((await remove(admin, 'report', report.id)).status).toBe(204)
+    expect((await request.get(`/reports/${report.id}`)).status).toBe(404)
+  })
+
+  it('si lo borrado estaba denunciado, sus denuncias quedan resueltas', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const reporter = await createUser('vecina')
+    const post = await createPost(author)
+    await flag(reporter, { targetType: 'post', targetId: post.id })
+
+    await remove(admin, 'post', post.id)
+    expect(await pending(admin)).toEqual([])
+    expect((await request.get('/admin/flags/count').set(admin.auth)).body).toEqual({ pending: 0 })
+  })
+
+  it('solo pueden los moderadores: ni siquiera el autor entra por esta ruta', async () => {
+    const author = await createUser('autora')
+    const post = await createPost(author)
+
+    expect((await request.delete(`/admin/content/post/${post.id}`)).status).toBe(401)
+    expect((await remove(author, 'post', post.id)).status).toBe(403)
+    expect((await request.get(`/posts/${post.id}`)).status).toBe(200)
+  })
+
+  it('lo que no existe da 404, y los perfiles y las conversaciones no se borran', async () => {
+    const admin = await createAdmin()
+    const user = await createUser('vecina')
+
+    expect((await remove(admin, 'post', user.id)).status).toBe(404)
+    expect((await remove(admin, 'user', user.id)).status).toBe(400)
+    expect((await remove(admin, 'conversation', user.id)).status).toBe(400)
+    expect((await remove(admin, 'post', 'no-es-un-uuid')).status).toBe(400)
+  })
+
+  it('suspende y readmite desde el perfil, y las denuncias de ese perfil quedan resueltas', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    const reporter = await createUser('vecina')
+    await flag(reporter, { targetType: 'user', username: 'troll' })
+
+    expect((await request.put('/admin/suspended/Troll').set(admin.auth)).status).toBe(204)
+    expect((await request.get('/me').set(troll.auth)).status).toBe(403)
+    expect(await pending(admin)).toEqual([])
+
+    expect((await request.delete('/admin/suspended/troll').set(admin.auth)).status).toBe(204)
+    expect((await request.get('/me').set(troll.auth)).status).toBe(200)
+  })
+
+  it('suspender desde el perfil: solo moderadores, y nunca a uno mismo ni a otro moderador', async () => {
+    const admin = await createAdmin()
+    await createAdmin('moderadora')
+    const user = await createUser('vecina')
+
+    expect((await request.put('/admin/suspended/vecina').set(user.auth)).status).toBe(403)
+    expect((await request.put('/admin/suspended/nabil').set(admin.auth)).status).toBe(400)
+    expect((await request.put('/admin/suspended/moderadora').set(admin.auth)).status).toBe(400)
+    expect((await request.put('/admin/suspended/nadie').set(admin.auth)).status).toBe(404)
   })
 })

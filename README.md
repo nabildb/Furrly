@@ -49,7 +49,9 @@ para compartir fotos de tus mascotas.
 - Registro con email o **con Google** (la primera vez se elige el nombre de usuario), login y recuperación de contraseña.
   Perfil público y zona de alertas privada. Páginas legales: [aviso legal](https://furrly-rouge.vercel.app/aviso-legal), [privacidad](https://furrly-rouge.vercel.app/privacidad), [cookies](https://furrly-rouge.vercel.app/cookies) y [condiciones de uso](https://furrly-rouge.vercel.app/condiciones).
 - Denunciar avisos, publicaciones, comentarios, usuarios o conversaciones, y un **panel de moderación** para revisarlas:
-  descartar, borrar el contenido o suspender la cuenta del autor. Los moderadores reciben un push con cada denuncia.
+  descartar, borrar el contenido o suspender la cuenta del autor. Los moderadores reciben un push con cada denuncia y
+  también pueden actuar sin esperar a una: borrar publicaciones, comentarios, avisos y avistamientos donde se ven, y
+  suspender una cuenta desde su perfil.
 - **Bloquear** a un usuario: no podéis escribiros ni interactuar con vuestras publicaciones, y dejas de recibir sus avisos.
 - Límites contra el spam: 30 mensajes por hora y 10 conversaciones nuevas al día por usuario.
 - Borrar la cuenta con todos sus datos y fotos (derecho de supresión del RGPD).

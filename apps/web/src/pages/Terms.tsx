@@ -69,8 +69,8 @@ export function Terms() {
       <Section title="Moderación">
         <p>
           Cualquiera puede denunciar avisos, publicaciones, comentarios, perfiles o conversaciones. La moderación revisa las
-          denuncias y puede borrar el contenido o suspender la cuenta de quien incumpla estas normas. Si crees que se ha
-          equivocado, escribe a <ContactEmail />.
+          denuncias y, aunque no las haya, puede borrar el contenido o suspender la cuenta de quien incumpla estas normas. Si
+          crees que se ha equivocado, escribe a <ContactEmail />.
         </p>
       </Section>
 

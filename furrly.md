@@ -50,7 +50,7 @@ Hecho, probado (101 tests de API, 46 de componentes y 28 end-to-end ×2 —móvi
 - **Comunidad (feed social)**: publicaciones con foto, likes, comentarios y seguir mascotas; "Siguiendo" y "Explorar" con paginación por cursor
 - **Avisos push (PWA)**: Web Push implementado a mano (RFC 8291/8292) con test del vector oficial; la web es instalable. Claves VAPID configuradas en Vercel y probado en iPhone
 - **Tests del frontend**: Vitest + Testing Library (componentes) y Playwright (end-to-end, móvil y escritorio, API simulada)
-- **Moderación**: denunciar avisos, publicaciones, comentarios, usuarios y conversaciones; panel en `/moderacion` (descartar, borrar, suspender cuentas) y borrar la cuenta (RGPD)
+- **Moderación**: denunciar avisos, publicaciones, comentarios, usuarios y conversaciones; panel en `/moderacion` (descartar, borrar, suspender cuentas), moderación directa sin denuncia (papelera en publicaciones, comentarios, avisos y avistamientos; suspender desde `/u/:username`; rutas `DELETE /admin/content/:type/:id` y `PUT /admin/suspended/:username`) y borrar la cuenta (RGPD)
 - **Diseño C** aplicado (ver docs/diseno.md) y **responsive** (barra lateral en escritorio, dos columnas)
 - **Datos de demo** en producción con fotos libres (ver Notas operativas) y README de portfolio con capturas
 - **Seguridad en los mensajes**: bloquear usuarios (en los dos sentidos, también likes, comentarios, seguir y avisos), 30 mensajes/hora y 10 conversaciones nuevas/día por usuario, denunciar conversaciones

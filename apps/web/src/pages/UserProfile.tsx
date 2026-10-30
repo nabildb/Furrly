@@ -7,6 +7,7 @@ import { BlockButton } from '../components/BlockButton'
 import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { PetCard } from '../components/PetCard'
+import { SuspendButton } from '../components/SuspendButton'
 import { ButtonLink } from '../components/ui/Button'
 import { SectionTitle } from '../components/ui/Card'
 import { MessageIcon } from '../components/ui/icons'
@@ -17,7 +18,7 @@ import type { PublicProfile } from '../lib/users'
 export function UserProfile() {
   const { username } = useParams()
   const { session } = useAuth()
-  const { username: myUsername } = useMe()
+  const { username: myUsername, isAdmin } = useMe()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [pets, setPets] = useState<Pet[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -77,8 +78,9 @@ export function UserProfile() {
                   onChange={(blockedByMe) => setProfile({ ...profile, blockedByMe })}
                 />
               )}
-              <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />
+              {!isAdmin && <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />}
             </div>
+            {isAdmin && <SuspendButton key={profile.username} username={profile.username} />}
           </div>
         )}
       </section>

@@ -1,5 +1,106 @@
 import { expect, logIn, mockApi, test } from './fixtures'
 
+const me = (isAdmin: boolean) => () => ({
+  id: 'u1',
+  username: 'nabil',
+  usernameConfirmed: true,
+  onboardingDone: true,
+  isAdmin,
+  displayName: 'Nabil',
+  avatarUrl: null,
+  bio: null,
+  alertRadiusKm: 5,
+  alertLocation: null,
+})
+
+const post = (id: string, caption: string) => ({
+  id,
+  imageUrl: '/demo/toby.jpg',
+  caption,
+  createdAt: new Date().toISOString(),
+  pet: { id: 'pet1', name: 'Toby', species: 'dog', photoUrl: null, owner: { username: 'vecina', displayName: 'Vecina' } },
+  likesCount: 0,
+  commentsCount: 0,
+  likedByMe: false,
+})
+
+const profile = {
+  username: 'troll',
+  displayName: 'Troll',
+  avatarUrl: null,
+  bio: null,
+  createdAt: new Date().toISOString(),
+  petsCount: 0,
+  reportsCount: 0,
+  blockedByMe: false,
+}
+
+test('un moderador borra una publicación desde la comunidad, sin denuncia', async ({ page }) => {
+  await logIn(page)
+  const deleted: string[] = []
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /feed': () => ({ posts: [post('p1', 'Compra seguidores aquí'), post('p2', 'Toby en el parque')], nextCursor: null }),
+    'DELETE /admin/content/post/:id': (_request, { id }) => {
+      deleted.push(id)
+    },
+  })
+
+  await page.goto('/comunidad')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('article').filter({ hasText: 'Compra seguidores aquí' }).getByRole('button', { name: 'Borrar publicación' }).click()
+
+  await expect(page.getByText('Compra seguidores aquí')).toBeHidden()
+  await expect(page.getByText('Toby en el parque')).toBeVisible()
+  expect(deleted).toEqual(['p1'])
+})
+
+test('un moderador suspende una cuenta desde su perfil y puede readmitirla', async ({ page }) => {
+  await logIn(page)
+  let suspended = false
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /users/troll': () => profile,
+    'GET /users/troll/pets': () => [],
+    'GET /admin/suspended': () => (suspended ? [{ username: 'troll', displayName: 'Troll', suspendedAt: new Date().toISOString() }] : []),
+    'PUT /admin/suspended/troll': () => {
+      suspended = true
+    },
+    'DELETE /admin/suspended/troll': () => {
+      suspended = false
+    },
+  })
+
+  await page.goto('/u/troll')
+  page.on('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Suspender cuenta' }).click()
+  await page.getByRole('button', { name: 'Levantar suspensión' }).click()
+
+  await expect(page.getByRole('button', { name: 'Suspender cuenta' })).toBeVisible()
+  expect(suspended).toBe(false)
+})
+
+test('quien no es moderador no ve los botones de moderación', async ({ page }) => {
+  await logIn(page)
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(false),
+    'GET /feed': () => ({ posts: [post('p1', 'Toby en el parque')], nextCursor: null }),
+    'GET /users/troll': () => profile,
+    'GET /users/troll/pets': () => [],
+  })
+
+  await page.goto('/comunidad')
+  await expect(page.getByText('Toby en el parque')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Borrar publicación' })).toHaveCount(0)
+
+  await page.goto('/u/troll')
+  await expect(page.getByRole('button', { name: 'Denunciar perfil' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Suspender cuenta' })).toHaveCount(0)
+})
+
 test('un moderador revisa una denuncia y borra la publicación', async ({ page }) => {
   await logIn(page)
   let resolved: unknown = null

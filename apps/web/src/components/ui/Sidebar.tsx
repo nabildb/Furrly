@@ -30,7 +30,7 @@ export function Sidebar() {
       </ButtonLink>
 
       <nav aria-label="Navegación principal" className="flex flex-col gap-1">
-        {navItems.map(({ to, label, icon, end, also = [], badge }) => (
+        {navItems.filter((item) => !item.adminOnly || me.isAdmin).map(({ to, label, icon, end, also = [], badge }) => (
           <NavLink
             key={to}
             to={to}
