@@ -157,7 +157,7 @@ docs/                      → modelo de datos, diseño y capturas
 
 Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows/ci.yml)):
 
-- **API: 132 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
+- **API: 131 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
   reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
   paginación, Web Push (incluido el vector del RFC 8291), bloqueos y límites anti-spam, ataques (inyección SQL, tokens falsos), el trigger que crea el perfil al entrar con Google y casos límite. Los tokens se firman con una clave ES256
   generada en cada ejecución, igual que hace Supabase Auth.
