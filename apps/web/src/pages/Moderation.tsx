@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { ErrorText } from '../components/Field'
+import { ErrorText, SelectField } from '../components/Field'
+import { ModerationCountsBar } from '../components/ModerationCountsBar'
 import { ModerationLog } from '../components/ModerationLog'
+import { ModeratorUserSearch } from '../components/ModeratorUserSearch'
 import { Loading, Page } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
@@ -74,7 +76,7 @@ function FlaggedCard({ item, onResolved }: { item: FlaggedItem; onResolved: () =
           )}
           <p className="text-sm font-semibold text-muted">
             De{' '}
-            <Link to={`/u/${target.author.username}`} className="font-extrabold text-lost-text hover:underline">
+            <Link to={`/moderacion/usuarios/${target.author.username}`} className="font-extrabold text-lost-text hover:underline">
               @{target.author.username}
             </Link>
             {target.author.suspendedAt && ' · suspendido'}
@@ -194,6 +196,8 @@ export function Moderation() {
   const [items, setItems] = useState<FlaggedItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [typeFilter, setTypeFilter] = useState('')
+  const visible = items?.filter((item) => !typeFilter || item.targetType === typeFilter)
 
   const load = useCallback(() => {
     if (tab === 'historial') return
@@ -211,6 +215,8 @@ export function Moderation() {
 
   return (
     <Page title="Moderación" back="/perfil">
+      <ModerationCountsBar refreshKey={refreshKey} />
+      <ModeratorUserSearch />
       <div className="mb-5 flex gap-2">
         <Chip active={tab === 'pendientes'} onClick={() => changeTab('pendientes')}>
           Pendientes
@@ -227,16 +233,28 @@ export function Moderation() {
         {error && <ErrorText>{error}</ErrorText>}
         {tab === 'historial' ? (
           <ModerationLog />
-        ) : !items ? (
+        ) : !visible ? (
           !error && <Loading label="Cargando denuncias…" />
-        ) : items.length === 0 ? (
-          <p className="py-8 text-center text-[15px] font-semibold text-muted">
-            {tab === 'pendientes' ? 'No hay nada pendiente de revisar. 🎉' : 'Aún no se ha resuelto ninguna denuncia.'}
-          </p>
         ) : (
-          items.map((item) => (
-            <FlaggedCard key={`${item.targetType}:${item.targetId}`} item={item} onResolved={() => setRefreshKey((k) => k + 1)} />
-          ))
+          <>
+            {items && items.length > 0 && (
+              <SelectField
+                label="Tipo de contenido"
+                options={{ '': 'Todo', ...targetLabels }}
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              />
+            )}
+            {visible.length === 0 ? (
+              <p className="py-8 text-center text-[15px] font-semibold text-muted">
+                {tab === 'pendientes' ? 'No hay nada pendiente de revisar. 🎉' : 'Aún no se ha resuelto ninguna denuncia.'}
+              </p>
+            ) : (
+              visible.map((item) => (
+                <FlaggedCard key={`${item.targetType}:${item.targetId}`} item={item} onResolved={() => setRefreshKey((k) => k + 1)} />
+              ))
+            )}
+          </>
         )}
         <SuspendedUsers refreshKey={refreshKey} />
         <SentryTest />

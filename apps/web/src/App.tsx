@@ -24,6 +24,7 @@ const LegalNotice = page(() => import('./pages/LegalNotice'), 'LegalNotice')
 const Login = page(() => import('./pages/Login'), 'Login')
 const Messages = page(() => import('./pages/Messages'), 'Messages')
 const Moderation = page(() => import('./pages/Moderation'), 'Moderation')
+const ModerationUser = page(() => import('./pages/ModerationUser'), 'ModerationUser')
 const MyPets = page(() => import('./pages/MyPets'), 'MyPets')
 const MyReports = page(() => import('./pages/MyReports'), 'MyReports')
 const NotFound = page(() => import('./pages/NotFound'), 'NotFound')
@@ -92,6 +93,7 @@ export function App() {
                 <Route path="mensajes" element={<Messages />} />
                 <Route path="notificaciones" element={<Notifications />} />
                 <Route path="moderacion" element={<Moderation />} />
+                <Route path="moderacion/usuarios/:username" element={<ModerationUser />} />
               </Route>
               {StyleGuide && <Route path="guia" element={<StyleGuide />} />}
               <Route path="*" element={<NotFound />} />

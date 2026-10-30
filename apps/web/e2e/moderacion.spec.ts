@@ -171,6 +171,57 @@ test('un moderador borra una mascota desde su ficha', async ({ page }) => {
   expect(deleted).toBe(true)
 })
 
+test('la ficha reúne el resumen, el historial y las acciones de una cuenta', async ({ page }) => {
+  await logIn(page)
+  let cleaned: unknown = null
+  const file = {
+    username: 'troll',
+    displayName: 'Troll',
+    avatarUrl: null,
+    bio: 'Bio ofensiva',
+    createdAt: new Date().toISOString(),
+    isAdmin: false,
+    suspendedAt: null,
+    suspendedUntil: null,
+    counts: { pets: 2, posts: 5, reports: 0, comments: 9, sightings: 0 },
+    flags: 3,
+    warnings: 1,
+    history: [
+      {
+        id: 'l1',
+        action: 'warn',
+        targetLabel: '@troll',
+        reason: 'spam',
+        note: null,
+        createdAt: new Date().toISOString(),
+        moderator: { username: 'nabil' },
+      },
+    ],
+  }
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /admin/users/troll': () => file,
+    'GET /admin/suspended': () => [],
+    'POST /admin/users/troll/clean': (request) => {
+      cleaned = request.postDataJSON()
+      return { username: 'troll' }
+    },
+  })
+
+  await page.goto('/moderacion/usuarios/troll')
+  await expect(page.getByRole('heading', { name: '@troll' })).toBeVisible()
+  await expect(page.getByText('ha advertido a')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Limpiar perfil' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Limpiar el perfil de @troll' })
+  await dialog.getByRole('checkbox', { name: 'Biografía' }).check()
+  await dialog.getByRole('button', { name: 'Limpiar perfil' }).click()
+
+  await expect(dialog).toBeHidden()
+  expect(cleaned).toEqual({ reason: 'spam', note: null, fields: ['bio'] })
+})
+
 test('el historial enseña quién hizo qué y por qué', async ({ page }) => {
   await logIn(page)
   const entry = {
