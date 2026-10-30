@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { useMe } from '../auth/useMe'
 import { Avatar } from '../components/Avatar'
 import { BlockButton } from '../components/BlockButton'
+import { DeleteProfileButton } from '../components/DeleteProfileButton'
 import { FlagButton } from '../components/FlagButton'
 import { Loading, Page, PageError } from '../components/Page'
 import { PetCard } from '../components/PetCard'
@@ -17,6 +18,7 @@ import type { PublicProfile } from '../lib/users'
 
 export function UserProfile() {
   const { username } = useParams()
+  const navigate = useNavigate()
   const { session } = useAuth()
   const { username: myUsername, isAdmin } = useMe()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
@@ -80,7 +82,12 @@ export function UserProfile() {
               )}
               {!isAdmin && <FlagButton target={{ targetType: 'user', username: profile.username }} label="Denunciar perfil" />}
             </div>
-            {isAdmin && <SuspendButton key={profile.username} username={profile.username} />}
+            {isAdmin && (
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <SuspendButton key={profile.username} username={profile.username} />
+                <DeleteProfileButton username={profile.username} onDeleted={() => navigate('/comunidad', { replace: true })} />
+              </div>
+            )}
           </div>
         )}
       </section>

@@ -152,6 +152,73 @@ describe('moderación directa, sin denuncia', () => {
     expect((await request.get(`/reports/${report.id}`)).status).toBe(404)
   })
 
+  it('borrar una mascota se lleva sus publicaciones y sus avisos', async () => {
+    const admin = await createAdmin()
+    const owner = await createUser('autora')
+    const pet = await createPet(owner)
+    const post = await request.post('/posts').set(owner.auth).send({ petId: pet.id, imageUrl: mediaUrl(owner.id) })
+    const report = await createLostReport(owner, pet.id)
+
+    expect((await remove(admin, 'pet', pet.id)).status).toBe(204)
+    expect((await request.get(`/pets/${pet.id}`)).status).toBe(404)
+    expect((await request.get(`/posts/${post.body.id}`)).status).toBe(404)
+    expect((await request.get(`/reports/${report.id}`)).status).toBe(404)
+  })
+
+  it('las denuncias de lo que cae con lo borrado también quedan resueltas', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const troll = await createUser('troll')
+    const post = await createPost(author)
+    const comment = await request.post(`/posts/${post.id}/comments`).set(troll.auth).send({ body: 'Insulto' })
+    await flag(author, { targetType: 'comment', targetId: comment.body.id })
+
+    await remove(admin, 'post', post.id)
+    expect(await pending(admin)).toEqual([])
+  })
+
+  it('borrar un perfil elimina la cuenta y todo lo suyo, y cierra sus denuncias', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    const neighbour = await createUser('vecina')
+    const post = await createPost(troll)
+    const neighbourPost = await createPost(neighbour)
+    await request.post(`/posts/${neighbourPost.id}/comments`).set(troll.auth).send({ body: 'Insulto' })
+    await flag(neighbour, { targetType: 'post', targetId: post.id })
+    await flag(neighbour, { targetType: 'user', username: 'troll' })
+
+    expect((await request.delete('/admin/users/Troll').set(admin.auth)).status).toBe(204)
+    expect((await request.get('/users/troll')).status).toBe(404)
+    expect((await request.get(`/posts/${post.id}`)).status).toBe(404)
+    expect((await request.get(`/posts/${neighbourPost.id}`)).status).toBe(200)
+    expect((await request.get(`/posts/${neighbourPost.id}/comments`)).body).toEqual([])
+    expect(await pending(admin)).toEqual([])
+  })
+
+  it('una cuenta borrada deja de funcionar aunque su token no haya caducado', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    await request.delete('/admin/users/troll').set(admin.auth)
+
+    const res = await request.post('/flags').set(troll.auth).send({ targetType: 'user', username: 'nabil', reason: 'spam' })
+    expect(res.status).toBe(401)
+    expect(res.body.error).toMatch(/ya no existe/)
+  })
+
+  it('borrar perfiles: solo moderadores, y nunca el propio ni el de otro moderador', async () => {
+    const admin = await createAdmin()
+    await createAdmin('moderadora')
+    const user = await createUser('vecina')
+    await createUser('otra')
+
+    expect((await request.delete('/admin/users/otra')).status).toBe(401)
+    expect((await request.delete('/admin/users/otra').set(user.auth)).status).toBe(403)
+    expect((await request.delete('/admin/users/nabil').set(admin.auth)).status).toBe(400)
+    expect((await request.delete('/admin/users/moderadora').set(admin.auth)).status).toBe(400)
+    expect((await request.delete('/admin/users/nadie').set(admin.auth)).status).toBe(404)
+    expect((await request.get('/users/otra')).status).toBe(200)
+  })
+
   it('si lo borrado estaba denunciado, sus denuncias quedan resueltas', async () => {
     const admin = await createAdmin()
     const author = await createUser('autora')
