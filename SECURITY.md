@@ -117,7 +117,7 @@ Cabeceras en [vercel.json](vercel.json):
 
 - Tests de ataques en la API contra un PostgreSQL real.
 - Guarda contra SQL sin parámetros.
-- `npm audit --omit=dev --audit-level=high`: falla si una dependencia de producción tiene una vulnerabilidad alta.
+- `npm audit --omit=dev --audit-level=high`: falla si una dependencia de producción tiene una vulnerabilidad alta. Se repite cada lunes aunque no haya cambios, porque una vulnerabilidad nueva no espera a que se abra un PR.
 - **CodeQL** (`security-extended`) analiza el código en busca de vulnerabilidades.
 - **Dependabot** propone actualizaciones de dependencias cada semana y avisa en cuanto se publica una vulnerabilidad
   (alertas y actualizaciones de seguridad activadas). GitHub escanea además el repositorio en busca de secretos y bloquea subirlos.
