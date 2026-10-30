@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { deleteAccount } from '../lib/accounts.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { isOwnMediaUrl } from '../lib/storage.js'
@@ -113,18 +114,9 @@ meRouter.get('/blocks', requireAuth, async (req, res) => {
   res.json(blocks.map((b) => ({ ...b.blocked, blockedAt: b.createdAt })))
 })
 
-/**
- * Borrar la cuenta. En Supabase se borra el usuario de auth.users: el trigger on_auth_user_deleted
- * borra el perfil y, en cascada, mascotas, avisos, publicaciones, mensajes... (la API se conecta
- * como postgres, que puede hacerlo). En los tests no existe el schema auth: se borra el perfil.
- * Las fotos de Storage las borra antes la web, que es quien tiene permiso sobre la carpeta.
- */
+/** Borrar la cuenta. Las fotos de Storage las borra antes la web, que es quien tiene permiso sobre la carpeta. */
 meRouter.delete('/', requireAuth, async (req, res) => {
-  const userId = req.userId!
-  const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`
-    SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
-  if (hasAuth) await prisma.$executeRaw`DELETE FROM auth.users WHERE id = ${userId}::uuid`
-  await prisma.user.deleteMany({ where: { id: userId } })
+  await deleteAccount(req.userId!)
   res.status(204).end()
 })
 

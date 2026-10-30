@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import type { FlagTarget } from '../generated/prisma/enums.js'
+import { deleteAccount } from '../lib/accounts.js'
 import { HttpError, parse } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/auth.js'
@@ -120,12 +121,16 @@ async function authorOf(targetType: FlagTarget, targetId: string) {
   }
 }
 
+/** Un moderador no suspende ni borra su propia cuenta desde aquí, ni la de otro moderador. */
+async function assertRegularUser(userId: string, moderatorId: string) {
+  if (userId === moderatorId) throw new HttpError(400, 'Eso no se puede hacer con tu propia cuenta')
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+  if (user?.isAdmin) throw new HttpError(400, 'Eso no se puede hacer con la cuenta de un moderador')
+}
+
 /** Suspende la cuenta: no puede usar la API (requireAuth) ni volver a entrar en Supabase Auth. */
 async function suspend(userId: string, moderatorId: string) {
-  if (userId === moderatorId) throw new HttpError(400, 'No puedes suspenderte a ti mismo')
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
-  if (user?.isAdmin) throw new HttpError(400, 'No se puede suspender a un moderador')
-
+  await assertRegularUser(userId, moderatorId)
   await prisma.user.update({ where: { id: userId }, data: { suspendedAt: new Date() } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
   if (hasAuth) {
@@ -137,12 +142,25 @@ async function suspend(userId: string, moderatorId: string) {
 const resolveFlags = (targetType: FlagTarget, targetId: string) =>
   prisma.contentFlag.updateMany({ where: { targetType, targetId, resolvedAt: null }, data: { resolvedAt: new Date() } })
 
-const contentSchema = z.object({ type: z.enum(['report', 'post', 'comment', 'sighting']), id: z.uuid() })
+/** Lo borrado arrastra publicaciones, comentarios, avisos...: las denuncias de lo que ya no existe no tienen nada que revisar. */
+const resolveOrphanFlags = () => prisma.$executeRaw`
+  UPDATE content_flags f SET resolved_at = now()
+  WHERE f.resolved_at IS NULL AND CASE f.target_type
+    WHEN 'report' THEN NOT EXISTS (SELECT 1 FROM reports WHERE id = f.target_id)
+    WHEN 'post' THEN NOT EXISTS (SELECT 1 FROM posts WHERE id = f.target_id)
+    WHEN 'comment' THEN NOT EXISTS (SELECT 1 FROM comments WHERE id = f.target_id)
+    WHEN 'user' THEN NOT EXISTS (SELECT 1 FROM users WHERE id = f.target_id)
+    WHEN 'conversation' THEN NOT EXISTS (SELECT 1 FROM conversations WHERE id = f.target_id)
+  END`
+
+const contentSchema = z.object({ type: z.enum(['report', 'post', 'comment', 'sighting', 'pet']), id: z.uuid() })
 
 /** Borra un contenido; false si ya no existía. Sus fotos, si las tiene, se van con la limpieza nocturna. */
 async function removeContent(type: z.infer<typeof contentSchema>['type'], id: string) {
   const where = { id }
   switch (type) {
+    case 'pet':
+      return (await prisma.pet.deleteMany({ where })).count > 0
     case 'report':
       return (await prisma.report.deleteMany({ where })).count > 0
     case 'post':
@@ -164,6 +182,7 @@ adminRouter.post('/flags/resolve', async (req, res) => {
       throw new HttpError(400, 'Los usuarios y las conversaciones no se borran: suspende al autor')
     }
     await removeContent(targetType, targetId)
+    await resolveOrphanFlags()
   }
   if (action === 'suspend') {
     const authorId = await authorOf(targetType, targetId)
@@ -179,8 +198,7 @@ adminRouter.post('/flags/resolve', async (req, res) => {
 adminRouter.delete('/content/:type/:id', async (req, res) => {
   const { type, id } = parse(contentSchema, req.params)
   if (!(await removeContent(type, id))) throw new HttpError(404, 'Ese contenido ya no existe')
-  // Los avistamientos no se pueden denunciar.
-  if (type !== 'sighting') await resolveFlags(type, id)
+  await resolveOrphanFlags()
   res.status(204).end()
 })
 
@@ -199,6 +217,15 @@ async function findUserId(username: string) {
   if (!user) throw new HttpError(404, 'Usuario no encontrado')
   return user.id
 }
+
+/** Borrar una cuenta y todo lo suyo. A diferencia de suspender, su email queda libre para volver a registrarse. */
+adminRouter.delete('/users/:username', async (req, res) => {
+  const userId = await findUserId(String(req.params.username))
+  await assertRegularUser(userId, req.userId!)
+  await deleteAccount(userId)
+  await resolveOrphanFlags()
+  res.status(204).end()
+})
 
 /** Suspender desde su perfil, sin esperar a una denuncia. Las que tuviera ese perfil quedan resueltas. */
 adminRouter.put('/suspended/:username', async (req, res) => {

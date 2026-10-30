@@ -99,6 +99,73 @@ test('quien no es moderador no ve los botones de moderación', async ({ page }) 
   await page.goto('/u/troll')
   await expect(page.getByRole('button', { name: 'Denunciar perfil' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Suspender cuenta' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Borrar perfil' })).toHaveCount(0)
+})
+
+test('un moderador borra un perfil escribiendo su nombre', async ({ page }) => {
+  await logIn(page)
+  let deleted = false
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /users/troll': () => profile,
+    'GET /users/troll/pets': () => [],
+    'GET /admin/suspended': () => [],
+    'DELETE /admin/users/troll': () => {
+      deleted = true
+    },
+    'GET /feed': () => ({ posts: [], nextCursor: null }),
+  })
+
+  await page.goto('/u/troll')
+  await page.getByRole('button', { name: 'Borrar perfil' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Borrar a @troll' })
+  await expect(dialog.getByRole('button', { name: 'Borrar definitivamente' })).toBeDisabled()
+  await dialog.getByRole('textbox', { name: 'Nombre de usuario' }).fill('Troll ')
+  await dialog.getByRole('button', { name: 'Borrar definitivamente' }).click()
+
+  await expect(page).toHaveURL(/\/comunidad$/)
+  expect(deleted).toBe(true)
+})
+
+test('un moderador borra una mascota desde su ficha', async ({ page }) => {
+  await logIn(page)
+  let deleted = false
+  const pet = {
+    id: 'pet1',
+    name: 'Toby',
+    species: 'dog',
+    breed: null,
+    sex: 'unknown',
+    birthDate: null,
+    color: null,
+    description: null,
+    photoUrl: null,
+    createdAt: new Date().toISOString(),
+    owner: { username: 'troll', displayName: 'Troll' },
+    followersCount: 0,
+    postsCount: 0,
+    followedByMe: false,
+  }
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /pets/pet1': () => pet,
+    'GET /pets/pet1/posts': () => ({ posts: [], nextCursor: null }),
+    'DELETE /admin/content/pet/pet1': () => {
+      deleted = true
+    },
+    'GET /users/troll': () => profile,
+    'GET /users/troll/pets': () => [],
+    'GET /admin/suspended': () => [],
+  })
+
+  await page.goto('/mascotas/pet1')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Borrar a Toby' }).click()
+
+  await expect(page).toHaveURL(/\/u\/troll$/)
+  expect(deleted).toBe(true)
 })
 
 test('un moderador revisa una denuncia y borra la publicación', async ({ page }) => {
