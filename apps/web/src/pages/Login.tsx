@@ -6,6 +6,7 @@ import { ErrorText, Field } from '../components/Field'
 import { LegalLinks } from '../components/Legal'
 import { OAuthButtons } from '../components/OAuthButtons'
 import { Button } from '../components/ui/Button'
+import { signInErrorMessage } from '../lib/authErrors'
 import { safeRedirect } from '../lib/redirect'
 import { supabase } from '../lib/supabase'
 
@@ -34,7 +35,7 @@ export function Login() {
     })
     setSubmitting(false)
     if (error) {
-      setError(error.code === 'email_not_confirmed' ? 'Confirma tu email antes de entrar.' : 'Email o contraseña incorrectos.')
+      setError(signInErrorMessage(error))
       return
     }
     navigate(from, { replace: true })

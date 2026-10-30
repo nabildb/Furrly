@@ -5,6 +5,18 @@ interface AuthErrorLike {
   message: string
 }
 
+/** Al entrar: quien tiene la cuenta suspendida debe saberlo, no leer que su contraseña está mal. */
+export function signInErrorMessage(error: AuthErrorLike): string {
+  switch (error.code) {
+    case 'email_not_confirmed':
+      return 'Confirma tu email antes de entrar.'
+    case 'user_banned':
+      return 'Tu cuenta está suspendida por incumplir las normas de Furrly.'
+    default:
+      return 'Email o contraseña incorrectos.'
+  }
+}
+
 /**
  * Supabase devuelve los errores en inglés ("email rate limit exceeded"...). Al crear la cuenta se
  * traducen los que pueden pasarle a alguien normal; el resto, con un mensaje genérico.

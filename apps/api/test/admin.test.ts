@@ -376,3 +376,63 @@ describe('registro de moderación y aviso al afectado', () => {
     expect(first).toEqual({ entries: [], nextCursor: null })
   })
 })
+
+describe('advertencias y suspensiones temporales', () => {
+  const notice = (userId: string) => prisma.notification.findFirst({ where: { userId, type: 'moderation_notice' }, select: { message: true } })
+
+  it('advertir le explica el motivo y queda en el historial, sin más consecuencias', async () => {
+    const admin = await createAdmin()
+    const user = await createUser('vecina')
+
+    expect((await request.post('/admin/users/vecina/warn').set(admin.auth).send({ reason: 'inappropriate' })).status).toBe(204)
+
+    expect((await notice(user.id))?.message).toMatch(/advertencia por contenido inapropiado/)
+    expect((await request.get('/me').set(user.auth)).status).toBe(200)
+    const [entry] = (await request.get('/admin/log').set(admin.auth)).body.entries
+    expect(entry).toMatchObject({ action: 'warn', targetLabel: '@vecina', reason: 'inappropriate' })
+  })
+
+  it('advertir: solo moderadores, y nunca a uno mismo ni a otro moderador', async () => {
+    const admin = await createAdmin()
+    await createAdmin('moderadora')
+    const user = await createUser('vecina')
+
+    expect((await request.post('/admin/users/vecina/warn').set(user.auth).send(decision)).status).toBe(403)
+    expect((await request.post('/admin/users/nabil/warn').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.post('/admin/users/moderadora/warn').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.post('/admin/users/nadie/warn').set(admin.auth).send(decision)).status).toBe(404)
+  })
+
+  it('una suspensión temporal dice hasta cuándo y se acaba sola', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+
+    await request.put('/admin/suspended/troll').set(admin.auth).send({ ...decision, days: 7 })
+
+    const blocked = await request.get('/me').set(troll.auth)
+    expect(blocked.status).toBe(403)
+    expect(blocked.body.error).toMatch(/suspendida hasta el/)
+    expect((await notice(troll.id))?.message).toBe('Hemos suspendido tu cuenta durante 7 días por spam o publicidad.')
+    const [entry] = (await request.get('/admin/suspended').set(admin.auth)).body
+    expect(entry.suspendedUntil).not.toBeNull()
+
+    await prisma.user.update({ where: { id: troll.id }, data: { suspendedUntil: new Date(Date.now() - 1000) } })
+    expect((await request.get('/admin/suspended').set(admin.auth)).body).toEqual([])
+    expect((await request.get('/me').set(troll.auth)).status).toBe(200)
+    const after = await prisma.user.findUniqueOrThrow({ where: { id: troll.id }, select: { suspendedAt: true, suspendedUntil: true } })
+    expect(after).toEqual({ suspendedAt: null, suspendedUntil: null })
+  })
+
+  it('sin días la suspensión es indefinida y no se admiten duraciones raras', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+
+    expect((await request.put('/admin/suspended/troll').set(admin.auth).send({ ...decision, days: 0 })).status).toBe(400)
+    expect((await request.put('/admin/suspended/troll').set(admin.auth).send({ ...decision, days: 9999 })).status).toBe(400)
+
+    await request.put('/admin/suspended/troll').set(admin.auth).send(decision)
+    const blocked = await request.get('/me').set(troll.auth)
+    expect(blocked.body.error).toBe('Tu cuenta está suspendida por incumplir las normas de Furrly.')
+    expect((await notice(troll.id))?.message).toBe('Hemos suspendido tu cuenta por spam o publicidad.')
+  })
+})

@@ -37,7 +37,7 @@ Prefiero conversar en español.
 - Modelo de datos: ver [docs/modelo-datos.md](docs/modelo-datos.md)
 
 ## Estado actual (30-10-2026)
-Hecho, probado (119 tests de API, 57 de componentes y 35 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
+Hecho, probado (123 tests de API, 59 de componentes y 35 end-to-end ×2 —móvil y escritorio— en CI) y desplegado:
 - Registro/login con Supabase Auth (+ recuperar contraseña) y **con Google** (username provisional que se confirma en /bienvenida); **páginas legales** (`/aviso-legal`, `/privacidad`, `/cookies`, `/condiciones`; datos del titular en lib/legal.ts, sin banner de cookies porque no hay cookies), perfil editable con zona de alertas, perfil público `/u/:username`, 404
 - Mascotas (CRUD con foto en Storage, microchip privado) y carnet con seguidores y publicaciones
 - Avisos perdida/encontrada con mapa (Leaflet), búsqueda por radio con PostGIS, editar, resolver/cancelar, "Mis avisos"
@@ -50,7 +50,7 @@ Hecho, probado (119 tests de API, 57 de componentes y 35 end-to-end ×2 —móvi
 - **Comunidad (feed social)**: publicaciones con foto, likes, comentarios y seguir mascotas; "Siguiendo" y "Explorar" con paginación por cursor
 - **Avisos push (PWA)**: Web Push implementado a mano (RFC 8291/8292) con test del vector oficial; la web es instalable. Claves VAPID configuradas en Vercel y probado en iPhone
 - **Tests del frontend**: Vitest + Testing Library (componentes) y Playwright (end-to-end, móvil y escritorio, API simulada)
-- **Moderación**: denunciar avisos, publicaciones, comentarios, usuarios y conversaciones; panel en `/moderacion` (descartar, borrar, suspender cuentas), moderación directa sin denuncia (papelera en publicaciones, comentarios, avisos, avistamientos y mascotas; suspender o borrar desde `/u/:username`; rutas `DELETE /admin/content/:type/:id`, `PUT /admin/suspended/:username` y `DELETE /admin/users/:username`), motivo obligatorio con nota interna, historial (`moderation_log`, pestaña en el panel) y aviso al afectado (`moderation_notice`), y borrar la cuenta (RGPD)
+- **Moderación**: denunciar avisos, publicaciones, comentarios, usuarios y conversaciones; panel en `/moderacion` (descartar, borrar, suspender cuentas), moderación directa sin denuncia (papelera en publicaciones, comentarios, avisos, avistamientos y mascotas; advertir, suspender 24 h, 7 o 30 días o sin fecha, y borrar desde `/u/:username`; rutas `DELETE /admin/content/:type/:id`, `PUT /admin/suspended/:username` y `DELETE /admin/users/:username`), motivo obligatorio con nota interna, historial (`moderation_log`, pestaña en el panel) y aviso al afectado (`moderation_notice`), y borrar la cuenta (RGPD)
 - **Diseño C** aplicado (ver docs/diseno.md) y **responsive** (barra lateral en escritorio, dos columnas)
 - **Datos de demo** en producción con fotos libres (ver Notas operativas) y README de portfolio con capturas
 - **Seguridad en los mensajes**: bloquear usuarios (en los dos sentidos, también likes, comentarios, seguir y avisos), 30 mensajes/hora y 10 conversaciones nuevas/día por usuario, denunciar conversaciones
