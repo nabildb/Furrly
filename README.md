@@ -178,7 +178,7 @@ Notas de **Lighthouse** en producción (móvil / escritorio), medidas cada seman
   en móvil y escritorio, y fallan si la CSP bloquea cualquier cosa.
 - **El mapa en móvil pasó de 72 a 80-88** (LCP de 4,9 a 3,7-5,1 s según el día). Lighthouse simula un 4G lento, así que lo que cuenta son los kB que se
   descargan antes de pintar la primera tesela: cada página se carga bajo demanda (el JS inicial ya no lleva mensajes, moderación…),
-  Nunito Sans solo con el eje de grosor (50 → 31 kB) y Sentry (~150 kB) se descarga unos segundos después de cargar la página.
+  Nunito Sans solo con el eje de grosor (50 → 31 kB) y Sentry (~150 kB) solo se descarga si ocurre un error.
   Lo que queda son sobre todo las ~500 kB de teselas de OpenStreetMap, que no dependen de la web.
 - Cada página se mide **3 veces y se toma la mediana**: en las máquinas de GitHub una sola medición del mismo código variaba de 56 a 75,
   y aun así la mediana cambia de un día a otro (88 el domingo y 80 el lunes, con los mismos 766 kB descargados). Por eso el mapa lleva un rango.
