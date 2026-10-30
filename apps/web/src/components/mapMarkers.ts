@@ -1,6 +1,7 @@
 import L from 'leaflet'
 import { escapeHtml } from '../lib/html'
 import { reportColors, SIGHTING_COLOR, type ReportType } from '../lib/reports'
+import { thumbUrl } from '../lib/thumbUrl'
 
 // Marcadores HTML (L.divIcon) con los estilos del diseño C. El ancla está en [0,0] y el
 // contenido se centra con transform, así no hay que conocer el ancho del texto de antemano.
@@ -14,7 +15,7 @@ const softColors: Record<ReportType, string> = { lost: '#F6D9C8', found: '#D5E2F
 export function reportPillIcon(type: ReportType, label: string, photoUrl: string | null, selected: boolean) {
   const color = reportColors[type]
   const photo = photoUrl
-    ? `<img src="${escapeHtml(photoUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${escapeHtml(thumbUrl(photoUrl))}" alt="" style="width:100%;height:100%;object-fit:cover">`
     : `<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:${color}">${PAW_SVG}</span>`
   return L.divIcon({
     className: 'furrly-marker',

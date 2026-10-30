@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { usePostsPages } from '../lib/usePostsPages'
+import { thumbUrl } from '../lib/thumbUrl'
 import { Button } from './ui/Button'
 import { SectionTitle } from './ui/Card'
 
@@ -16,7 +17,7 @@ export function PetPostsGrid({ petId, petName }: { petId: string; petName: strin
         {posts?.map((post) => (
           <Link key={post.id} to={`/publicaciones/${post.id}`} className="group relative block">
             <img
-              src={post.imageUrl}
+              src={thumbUrl(post.imageUrl)}
               alt={post.caption ?? `Foto de ${petName}`}
               loading="lazy"
               className="aspect-square w-full bg-subtle object-cover transition group-hover:opacity-85"

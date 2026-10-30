@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../lib/api'
 import { formatDistance, formatTimeAgo, type ReportType } from '../lib/reports'
+import { thumbUrl } from '../lib/thumbUrl'
 import { Card, SectionTitle } from './ui/Card'
 import { ArrowRightIcon, PawIcon } from './ui/icons'
 
@@ -45,7 +46,7 @@ export function ReportMatches({ reportId, type }: { reportId: string; type: Repo
           <li key={m.id}>
             <Link to={`/avisos/${m.id}`} className="flex items-center gap-3 py-2.5 transition hover:opacity-80">
               <span className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-xl bg-subtle text-muted">
-                {m.photoUrl ? <img src={m.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={24} />}
+                {m.photoUrl ? <img src={thumbUrl(m.photoUrl)} alt="" className="h-full w-full object-cover" /> : <PawIcon size={24} />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-extrabold">{m.title}</span>

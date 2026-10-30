@@ -56,6 +56,29 @@ describe('limpieza de fotos huérfanas', () => {
     ])
   })
 
+  it('la miniatura sigue a su foto: se queda si la foto se usa y se va si no', async () => {
+    const user = await createUser('nabil')
+    const pet = await createPet(user)
+    const withThumb = () => mediaUrl(user.id).replace(/\.\w+$/, '-t.webp')
+    const usedUrl = withThumb()
+    await prisma.pet.update({ where: { id: pet.id }, data: { photoUrl: usedUrl } })
+    const orphanUrl = withThumb()
+
+    await storedPhoto(usedUrl, 48)
+    await storedPhoto(usedUrl.replace('-t.webp', '-thumb.webp'), 48)
+    const orphan = await storedPhoto(orphanUrl, 48)
+    const orphanThumb = await storedPhoto(orphanUrl.replace('-t.webp', '-thumb.webp'), 48)
+
+    const deleted: string[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+      deleted.push(...JSON.parse(String(init?.body)).prefixes)
+      return new Response('[]', { status: 200 })
+    })
+
+    expect((await cron()).body).toEqual({ deleted: 2 })
+    expect(deleted.sort()).toEqual([orphan, orphanThumb].sort())
+  })
+
   it('sin el secreto del cron no hace nada', async () => {
     expect((await request.get('/cron/storage-cleanup')).status).toBe(401)
     expect((await request.get('/cron/storage-cleanup').set('Authorization', 'Bearer otro')).status).toBe(401)

@@ -9,6 +9,7 @@ import { api } from '../lib/api'
 import type { Pet } from '../lib/pets'
 import type { Post } from '../lib/posts'
 import { removeImage, uploadImage } from '../lib/storage'
+import { thumbUrl } from '../lib/thumbUrl'
 
 /** Nueva publicación: elegir mascota, subir una foto y escribir un texto. */
 export function PostNew() {
@@ -125,7 +126,7 @@ export function PostNew() {
               >
                 <input type="radio" name="petId" value={pet.id} required defaultChecked={pet.id === preselected} className="sr-only" />
                 <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#F6D9C8] text-lost/50">
-                  {pet.photoUrl ? <img src={pet.photoUrl} alt="" className="h-full w-full object-cover" /> : <PawIcon size={18} />}
+                  {pet.photoUrl ? <img src={thumbUrl(pet.photoUrl)} alt="" className="h-full w-full object-cover" /> : <PawIcon size={18} />}
                 </span>
                 <span className="text-[15px] font-extrabold">{pet.name}</span>
               </label>
