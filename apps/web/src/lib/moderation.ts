@@ -1,5 +1,11 @@
+import { api } from './api'
+
 export type FlagTargetType = 'report' | 'post' | 'comment' | 'user' | 'conversation'
 export type ModerationAction = 'dismiss' | 'remove' | 'suspend'
+export type RemovableType = 'report' | 'post' | 'comment' | 'sighting'
+
+/** Moderación directa: borra cualquier contenido, aunque nadie lo haya denunciado. */
+export const removeContent = (type: RemovableType, id: string) => api(`/admin/content/${type}/${id}`, { method: 'DELETE' })
 
 export interface FlaggedItem {
   targetType: FlagTargetType

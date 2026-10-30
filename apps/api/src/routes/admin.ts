@@ -121,12 +121,36 @@ async function authorOf(targetType: FlagTarget, targetId: string) {
 }
 
 /** Suspende la cuenta: no puede usar la API (requireAuth) ni volver a entrar en Supabase Auth. */
-async function suspend(userId: string) {
+async function suspend(userId: string, moderatorId: string) {
+  if (userId === moderatorId) throw new HttpError(400, 'No puedes suspenderte a ti mismo')
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+  if (user?.isAdmin) throw new HttpError(400, 'No se puede suspender a un moderador')
+
   await prisma.user.update({ where: { id: userId }, data: { suspendedAt: new Date() } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
   if (hasAuth) {
     await prisma.$executeRaw`UPDATE auth.users SET banned_until = 'infinity' WHERE id = ${userId}::uuid`
     await prisma.$executeRaw`DELETE FROM auth.sessions WHERE user_id = ${userId}::uuid`
+  }
+}
+
+const resolveFlags = (targetType: FlagTarget, targetId: string) =>
+  prisma.contentFlag.updateMany({ where: { targetType, targetId, resolvedAt: null }, data: { resolvedAt: new Date() } })
+
+const contentSchema = z.object({ type: z.enum(['report', 'post', 'comment', 'sighting']), id: z.uuid() })
+
+/** Borra un contenido; false si ya no existía. Sus fotos, si las tiene, se van con la limpieza nocturna. */
+async function removeContent(type: z.infer<typeof contentSchema>['type'], id: string) {
+  const where = { id }
+  switch (type) {
+    case 'report':
+      return (await prisma.report.deleteMany({ where })).count > 0
+    case 'post':
+      return (await prisma.post.deleteMany({ where })).count > 0
+    case 'comment':
+      return (await prisma.comment.deleteMany({ where })).count > 0
+    case 'sighting':
+      return (await prisma.sighting.deleteMany({ where })).count > 0
   }
 }
 
@@ -136,22 +160,28 @@ adminRouter.post('/flags/resolve', async (req, res) => {
   if (pending === 0) throw new HttpError(404, 'No hay denuncias pendientes de ese contenido')
 
   if (action === 'remove') {
-    if (targetType === 'report') await prisma.report.deleteMany({ where: { id: targetId } })
-    else if (targetType === 'post') await prisma.post.deleteMany({ where: { id: targetId } })
-    else if (targetType === 'comment') await prisma.comment.deleteMany({ where: { id: targetId } })
-    else throw new HttpError(400, 'Los usuarios y las conversaciones no se borran: suspende al autor')
+    if (targetType === 'user' || targetType === 'conversation') {
+      throw new HttpError(400, 'Los usuarios y las conversaciones no se borran: suspende al autor')
+    }
+    await removeContent(targetType, targetId)
   }
   if (action === 'suspend') {
     const authorId = await authorOf(targetType, targetId)
     if (!authorId) throw new HttpError(404, 'El autor ya no existe')
-    if (authorId === req.userId) throw new HttpError(400, 'No puedes suspenderte a ti mismo')
-    const author = await prisma.user.findUnique({ where: { id: authorId }, select: { isAdmin: true } })
-    if (author?.isAdmin) throw new HttpError(400, 'No se puede suspender a un moderador')
-    await suspend(authorId)
+    await suspend(authorId, req.userId!)
   }
 
-  await prisma.contentFlag.updateMany({ where: { targetType, targetId, resolvedAt: null }, data: { resolvedAt: new Date() } })
+  await resolveFlags(targetType, targetId)
   res.json({ ok: true })
+})
+
+/** Moderación directa: borrar cualquier contenido sin esperar a una denuncia. Las que tuviera quedan resueltas. */
+adminRouter.delete('/content/:type/:id', async (req, res) => {
+  const { type, id } = parse(contentSchema, req.params)
+  if (!(await removeContent(type, id))) throw new HttpError(404, 'Ese contenido ya no existe')
+  // Los avistamientos no se pueden denunciar.
+  if (type !== 'sighting') await resolveFlags(type, id)
+  res.status(204).end()
 })
 
 /** Cuentas suspendidas, para poder levantar la suspensión. */
@@ -164,12 +194,25 @@ adminRouter.get('/suspended', async (_req, res) => {
   res.json(users)
 })
 
-adminRouter.delete('/suspended/:username', async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { username: String(req.params.username).toLowerCase() }, select: { id: true } })
+async function findUserId(username: string) {
+  const user = await prisma.user.findUnique({ where: { username: username.toLowerCase() }, select: { id: true } })
   if (!user) throw new HttpError(404, 'Usuario no encontrado')
-  await prisma.user.update({ where: { id: user.id }, data: { suspendedAt: null } })
+  return user.id
+}
+
+/** Suspender desde su perfil, sin esperar a una denuncia. Las que tuviera ese perfil quedan resueltas. */
+adminRouter.put('/suspended/:username', async (req, res) => {
+  const userId = await findUserId(String(req.params.username))
+  await suspend(userId, req.userId!)
+  await resolveFlags('user', userId)
+  res.status(204).end()
+})
+
+adminRouter.delete('/suspended/:username', async (req, res) => {
+  const userId = await findUserId(String(req.params.username))
+  await prisma.user.update({ where: { id: userId }, data: { suspendedAt: null } })
   const [{ hasAuth }] = await prisma.$queryRaw<{ hasAuth: boolean }[]>`SELECT to_regclass('auth.users') IS NOT NULL AS "hasAuth"`
-  if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${user.id}::uuid`
+  if (hasAuth) await prisma.$executeRaw`UPDATE auth.users SET banned_until = NULL WHERE id = ${userId}::uuid`
   res.status(204).end()
 })
 

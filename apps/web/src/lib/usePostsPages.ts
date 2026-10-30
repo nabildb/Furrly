@@ -45,11 +45,21 @@ export function usePostsPages(path: string | null) {
     }
   }, [current, loadingMore])
 
+  /** Quita una publicación ya borrada. El cursor es la última cargada: si era esa, pasa a la anterior. */
+  const remove = useCallback((id: string) => {
+    setLoaded((data) => {
+      if (!data) return data
+      const posts = data.posts.filter((post) => post.id !== id)
+      return { ...data, posts, cursor: data.cursor === id ? (posts.at(-1)?.id ?? null) : data.cursor }
+    })
+  }, [])
+
   return {
     posts: current && !current.error ? current.posts : null,
     error: current?.error ?? null,
     hasMore: !!current?.cursor,
     loadMore,
     loadingMore,
+    remove,
   }
 }

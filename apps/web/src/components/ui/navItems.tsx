@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BellIcon, CommunityIcon, ListIcon, MapIcon, MessageIcon, PawOutlineIcon, UserIcon } from './icons'
+import { BellIcon, CommunityIcon, FlagIcon, ListIcon, MapIcon, MessageIcon, PawOutlineIcon, UserIcon } from './icons'
 
 export interface NavItem {
   to: string
@@ -11,6 +11,8 @@ export interface NavItem {
   also?: string[]
   /** Solo en la barra lateral, donde hay sitio para más opciones. */
   wideOnly?: boolean
+  /** Solo para moderadores. */
+  adminOnly?: boolean
   /** Contador del buzón que se pinta en el globo. */
   badge?: 'messages' | 'notifications' | 'all'
 }
@@ -23,6 +25,7 @@ export const navItems: NavItem[] = [
   { to: '/mensajes', label: 'Mensajes', icon: <MessageIcon />, wideOnly: true, badge: 'messages' },
   { to: '/notificaciones', label: 'Notificaciones', icon: <BellIcon />, wideOnly: true, badge: 'notifications' },
   { to: '/avisos/mios', label: 'Mis avisos', icon: <ListIcon />, wideOnly: true },
+  { to: '/moderacion', label: 'Moderación', icon: <FlagIcon />, wideOnly: true, adminOnly: true },
   // En móvil, mensajes y notificaciones se abren desde el perfil: su globo suma ambos.
   { to: '/perfil', label: 'Perfil', icon: <UserIcon size={24} />, badge: 'all' },
 ]

@@ -1,8 +1,10 @@
 import { Link } from 'react-router'
+import { useMe } from '../auth/useMe'
 import { cx } from '../lib/cx'
 import type { LikeState, Post } from '../lib/posts'
 import { useLike } from '../lib/useLike'
 import { formatTimeAgo } from '../lib/reports'
+import { ModeratorDeleteButton } from './ModeratorDeleteButton'
 import { CommentIcon, HeartIcon, PawIcon } from './ui/icons'
 
 /** Foto redonda de la mascota (o huella si no tiene). */
@@ -54,12 +56,23 @@ export function PostHeader({ post }: { post: Post }) {
 }
 
 /** Publicación en el feed: cabecera, foto cuadrada, me gusta, comentarios y texto. */
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   const like = useLike(post)
+  const { isAdmin } = useMe()
   return (
     <article className="overflow-hidden rounded-card border border-card-line bg-surface">
-      <div className="p-3">
+      <div className="flex items-center justify-between gap-3 p-3">
         <PostHeader post={post} />
+        {isAdmin && (
+          <ModeratorDeleteButton
+            type="post"
+            id={post.id}
+            label="Borrar publicación"
+            question={`¿Borrar esta publicación de @${post.pet.owner.username}? También se borrarán sus comentarios. No se puede deshacer.`}
+            icon
+            onDeleted={onDeleted}
+          />
+        )}
       </div>
       {/* Doble clic en la foto = me gusta, como en las redes sociales (y el botón para quien no lo sepa). */}
       <Link to={`/publicaciones/${post.id}`} onDoubleClick={(e) => (e.preventDefault(), !like.likedByMe && like.toggle())}>

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type UIEvent } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { Marker, Polyline, useMap } from 'react-leaflet'
 import { useAuth } from '../auth/useAuth'
 import { useMe } from '../auth/useMe'
 import { ErrorText } from '../components/Field'
 import { FlagButton } from '../components/FlagButton'
+import { ModeratorDeleteButton } from '../components/ModeratorDeleteButton'
 import { ReportMatches } from '../components/ReportMatches'
 import { originIcon, sightingIcon } from '../components/mapMarkers'
 import { MapView } from '../components/MapView'
@@ -18,6 +19,7 @@ import { Sheet } from '../components/ui/Sheet'
 import { buttonClass, iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
+import { removeContent } from '../lib/moderation'
 import { speciesLabels } from '../lib/pets'
 import {
   formatDateTime,
@@ -48,6 +50,7 @@ const overPhotoButton = 'flex h-11 w-11 items-center justify-center rounded-full
 
 export function ReportDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [report, setReport] = useState<Report | null>(null)
   useDocumentTitle(report?.title)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +62,8 @@ export function ReportDetail() {
   const [photoIndex, setPhotoIndex] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const { session } = useAuth()
-  const myUsername = useMe().username ?? undefined
+  const { username, isAdmin } = useMe()
+  const myUsername = username ?? undefined
   const closeSightingForm = useCallback(() => setShowSightingForm(false), [])
 
   useEffect(() => {
@@ -118,9 +122,11 @@ export function ReportDetail() {
   async function deleteSighting(sighting: Sighting) {
     if (!report || !confirm('¿Borrar este avistamiento?')) return
     try {
-      await api(`/reports/${report.id}/sightings/${sighting.id}`, { method: 'DELETE' })
+      const isMine = sighting.user.username === myUsername
+      if (isMine || isReporter) await api(`/reports/${report.id}/sightings/${sighting.id}`, { method: 'DELETE' })
+      else await removeContent('sighting', sighting.id)
       // La foto solo la puede borrar quien la subió (políticas de Storage).
-      if (sighting.photoUrl && sighting.user.username === myUsername) await removeImage(sighting.photoUrl)
+      if (sighting.photoUrl && isMine) await removeImage(sighting.photoUrl)
       setSightingsVersion((v) => v + 1)
     } catch (e) {
       setActionError((e as Error).message)
@@ -342,7 +348,17 @@ export function ReportDetail() {
             </Card>
           )}
 
-          {!isReporter && <FlagButton target={{ targetType: 'report', targetId: report.id }} label="Denunciar este aviso" />}
+          {isAdmin ? (
+            <ModeratorDeleteButton
+              type="report"
+              id={report.id}
+              label="Borrar aviso"
+              question={`¿Borrar este aviso de @${report.reporter.username}? También se borrarán sus avistamientos. No se puede deshacer.`}
+              onDeleted={() => navigate('/avisos', { replace: true })}
+            />
+          ) : (
+            !isReporter && <FlagButton target={{ targetType: 'report', targetId: report.id }} label="Denunciar este aviso" />
+          )}
         </article>
       </div>
 
@@ -401,7 +417,7 @@ export function ReportDetail() {
                     {s.note && <p className="text-muted">{s.note}</p>}
                     {s.photoUrl && <img src={s.photoUrl} alt="" className="mt-2 h-24 w-24 rounded-xl object-cover" />}
                   </div>
-                  {(s.user.username === myUsername || isReporter) && (
+                  {(s.user.username === myUsername || isReporter || isAdmin) && (
                     <button
                       type="button"
                       onClick={() => deleteSighting(s)}

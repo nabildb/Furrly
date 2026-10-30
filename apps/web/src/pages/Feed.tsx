@@ -18,7 +18,7 @@ export function Feed() {
   const [params, setParams] = useSearchParams()
   // Sin sesión no hay a quién seguir: se muestra Explorar.
   const tab: Tab = !session || params.get('ver') === 'explorar' ? 'explorar' : 'siguiendo'
-  const { posts, error, hasMore, loadMore, loadingMore } = usePostsPages(
+  const { posts, error, hasMore, loadMore, loadingMore, remove } = usePostsPages(
     loading ? null : tab === 'siguiendo' ? '/feed' : '/posts',
   )
 
@@ -85,7 +85,7 @@ export function Feed() {
           )}
         </Card>
       ) : (
-        <PostList posts={posts} hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore} />
+        <PostList posts={posts} hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore} onDeleted={remove} />
       )}
     </Page>
   )

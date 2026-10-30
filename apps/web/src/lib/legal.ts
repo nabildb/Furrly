@@ -4,7 +4,7 @@ export const LEGAL = {
   email: 'furrly.contacto@gmail.com',
   /** Edad mínima para tener cuenta: en España se puede consentir solo desde los 14 (art. 7 LOPDGDD). */
   minAge: 14,
-  updated: '22 de octubre de 2026',
+  updated: '30 de octubre de 2026',
 }
 
 export const legalPages = [

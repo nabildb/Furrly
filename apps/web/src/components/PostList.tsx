@@ -8,13 +8,14 @@ interface PostListProps {
   hasMore: boolean
   loadingMore: boolean
   onLoadMore: () => void
+  onDeleted: (postId: string) => void
 }
 
 /**
  * Lista de publicaciones con scroll infinito: cuando el final de la lista entra en pantalla
  * (IntersectionObserver) se pide la siguiente página. El botón queda por si el observer no salta.
  */
-export function PostList({ posts, hasMore, loadingMore, onLoadMore }: PostListProps) {
+export function PostList({ posts, hasMore, loadingMore, onLoadMore, onDeleted }: PostListProps) {
   const sentinel = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function PostList({ posts, hasMore, loadingMore, onLoadMore }: PostListPr
   return (
     <div className="space-y-5">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} onDeleted={() => onDeleted(post.id)} />
       ))}
       <div ref={sentinel} />
       {hasMore ? (
