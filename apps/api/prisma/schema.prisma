@@ -173,6 +173,7 @@ model Comment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId, createdAt])
+  @@index([userId])
   @@map("comments")
 }
 
@@ -206,6 +207,7 @@ model Report {
   @@index([location], type: Gist)
   @@index([status, happenedAt(sort: Desc)])
   @@index([reporterId])
+  @@index([petId])
   @@map("reports")
 }
 
@@ -236,6 +238,7 @@ model Sighting {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([reportId, seenAt(sort: Desc)])
+  @@index([userId])
   @@map("sightings")
 }
 
@@ -257,6 +260,10 @@ model Notification {
   pet    Pet?    @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt(sort: Desc)])
+  @@index([actorId])
+  @@index([reportId])
+  @@index([postId])
+  @@index([petId])
   @@map("notifications")
 }
 
@@ -295,6 +302,8 @@ model Message {
   report       Report?      @relation(fields: [reportId], references: [id], onDelete: SetNull)
 
   @@index([conversationId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@index([reportId])
   @@map("messages")
 }
 
