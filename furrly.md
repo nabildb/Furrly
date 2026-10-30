@@ -83,7 +83,7 @@ Hecho, probado (100 tests de API, 35 de componentes y 27 end-to-end ×2 —móvi
 - **Tiempo real** (lib/realtime.ts en API y web): timbre por el canal privado `user:<id>` de Supabase Realtime; usa `SUPABASE_SERVICE_ROLE_KEY`. Política RLS en `realtime.messages` creada por la migración `realtime_channels`
 - **Capturas del README**: workflow «Capturas» (apps/web/scripts/capturas.mjs) contra producción; descargar el artefacto y copiarlo a docs/capturas
 - **Geocodificación** por la API (`GET /geocode`, caché de Vercel un día) y `cx` con tailwind-merge
-- **Sentry** (región UE): `SENTRY_DSN` (API, Secret) y `VITE_SENTRY_DSN` (web, tipo Config: las `VITE_` son públicas) en Vercel; sin ellas no se envía nada. La web lo carga en segundo plano
+- **Sentry** (región UE): `SENTRY_DSN` (API, Secret) y `VITE_SENTRY_DSN` (web, tipo Config: las `VITE_` son públicas) en Vercel; sin ellas no se envía nada. La web solo descarga el SDK (~150 kB) con el primer error, así que los informes no traen breadcrumbs
 - **Sentry**: organización `nabil-cc` (región UE, `de.sentry.io`), proyectos `furrly-web` y `furrly-api`, sin guardar IPs. Botón de error de prueba en /moderacion
 - **Moderadores**: `UPDATE users SET is_admin = true WHERE username = '...'` en Supabase (ahora solo @nabil)
 - **Login con Google**: cliente OAuth en Google Cloud (proyecto `furrly`, Google Auth Platform) con el ID y secreto pegados en Supabase → Sign In / Providers → Google. Apple necesitaría cuenta de Apple Developer (99 €/año); el botón aparecería solo al activarlo en Supabase
