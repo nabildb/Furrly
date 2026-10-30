@@ -14,7 +14,7 @@ interface ConfirmUsernameSheetProps {
   username: string
   deleting: boolean
   error: string | null
-  onConfirm: () => void
+  onConfirm: (form: FormData) => void
   onClose: () => void
   /** Lo que se va a borrar, antes de pedir el nombre. */
   children?: ReactNode
@@ -25,9 +25,9 @@ export function ConfirmUsernameSheet({ title, username, deleting, error, onConfi
   const [typed, setTyped] = useState('')
   const confirmed = normalizeUsername(typed) === username
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (confirmed) onConfirm()
+    if (confirmed) onConfirm(new FormData(e.currentTarget))
   }
 
   return (

@@ -85,6 +85,8 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
   solo decide qué botones se ven. Desde esas rutas nadie puede suspender ni borrar su propia cuenta, ni la de otro moderador.
 - Una cuenta borrada deja de funcionar al momento, aunque su token no haya caducado: `requireAuth` comprueba en cada
   petición que el perfil sigue existiendo.
+- Cada decisión de moderación queda en `moderation_log` (quién, qué, a quién y por qué). La tabla tiene RLS sin políticas, como
+  las demás: solo la lee la API, y solo para moderadores. La nota del moderador es interna: el afectado solo ve el motivo.
 - Una cuenta suspendida no puede usar la API aunque su token no haya caducado (se comprueba en cada petición)
   ni volver a entrar: se le pone `banned_until` en Supabase Auth y se cierran sus sesiones.
 - Las conversaciones privadas solo las puede leer un moderador si alguien que participa en ellas la ha denunciado.

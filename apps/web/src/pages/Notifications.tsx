@@ -6,7 +6,7 @@ import { Loading, Page } from '../components/Page'
 import { PushToggle } from '../components/PushToggle'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
-import { BellIcon, CheckIcon, CommentIcon, EyeIcon, HeartIcon, PawIcon, PinIcon, PlusIcon } from '../components/ui/icons'
+import { BellIcon, CheckIcon, CommentIcon, EyeIcon, HeartIcon, PawIcon, PinIcon, PlusIcon, ShieldIcon } from '../components/ui/icons'
 import { useInbox } from '../inbox/useInbox'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
@@ -79,6 +79,9 @@ function describe(n: AppNotification): { text: ReactNode; icon: ReactNode; to: s
         to: n.post && `/publicaciones/${n.post.id}`,
         tone: 'bg-lost-soft text-lost',
       }
+    case 'moderation_notice':
+      // Lleva a las normas: ahí se explica qué se puede publicar y cómo reclamar.
+      return { text: n.message, icon: <ShieldIcon size={18} />, to: '/condiciones', tone: 'bg-ink text-white' }
   }
 }
 

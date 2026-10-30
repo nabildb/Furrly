@@ -13,7 +13,6 @@ import { SectionTitle } from '../components/ui/Card'
 import { TrashIcon } from '../components/ui/icons'
 import { iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
-import { removeContent } from '../lib/moderation'
 import type { Post, PostComment } from '../lib/posts'
 import { formatTimeAgo } from '../lib/reports'
 import { removeImage } from '../lib/storage'
@@ -53,12 +52,13 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
     }
   }
 
+  const dropComment = (id: string) => setComments((prev) => prev?.filter((c) => c.id !== id) ?? null)
+
   async function deleteComment(comment: PostComment) {
     if (!confirm('¿Borrar este comentario?')) return
     try {
-      if (isOwner || comment.user.username === myUsername) await api(`/posts/${post.id}/comments/${comment.id}`, { method: 'DELETE' })
-      else await removeContent('comment', comment.id)
-      setComments((prev) => prev?.filter((c) => c.id !== comment.id) ?? null)
+      await api(`/posts/${post.id}/comments/${comment.id}`, { method: 'DELETE' })
+      dropComment(comment.id)
     } catch (e) {
       setError((e as Error).message)
     }
@@ -93,7 +93,7 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
               id={post.id}
               label="Borrar publicación"
               question={`¿Borrar esta publicación de @${post.pet.owner.username}? También se borrarán sus comentarios. No se puede deshacer.`}
-              icon
+              look="icon"
               onDeleted={onDeleted}
             />
           ) : (
@@ -126,7 +126,7 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
                 {c.user.username !== myUsername && !isAdmin && (
                   <FlagButton target={{ targetType: 'comment', targetId: c.id }} label="" className="px-1 py-1" />
                 )}
-                {(c.user.username === myUsername || isOwner || isAdmin) && (
+                {c.user.username === myUsername || isOwner ? (
                   <button
                     type="button"
                     onClick={() => deleteComment(c)}
@@ -134,6 +134,17 @@ function PostView({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
                   >
                     Borrar
                   </button>
+                ) : (
+                  isAdmin && (
+                    <ModeratorDeleteButton
+                      type="comment"
+                      id={c.id}
+                      label="Borrar comentario"
+                      question={`¿Borrar este comentario de @${c.user.username}? No se puede deshacer.`}
+                      look="link"
+                      onDeleted={() => dropComment(c.id)}
+                    />
+                  )
                 )}
               </li>
             ))}
