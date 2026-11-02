@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useMe } from '../auth/useMe'
 import { Loading, Page, PageError } from '../components/Page'
 import { LostAlertButton } from '../components/LostAlertButton'
+import { ModeratorDeleteButton } from '../components/ModeratorDeleteButton'
 import { FollowButton, PetStats } from '../components/FollowButton'
 import { PetCarnet } from '../components/PetCarnet'
 import { PetPostsGrid } from '../components/PetPostsGrid'
@@ -17,7 +18,8 @@ import { useActiveLostReports } from '../lib/useActiveLostReports'
 /** Carnet público de una mascota (/mascotas/:id). */
 export function PetDetail() {
   const { id } = useParams()
-  const { username: myUsername } = useMe()
+  const navigate = useNavigate()
+  const { username: myUsername, isAdmin } = useMe()
   const [pet, setPet] = useState<Pet | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,6 +46,15 @@ export function PetDetail() {
           <Link to={`/mascotas/${pet.id}/editar`} aria-label={`Editar a ${pet.name}`} className={iconButtonClass()}>
             <EditIcon size={20} />
           </Link>
+        ) : isAdmin ? (
+          <ModeratorDeleteButton
+            type="pet"
+            id={pet.id}
+            label={`Borrar a ${pet.name}`}
+            question={`¿Borrar a ${pet.name}, de @${pet.owner.username}? También se borrarán sus publicaciones y sus avisos. No se puede deshacer.`}
+            icon
+            onDeleted={() => navigate(`/u/${pet.owner.username}`, { replace: true })}
+          />
         ) : undefined
       }
     >

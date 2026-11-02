@@ -36,9 +36,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return
   }
 
-  // Una cuenta suspendida no puede hacer nada, aunque su token aún no haya caducado.
+  // Una cuenta suspendida o borrada no puede hacer nada, aunque su token aún no haya caducado.
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { suspendedAt: true } })
-  if (user?.suspendedAt) {
+  if (!user) {
+    res.status(401).json({ error: 'Esta cuenta ya no existe' })
+    return
+  }
+  if (user.suspendedAt) {
     res.status(403).json({ error: 'Tu cuenta está suspendida por incumplir las normas de Furrly.' })
     return
   }

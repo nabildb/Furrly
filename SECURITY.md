@@ -82,7 +82,9 @@ abre un *security advisory* privado en GitHub (pestaña **Security**) en vez de 
 - Los moderadores (`users.is_admin`) solo se pueden nombrar desde la base de datos: la API ignora ese campo
   si alguien intenta enviarlo.
 - Todo lo que hace un moderador va por `/admin`, protegido por `requireAdmin` en el servidor: en la web, ser moderador
-  solo decide qué botones se ven. Nadie puede suspenderse a sí mismo ni suspender a otro moderador.
+  solo decide qué botones se ven. Desde esas rutas nadie puede suspender ni borrar su propia cuenta, ni la de otro moderador.
+- Una cuenta borrada deja de funcionar al momento, aunque su token no haya caducado: `requireAuth` comprueba en cada
+  petición que el perfil sigue existiendo.
 - Una cuenta suspendida no puede usar la API aunque su token no haya caducado (se comprueba en cada petición)
   ni volver a entrar: se le pone `banned_until` en Supabase Auth y se cierran sus sesiones.
 - Las conversaciones privadas solo las puede leer un moderador si alguien que participa en ellas la ha denunciado.
