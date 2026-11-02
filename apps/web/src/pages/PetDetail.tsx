@@ -52,7 +52,7 @@ export function PetDetail() {
             id={pet.id}
             label={`Borrar a ${pet.name}`}
             question={`¿Borrar a ${pet.name}, de @${pet.owner.username}? También se borrarán sus publicaciones y sus avisos. No se puede deshacer.`}
-            icon
+            look="icon"
             onDeleted={() => navigate(`/u/${pet.owner.username}`, { replace: true })}
           />
         ) : undefined

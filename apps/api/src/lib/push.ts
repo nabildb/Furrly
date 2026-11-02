@@ -54,6 +54,7 @@ export async function pushNotifications(notificationIds: string[]) {
     select: {
       userId: true,
       type: true,
+      message: true,
       actor: { select: { username: true } },
       report: { select: { id: true, title: true, type: true } },
       post: { select: { id: true, pet: { select: { name: true } } } },
@@ -87,6 +88,8 @@ export async function pushNotifications(notificationIds: string[]) {
           : { title: '¿Es el animal que encontraste?', body: `«${n.report.title}» se perdió cerca`, url: `/avisos/${n.report.id}` }
     } else if (n.type === 'new_follower' && n.pet) {
       message = { title: 'Nuevo seguidor', body: `${who} sigue a ${n.pet.name}`, url: `/mascotas/${n.pet.id}` }
+    } else if (n.type === 'moderation_notice' && n.message) {
+      message = { title: 'Aviso de moderación', body: n.message, url: '/notificaciones' }
     }
     if (!message) continue
     const key = JSON.stringify(message)

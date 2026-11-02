@@ -12,33 +12,41 @@ const onDeleted = vi.fn()
 const route = (
   <Route
     path="/"
-    element={<ModeratorDeleteButton type="post" id="p1" label="Borrar publicación" question="¿Borrar?" icon onDeleted={onDeleted} />}
+    element={<ModeratorDeleteButton type="post" id="p1" label="Borrar publicación" question="¿Borrar esta publicación?" look="icon" onDeleted={onDeleted} />}
   />
 )
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
 describe('borrar como moderador', () => {
-  it('pregunta, borra por la ruta de moderación y avisa a la página', async () => {
+  it('pide el motivo, borra por la ruta de moderación y avisa a la página', async () => {
     vi.mocked(api).mockResolvedValue(null)
     renderRoutes(route)
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar publicación' }))
-    expect(window.confirm).toHaveBeenCalledWith('¿Borrar?')
-    expect(api).toHaveBeenCalledWith('/admin/content/post/p1', { method: 'DELETE' })
+    expect(screen.getByRole('dialog', { name: 'Borrar publicación' })).toHaveTextContent('¿Borrar esta publicación?')
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Falso o engañoso' }))
+    await userEvent.type(screen.getByRole('textbox', { name: /Nota interna/ }), 'Foto robada')
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+
+    expect(api).toHaveBeenCalledWith('/admin/content/post/p1', {
+      method: 'DELETE',
+      body: JSON.stringify({ reason: 'fake', note: 'Foto robada' }),
+    })
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
   })
 
-  it('si se cancela la pregunta no se borra nada', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('si se cierra la hoja no se borra nada', async () => {
     renderRoutes(route)
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar publicación' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(api).not.toHaveBeenCalled()
-    expect(onDeleted).not.toHaveBeenCalled()
   })
 
   it('si falla enseña el error y se puede reintentar', async () => {
@@ -46,8 +54,10 @@ describe('borrar como moderador', () => {
     renderRoutes(route)
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar publicación' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+
     expect(await screen.findByRole('alert')).toHaveTextContent('Solo para moderadores')
     expect(onDeleted).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Borrar publicación' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Borrar' })).toBeEnabled()
   })
 })

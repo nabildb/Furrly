@@ -32,7 +32,7 @@ describe('borrar un perfil como moderador', () => {
     await userEvent.type(box, '@Troll ')
     await userEvent.click(confirm)
 
-    expect(api).toHaveBeenCalledWith('/admin/users/troll', { method: 'DELETE' })
+    expect(api).toHaveBeenCalledWith('/admin/users/troll', { method: 'DELETE', body: JSON.stringify({ reason: 'spam', note: null }) })
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
   })
 

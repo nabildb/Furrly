@@ -13,10 +13,13 @@ export type NotificationType =
   | 'new_comment'
   | 'new_like'
   | 'possible_match'
+  | 'moderation_notice'
 
 export interface AppNotification {
   id: string
   type: NotificationType
+  /** Solo en moderation_notice. */
+  message: string | null
   readAt: string | null
   createdAt: string
   actor: { username: string; displayName: string; avatarUrl: string | null } | null

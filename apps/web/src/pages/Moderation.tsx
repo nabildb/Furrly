@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { ErrorText } from '../components/Field'
+import { ModerationLog } from '../components/ModerationLog'
 import { Loading, Page } from '../components/Page'
 import { Button } from '../components/ui/Button'
 import { Card, SectionTitle } from '../components/ui/Card'
@@ -16,7 +17,7 @@ import {
 } from '../lib/moderation'
 import { formatTimeAgo } from '../lib/reports'
 
-type Tab = 'pendientes' | 'resueltas'
+type Tab = 'pendientes' | 'resueltas' | 'historial'
 
 const confirmations: Record<ModerationAction, ((item: FlaggedItem) => string) | null> = {
   dismiss: null,
@@ -188,6 +189,7 @@ export function Moderation() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   const load = useCallback(() => {
+    if (tab === 'historial') return
     api<FlaggedItem[]>(`/admin/flags?estado=${tab}`)
       .then(setItems)
       .catch((e: Error) => setError(e.message))
@@ -209,11 +211,16 @@ export function Moderation() {
         <Chip active={tab === 'resueltas'} onClick={() => changeTab('resueltas')}>
           Resueltas
         </Chip>
+        <Chip active={tab === 'historial'} onClick={() => changeTab('historial')}>
+          Historial
+        </Chip>
       </div>
 
       <div className="space-y-4">
         {error && <ErrorText>{error}</ErrorText>}
-        {!items ? (
+        {tab === 'historial' ? (
+          <ModerationLog />
+        ) : !items ? (
           !error && <Loading label="Cargando denuncias…" />
         ) : items.length === 0 ? (
           <p className="py-8 text-center text-[15px] font-semibold text-muted">

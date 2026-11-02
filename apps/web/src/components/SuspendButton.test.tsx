@@ -20,13 +20,17 @@ beforeEach(() => {
 })
 
 describe('suspender desde el perfil', () => {
-  it('suspende a quien no lo está y el botón pasa a readmitir', async () => {
+  it('pide el motivo, suspende y el botón pasa a readmitir', async () => {
     mockSuspended(['otra'])
     renderRoutes(route)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Suspender cuenta' }))
-    expect(api).toHaveBeenCalledWith('/admin/suspended/troll', { method: 'PUT' })
+    await userEvent.click(screen.getByRole('radio', { name: 'Inapropiado u ofensivo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Suspender' }))
+
+    expect(api).toHaveBeenCalledWith('/admin/suspended/troll', { method: 'PUT', body: JSON.stringify({ reason: 'inappropriate', note: null }) })
     expect(await screen.findByRole('button', { name: 'Levantar suspensión' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('a quien ya está suspendido se le puede readmitir', async () => {
@@ -43,9 +47,10 @@ describe('suspender desde el perfil', () => {
     renderRoutes(route)
     const button = await screen.findByRole('button', { name: 'Suspender cuenta' })
 
-    vi.mocked(api).mockRejectedValue(new Error('No se puede suspender a un moderador'))
+    vi.mocked(api).mockRejectedValue(new Error('Eso no se puede hacer con la cuenta de un moderador'))
     await userEvent.click(button)
-    expect(await screen.findByRole('alert')).toHaveTextContent('No se puede suspender a un moderador')
-    expect(screen.getByRole('button', { name: 'Suspender cuenta' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Suspender' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('la cuenta de un moderador')
   })
 })

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
-import type { SuspendedUser } from '../lib/moderation'
+import type { Decision, SuspendedUser } from '../lib/moderation'
+import { DecisionSheet } from './DecisionSheet'
 import { ErrorText } from './Field'
 
 /** Suspender o readmitir una cuenta desde su perfil, sin esperar a una denuncia. Solo para moderadores. */
 export function SuspendButton({ username }: { username: string }) {
   // null = aún no se sabe: sale de la misma lista que el panel de moderación.
   const [suspended, setSuspended] = useState<boolean | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -16,36 +17,36 @@ export function SuspendButton({ username }: { username: string }) {
       .catch((e: Error) => setError(e.message))
   }, [username])
 
-  async function toggle() {
-    const question = suspended
-      ? `¿Levantar la suspensión de @${username}?`
-      : `¿Suspender a @${username}? No podrá entrar en Furrly hasta que levantes la suspensión.`
-    if (!confirm(question)) return
-    setBusy(true)
+  async function suspend(decision: Decision) {
+    await api(`/admin/suspended/${username}`, { method: 'PUT', body: JSON.stringify(decision) })
+    setSuspended(true)
+    setOpen(false)
+  }
+
+  async function lift() {
+    if (!confirm(`¿Levantar la suspensión de @${username}?`)) return
     setError(null)
     try {
-      await api(`/admin/suspended/${username}`, { method: suspended ? 'DELETE' : 'PUT' })
-      setSuspended(!suspended)
+      await api(`/admin/suspended/${username}`, { method: 'DELETE' })
+      setSuspended(false)
     } catch (e) {
       setError((e as Error).message)
-    } finally {
-      setBusy(false)
     }
   }
 
   return (
     <>
       {suspended !== null && (
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={busy}
-          className="text-[13px] font-extrabold text-danger hover:underline disabled:opacity-50"
-        >
+        <button type="button" onClick={suspended ? lift : () => setOpen(true)} className="text-[13px] font-extrabold text-danger hover:underline">
           {suspended ? 'Levantar suspensión' : 'Suspender cuenta'}
         </button>
       )}
       {error && <ErrorText>{error}</ErrorText>}
+      {open && (
+        <DecisionSheet title={`Suspender a @${username}`} confirmLabel="Suspender" onConfirm={suspend} onClose={() => setOpen(false)}>
+          <p className="text-[15px] font-semibold text-body">No podrá entrar en Furrly hasta que levantes la suspensión.</p>
+        </DecisionSheet>
+      )}
     </>
   )
 }

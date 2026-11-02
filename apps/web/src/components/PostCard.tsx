@@ -69,7 +69,7 @@ export function PostCard({ post, onDeleted }: { post: Post; onDeleted: () => voi
             id={post.id}
             label="Borrar publicación"
             question={`¿Borrar esta publicación de @${post.pet.owner.username}? También se borrarán sus comentarios. No se puede deshacer.`}
-            icon
+            look="icon"
             onDeleted={onDeleted}
           />
         )}

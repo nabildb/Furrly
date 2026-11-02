@@ -51,7 +51,8 @@ para compartir fotos de tus mascotas.
 - Denunciar avisos, publicaciones, comentarios, usuarios o conversaciones, y un **panel de moderación** para revisarlas:
   descartar, borrar el contenido o suspender la cuenta del autor. Los moderadores reciben un push con cada denuncia y
   también pueden actuar sin esperar a una: borrar publicaciones, comentarios, avisos, avistamientos y mascotas donde se
-  ven, y suspender o borrar una cuenta desde su perfil.
+  ven, y suspender o borrar una cuenta desde su perfil. Cada decisión lleva un motivo, queda en un historial y se le explica
+  al afectado.
 - **Bloquear** a un usuario: no podéis escribiros ni interactuar con vuestras publicaciones, y dejas de recibir sus avisos.
 - Límites contra el spam: 30 mensajes por hora y 10 conversaciones nuevas al día por usuario.
 - Borrar la cuenta con todos sus datos y fotos (derecho de supresión del RGPD).
@@ -156,13 +157,13 @@ docs/                      → modelo de datos, diseño y capturas
 
 Todo se ejecuta en GitHub Actions en cada push ([ver workflow](.github/workflows/ci.yml)):
 
-- **API: 112 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
+- **API: 119 tests de integración** (Vitest + Supertest) contra un PostgreSQL + PostGIS real, como servicio del workflow:
   reglas de negocio, permisos ("no puedes leer conversaciones ajenas"), búsquedas geoespaciales, alertas por zona,
   paginación, Web Push (incluido el vector del RFC 8291), bloqueos y límites anti-spam, ataques (inyección SQL, tokens falsos), el trigger que crea el perfil al entrar con Google y casos límite. Los tokens se firman con una clave ES256
   generada en cada ejecución, igual que hace Supabase Auth.
 - **Web: 57 tests de componentes** (Vitest + Testing Library + jsdom) de la lógica más delicada: el asistente de publicar
   (validación por pasos, título propuesto, lo que se envía a la API), el like optimista y su deshacer, mensajes, push, denuncias, bloqueos, moderación, redirecciones seguras, la recarga tras un despliegue y el registro (nombre de usuario que se corrige al escribir, errores en español y el aviso de condiciones y privacidad).
-- **End-to-end: 33 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, sobre la web compilada y con la API
+- **End-to-end: 35 tests con Playwright** (cada uno en móvil y escritorio) en un Chromium real, sobre la web compilada y con la API
   simulada (nunca tocan datos reales) y con la misma CSP que producción: un invitado explora el mapa, publicar un aviso con clic real en el mapa, escribir un mensaje, una conversación bloqueada, entrar con Google (botón, vuelta y elegir nombre de usuario), moderar sin denuncia y qué pasa si falta un archivo de la web tras un despliegue.
 
 ## Calidad

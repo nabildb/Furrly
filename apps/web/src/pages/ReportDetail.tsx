@@ -19,7 +19,6 @@ import { Sheet } from '../components/ui/Sheet'
 import { buttonClass, iconButtonClass } from '../components/ui/styles'
 import { api } from '../lib/api'
 import { cx } from '../lib/cx'
-import { removeContent } from '../lib/moderation'
 import { speciesLabels } from '../lib/pets'
 import {
   formatDateTime,
@@ -122,11 +121,9 @@ export function ReportDetail() {
   async function deleteSighting(sighting: Sighting) {
     if (!report || !confirm('¿Borrar este avistamiento?')) return
     try {
-      const isMine = sighting.user.username === myUsername
-      if (isMine || isReporter) await api(`/reports/${report.id}/sightings/${sighting.id}`, { method: 'DELETE' })
-      else await removeContent('sighting', sighting.id)
+      await api(`/reports/${report.id}/sightings/${sighting.id}`, { method: 'DELETE' })
       // La foto solo la puede borrar quien la subió (políticas de Storage).
-      if (sighting.photoUrl && isMine) await removeImage(sighting.photoUrl)
+      if (sighting.photoUrl && sighting.user.username === myUsername) await removeImage(sighting.photoUrl)
       setSightingsVersion((v) => v + 1)
     } catch (e) {
       setActionError((e as Error).message)
@@ -417,7 +414,7 @@ export function ReportDetail() {
                     {s.note && <p className="text-muted">{s.note}</p>}
                     {s.photoUrl && <img src={s.photoUrl} alt="" className="mt-2 h-24 w-24 rounded-xl object-cover" />}
                   </div>
-                  {(s.user.username === myUsername || isReporter || isAdmin) && (
+                  {s.user.username === myUsername || isReporter ? (
                     <button
                       type="button"
                       onClick={() => deleteSighting(s)}
@@ -425,6 +422,17 @@ export function ReportDetail() {
                     >
                       Borrar
                     </button>
+                  ) : (
+                    isAdmin && (
+                      <ModeratorDeleteButton
+                        type="sighting"
+                        id={s.id}
+                        label="Borrar avistamiento"
+                        question={`¿Borrar este avistamiento de @${s.user.username}? No se puede deshacer.`}
+                        look="link"
+                        onDeleted={() => setSightingsVersion((v) => v + 1)}
+                      />
+                    )
                   )}
                 </li>
               ))}

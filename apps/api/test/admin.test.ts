@@ -13,6 +13,7 @@ async function createPost(user: TestUser) {
   return (await request.post('/posts').set(user.auth).send({ petId: pet.id, imageUrl: mediaUrl(user.id), caption: 'Spam spam' })).body as { id: string }
 }
 
+const decision = { reason: 'spam' }
 const flag = (user: TestUser, body: object) => request.post('/flags').set(user.auth).send({ reason: 'spam', ...body })
 const pending = async (admin: TestUser) => (await request.get('/admin/flags').set(admin.auth)).body
 
@@ -130,7 +131,7 @@ describe('panel de moderación', () => {
 })
 
 describe('moderación directa, sin denuncia', () => {
-  const remove = (user: TestUser, type: string, id: string) => request.delete(`/admin/content/${type}/${id}`).set(user.auth)
+  const remove = (user: TestUser, type: string, id: string) => request.delete(`/admin/content/${type}/${id}`).set(user.auth).send(decision)
 
   it('un moderador borra publicaciones, comentarios, avisos y avistamientos de cualquiera', async () => {
     const admin = await createAdmin()
@@ -187,7 +188,7 @@ describe('moderación directa, sin denuncia', () => {
     await flag(neighbour, { targetType: 'post', targetId: post.id })
     await flag(neighbour, { targetType: 'user', username: 'troll' })
 
-    expect((await request.delete('/admin/users/Troll').set(admin.auth)).status).toBe(204)
+    expect((await request.delete('/admin/users/Troll').set(admin.auth).send(decision)).status).toBe(204)
     expect((await request.get('/users/troll')).status).toBe(404)
     expect((await request.get(`/posts/${post.id}`)).status).toBe(404)
     expect((await request.get(`/posts/${neighbourPost.id}`)).status).toBe(200)
@@ -198,7 +199,7 @@ describe('moderación directa, sin denuncia', () => {
   it('una cuenta borrada deja de funcionar aunque su token no haya caducado', async () => {
     const admin = await createAdmin()
     const troll = await createUser('troll')
-    await request.delete('/admin/users/troll').set(admin.auth)
+    await request.delete('/admin/users/troll').set(admin.auth).send(decision)
 
     const res = await request.post('/flags').set(troll.auth).send({ targetType: 'user', username: 'nabil', reason: 'spam' })
     expect(res.status).toBe(401)
@@ -213,9 +214,9 @@ describe('moderación directa, sin denuncia', () => {
 
     expect((await request.delete('/admin/users/otra')).status).toBe(401)
     expect((await request.delete('/admin/users/otra').set(user.auth)).status).toBe(403)
-    expect((await request.delete('/admin/users/nabil').set(admin.auth)).status).toBe(400)
-    expect((await request.delete('/admin/users/moderadora').set(admin.auth)).status).toBe(400)
-    expect((await request.delete('/admin/users/nadie').set(admin.auth)).status).toBe(404)
+    expect((await request.delete('/admin/users/nabil').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.delete('/admin/users/moderadora').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.delete('/admin/users/nadie').set(admin.auth).send(decision)).status).toBe(404)
     expect((await request.get('/users/otra')).status).toBe(200)
   })
 
@@ -256,7 +257,7 @@ describe('moderación directa, sin denuncia', () => {
     const reporter = await createUser('vecina')
     await flag(reporter, { targetType: 'user', username: 'troll' })
 
-    expect((await request.put('/admin/suspended/Troll').set(admin.auth)).status).toBe(204)
+    expect((await request.put('/admin/suspended/Troll').set(admin.auth).send(decision)).status).toBe(204)
     expect((await request.get('/me').set(troll.auth)).status).toBe(403)
     expect(await pending(admin)).toEqual([])
 
@@ -269,9 +270,109 @@ describe('moderación directa, sin denuncia', () => {
     await createAdmin('moderadora')
     const user = await createUser('vecina')
 
-    expect((await request.put('/admin/suspended/vecina').set(user.auth)).status).toBe(403)
-    expect((await request.put('/admin/suspended/nabil').set(admin.auth)).status).toBe(400)
-    expect((await request.put('/admin/suspended/moderadora').set(admin.auth)).status).toBe(400)
-    expect((await request.put('/admin/suspended/nadie').set(admin.auth)).status).toBe(404)
+    expect((await request.put('/admin/suspended/vecina').set(user.auth).send(decision)).status).toBe(403)
+    expect((await request.put('/admin/suspended/nabil').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.put('/admin/suspended/moderadora').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.put('/admin/suspended/nadie').set(admin.auth).send(decision)).status).toBe(404)
+  })
+})
+
+describe('registro de moderación y aviso al afectado', () => {
+  const removePost = (user: TestUser, id: string, body: object = decision) => request.delete(`/admin/content/post/${id}`).set(user.auth).send(body)
+  const log = async (admin: TestUser) => (await request.get('/admin/log').set(admin.auth)).body.entries
+  const notices = async (user: TestUser) =>
+    (await request.get('/notifications').set(user.auth)).body.notifications.filter((n: { type: string }) => n.type === 'moderation_notice')
+
+  it('apunta quién borró qué y por qué, aunque lo borrado ya no exista', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const post = await createPost(author)
+
+    await removePost(admin, post.id, { reason: 'fake', note: 'Foto robada' })
+
+    expect(await log(admin)).toEqual([
+      expect.objectContaining({
+        action: 'remove',
+        targetType: 'post',
+        targetLabel: 'Publicación de Luna',
+        reason: 'fake',
+        note: 'Foto robada',
+        moderator: { username: 'nabil' },
+        targetUser: { username: 'autora' },
+      }),
+    ])
+  })
+
+  it('explica el motivo al autor, sin la nota interna y aunque haya bloqueado al moderador', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const post = await createPost(author)
+    await request.put('/users/nabil/block').set(author.auth)
+
+    await removePost(admin, post.id, { reason: 'spam', note: 'Reincidente' })
+
+    const [notice] = await notices(author)
+    expect(notice.message).toBe('Hemos retirado tu publicación de Luna por spam o publicidad.')
+    expect(notice.actor).toBeNull()
+  })
+
+  it('no hay decisión sin motivo', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const post = await createPost(author)
+
+    expect((await removePost(admin, post.id, {})).status).toBe(400)
+    expect((await request.get(`/posts/${post.id}`)).status).toBe(200)
+  })
+
+  it('a un moderador no se le avisa de lo que borra él mismo', async () => {
+    const admin = await createAdmin()
+    const post = await createPost(admin)
+
+    await removePost(admin, post.id)
+    expect(await notices(admin)).toEqual([])
+  })
+
+  it('lo decidido en el panel se apunta con el motivo de la denuncia', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const reporter = await createUser('vecina')
+    const removed = await createPost(author)
+    const kept = await createPost(author)
+    await flag(reporter, { targetType: 'post', targetId: removed.id, reason: 'inappropriate' })
+    await flag(reporter, { targetType: 'post', targetId: kept.id, reason: 'fake' })
+
+    const resolve = (targetId: string, action: string) => request.post('/admin/flags/resolve').set(admin.auth).send({ targetType: 'post', targetId, action })
+    await resolve(removed.id, 'remove')
+    await resolve(kept.id, 'dismiss')
+
+    const [dismissed, remove] = await log(admin)
+    expect(remove).toMatchObject({ action: 'remove', reason: 'inappropriate' })
+    expect(dismissed).toMatchObject({ action: 'dismiss', reason: 'fake', targetLabel: 'Publicación de Luna' })
+    expect(await notices(author)).toHaveLength(1)
+  })
+
+  it('apunta suspender, readmitir y borrar cuentas, aunque la cuenta ya no exista', async () => {
+    const admin = await createAdmin()
+    await createUser('troll')
+
+    await request.put('/admin/suspended/troll').set(admin.auth).send(decision)
+    await request.delete('/admin/suspended/troll').set(admin.auth)
+    await request.delete('/admin/users/troll').set(admin.auth).send({ reason: 'other', note: 'Cuenta falsa' })
+
+    const entries = await log(admin)
+    expect(entries.map((e: { action: string }) => e.action)).toEqual(['delete_account', 'unsuspend', 'suspend'])
+    expect(entries.map((e: { targetLabel: string }) => e.targetLabel)).toEqual(['@troll', '@troll', '@troll'])
+    expect(entries[0]).toMatchObject({ reason: 'other', note: 'Cuenta falsa', targetUser: null })
+  })
+
+  it('el historial es solo para moderadores y va por páginas', async () => {
+    const admin = await createAdmin()
+    const user = await createUser('vecina')
+    expect((await request.get('/admin/log')).status).toBe(401)
+    expect((await request.get('/admin/log').set(user.auth)).status).toBe(403)
+
+    const first = (await request.get('/admin/log').set(admin.auth)).body
+    expect(first).toEqual({ entries: [], nextCursor: null })
   })
 })

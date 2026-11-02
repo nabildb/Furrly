@@ -48,8 +48,10 @@ test('un moderador borra una publicación desde la comunidad, sin denuncia', asy
   })
 
   await page.goto('/comunidad')
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('article').filter({ hasText: 'Compra seguidores aquí' }).getByRole('button', { name: 'Borrar publicación' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Borrar publicación' })
+  await dialog.getByRole('radio', { name: 'Spam o publicidad' }).check()
+  await dialog.getByRole('button', { name: 'Borrar' }).click()
 
   await expect(page.getByText('Compra seguidores aquí')).toBeHidden()
   await expect(page.getByText('Toby en el parque')).toBeVisible()
@@ -74,8 +76,9 @@ test('un moderador suspende una cuenta desde su perfil y puede readmitirla', asy
   })
 
   await page.goto('/u/troll')
-  page.on('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: 'Suspender cuenta' }).click()
+  await page.getByRole('dialog', { name: 'Suspender a @troll' }).getByRole('button', { name: 'Suspender' }).click()
+  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: 'Levantar suspensión' }).click()
 
   await expect(page.getByRole('button', { name: 'Suspender cuenta' })).toBeVisible()
@@ -161,11 +164,61 @@ test('un moderador borra una mascota desde su ficha', async ({ page }) => {
   })
 
   await page.goto('/mascotas/pet1')
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: 'Borrar a Toby' }).click()
+  await page.getByRole('dialog', { name: 'Borrar a Toby' }).getByRole('button', { name: 'Borrar' }).click()
 
   await expect(page).toHaveURL(/\/u\/troll$/)
   expect(deleted).toBe(true)
+})
+
+test('el historial enseña quién hizo qué y por qué', async ({ page }) => {
+  await logIn(page)
+  const entry = {
+    id: 'l1',
+    action: 'remove',
+    targetLabel: 'Publicación de Toby',
+    reason: 'spam',
+    note: 'Reincidente',
+    createdAt: new Date().toISOString(),
+    moderator: { username: 'nabil' },
+  }
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 0, messages: 0 }),
+    'GET /me': me(true),
+    'GET /admin/flags': () => [],
+    'GET /admin/suspended': () => [],
+    'GET /admin/log': () => ({ entries: [entry], nextCursor: null }),
+  })
+
+  await page.goto('/moderacion')
+  await page.getByRole('button', { name: 'Historial' }).click()
+
+  await expect(page.getByText('Publicación de Toby')).toBeVisible()
+  await expect(page.getByText('Nota: Reincidente')).toBeVisible()
+})
+
+test('quien recibe un aviso de moderación ve el motivo y llega a las normas', async ({ page }) => {
+  await logIn(page)
+  const notice = {
+    id: 'n1',
+    type: 'moderation_notice',
+    message: 'Hemos retirado tu publicación de Toby por spam o publicidad.',
+    readAt: null,
+    createdAt: new Date().toISOString(),
+    actor: null,
+    report: null,
+    post: null,
+    pet: null,
+  }
+  await mockApi(page, {
+    'GET /me/inbox': () => ({ notifications: 1, messages: 0 }),
+    'GET /me': me(false),
+    'GET /notifications': () => ({ notifications: [notice], nextCursor: null }),
+    'POST /notifications/read': () => ({}),
+  })
+
+  await page.goto('/notificaciones')
+  await expect(page.getByRole('link', { name: /Hemos retirado tu publicación de Toby/ })).toHaveAttribute('href', '/condiciones')
 })
 
 test('un moderador revisa una denuncia y borra la publicación', async ({ page }) => {
