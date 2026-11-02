@@ -26,11 +26,29 @@ describe('suspender desde el perfil', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Suspender cuenta' }))
     await userEvent.click(screen.getByRole('radio', { name: 'Inapropiado u ofensivo' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Duración' }), '30 días')
     await userEvent.click(screen.getByRole('button', { name: 'Suspender' }))
 
-    expect(api).toHaveBeenCalledWith('/admin/suspended/troll', { method: 'PUT', body: JSON.stringify({ reason: 'inappropriate', note: null }) })
+    expect(api).toHaveBeenCalledWith('/admin/suspended/troll', {
+      method: 'PUT',
+      body: JSON.stringify({ reason: 'inappropriate', note: null, days: 30 }),
+    })
     expect(await screen.findByRole('button', { name: 'Levantar suspensión' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('la suspensión indefinida no lleva días', async () => {
+    mockSuspended([])
+    renderRoutes(route)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender cuenta' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Duración' }), 'Indefinida')
+    await userEvent.click(screen.getByRole('button', { name: 'Suspender' }))
+
+    expect(api).toHaveBeenCalledWith('/admin/suspended/troll', {
+      method: 'PUT',
+      body: JSON.stringify({ reason: 'spam', note: null, days: null }),
+    })
   })
 
   it('a quien ya está suspendido se le puede readmitir', async () => {

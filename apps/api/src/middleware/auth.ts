@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+const dayFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' })
+
 async function verify(header: string) {
   const { payload } = await jwtVerify(header.slice('Bearer '.length), jwks, {
     issuer,
@@ -37,14 +39,19 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   // Una cuenta suspendida o borrada no puede hacer nada, aunque su token aún no haya caducado.
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { suspendedAt: true } })
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { suspendedAt: true, suspendedUntil: true } })
   if (!user) {
     res.status(401).json({ error: 'Esta cuenta ya no existe' })
     return
   }
   if (user.suspendedAt) {
-    res.status(403).json({ error: 'Tu cuenta está suspendida por incumplir las normas de Furrly.' })
-    return
+    // Una suspensión temporal ya cumplida se limpia con la primera petición de esa cuenta.
+    if (!user.suspendedUntil || user.suspendedUntil > new Date()) {
+      const until = user.suspendedUntil ? ` hasta el ${dayFormat.format(user.suspendedUntil)}` : ''
+      res.status(403).json({ error: `Tu cuenta está suspendida${until} por incumplir las normas de Furrly.` })
+      return
+    }
+    await prisma.user.update({ where: { id: userId }, data: { suspendedAt: null, suspendedUntil: null } })
   }
   req.userId = userId
   next()
