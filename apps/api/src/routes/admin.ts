@@ -1,6 +1,7 @@
+import { randomBytes } from 'node:crypto'
 import { Router } from 'express'
 import { z } from 'zod'
-import type { FlagTarget } from '../generated/prisma/enums.js'
+import { ModerationAction, type FlagTarget } from '../generated/prisma/enums.js'
 import { deleteAccount } from '../lib/accounts.js'
 import { HttpError, parse } from '../lib/http.js'
 import { decisionSchema, reasonTexts, recordAction, type Decision } from '../lib/moderation.js'
@@ -249,21 +250,24 @@ adminRouter.delete('/content/:type/:id', async (req, res) => {
   res.status(204).end()
 })
 
+const logSelect = {
+  id: true,
+  action: true,
+  targetType: true,
+  targetLabel: true,
+  reason: true,
+  note: true,
+  createdAt: true,
+  moderator: { select: { username: true } },
+  targetUser: { select: { username: true } },
+} as const
+
 /** Historial de decisiones, lo más reciente primero. */
 adminRouter.get('/log', async (req, res) => {
-  const { cursor } = parse(z.object({ cursor: z.uuid().optional() }), req.query)
+  const { cursor, action } = parse(z.object({ cursor: z.uuid().optional(), action: z.enum(ModerationAction).optional() }), req.query)
   const rows = await prisma.moderationLog.findMany({
-    select: {
-      id: true,
-      action: true,
-      targetType: true,
-      targetLabel: true,
-      reason: true,
-      note: true,
-      createdAt: true,
-      moderator: { select: { username: true } },
-      targetUser: { select: { username: true } },
-    },
+    where: { action },
+    select: logSelect,
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: LOG_PAGE_SIZE + 1,
     ...(cursor && { cursor: { id: cursor }, skip: 1 }),
@@ -273,11 +277,13 @@ adminRouter.get('/log', async (req, res) => {
   res.json({ entries, nextCursor: hasMore ? entries[entries.length - 1].id : null })
 })
 
+/** Las temporales ya cumplidas no cuentan, aunque esa persona aún no haya vuelto (ver requireAuth). */
+const activeSuspension = () => ({ suspendedAt: { not: null }, OR: [{ suspendedUntil: null }, { suspendedUntil: { gt: new Date() } }] })
+
 /** Cuentas suspendidas, para poder levantar la suspensión. */
 adminRouter.get('/suspended', async (_req, res) => {
   const users = await prisma.user.findMany({
-    // Las temporales ya cumplidas no cuentan, aunque esa persona aún no haya vuelto (ver requireAuth).
-    where: { suspendedAt: { not: null }, OR: [{ suspendedUntil: null }, { suspendedUntil: { gt: new Date() } }] },
+    where: activeSuspension(),
     orderBy: { suspendedAt: 'desc' },
     select: { username: true, displayName: true, suspendedAt: true, suspendedUntil: true },
   })
@@ -289,6 +295,99 @@ async function findUser(username: string) {
   if (!user) throw new HttpError(404, 'Usuario no encontrado')
   return user
 }
+
+/** Ficha de una cuenta: quién es, qué ha publicado, qué se ha denunciado y qué se ha decidido sobre ella. */
+adminRouter.get('/users/:username', async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { username: String(req.params.username).toLowerCase() },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      bio: true,
+      createdAt: true,
+      isAdmin: true,
+      suspendedAt: true,
+      suspendedUntil: true,
+      _count: { select: { pets: true, reports: true, comments: true, sightings: true } },
+    },
+  })
+  if (!user) throw new HttpError(404, 'Usuario no encontrado')
+
+  const { id, _count, ...profile } = user
+  const [posts, warnings, [{ flags }], history] = await Promise.all([
+    prisma.post.count({ where: { pet: { ownerId: id } } }),
+    prisma.moderationLog.count({ where: { targetUserId: id, action: 'warn' } }),
+    prisma.$queryRaw<{ flags: number }[]>`
+      SELECT count(*)::int AS flags FROM content_flags f
+      WHERE (f.target_type = 'user' AND f.target_id = ${id}::uuid)
+        OR (f.target_type = 'post' AND f.target_id IN (SELECT po.id FROM posts po JOIN pets pe ON pe.id = po.pet_id WHERE pe.owner_id = ${id}::uuid))
+        OR (f.target_type = 'report' AND f.target_id IN (SELECT r.id FROM reports r WHERE r.reporter_id = ${id}::uuid))
+        OR (f.target_type = 'comment' AND f.target_id IN (SELECT c.id FROM comments c WHERE c.user_id = ${id}::uuid))`,
+    prisma.moderationLog.findMany({ where: { targetUserId: id }, select: logSelect, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: LOG_PAGE_SIZE }),
+  ])
+  res.json({ ...profile, counts: { ..._count, posts }, flags, warnings, history })
+})
+
+const cleanSchema = decisionSchema.extend({ fields: z.array(z.enum(['avatar', 'bio', 'displayName', 'username'])).min(1, 'Elige qué quieres limpiar') })
+
+const cleanTexts = { avatar: 'tu foto de perfil', bio: 'tu biografía', displayName: 'tu nombre', username: 'tu nombre de usuario' }
+
+/** Limpiar un perfil: quita lo ofensivo sin tocar la cuenta ni lo publicado. El nombre de usuario se vuelve a elegir al entrar. */
+adminRouter.post('/users/:username/clean', async (req, res) => {
+  const { fields, ...decision } = parse(cleanSchema, req.body)
+  const moderatorId = req.userId!
+  const user = await findUser(String(req.params.username))
+  await assertRegularUser(user.id, moderatorId)
+
+  const username = fields.includes('username') ? `usuario_${randomBytes(6).toString('hex')}` : user.username
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      ...(fields.includes('avatar') && { avatarUrl: null }),
+      ...(fields.includes('bio') && { bio: null }),
+      ...(fields.includes('displayName') && { displayName: username }),
+      ...(fields.includes('username') && { username, usernameConfirmed: false }),
+    },
+  })
+
+  const what = new Intl.ListFormat('es', { type: 'conjunction' }).format(fields.map((field) => cleanTexts[field]))
+  await recordAction({ moderatorId, action: 'clean_profile', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, targetUserId: user.id, ...decision })
+  await notifyModeration(user.id, `Hemos retirado ${what} por ${reasonTexts[decision.reason]}.`)
+  res.json({ username })
+})
+
+/** Vaciar una cuenta: borra todo lo que ha publicado, pero la cuenta sigue. Si además se suspende, no podrá volver con ese email. */
+adminRouter.post('/users/:username/purge', async (req, res) => {
+  const decision = parse(decisionSchema, req.body)
+  const moderatorId = req.userId!
+  const user = await findUser(String(req.params.username))
+  await assertRegularUser(user.id, moderatorId)
+
+  await prisma.$transaction([
+    prisma.pet.deleteMany({ where: { ownerId: user.id } }),
+    prisma.report.deleteMany({ where: { reporterId: user.id } }),
+    prisma.comment.deleteMany({ where: { userId: user.id } }),
+    prisma.sighting.deleteMany({ where: { userId: user.id } }),
+  ])
+  await resolveOrphanFlags()
+  await recordAction({ moderatorId, action: 'purge_content', targetType: 'user', targetId: user.id, targetLabel: `@${user.username}`, targetUserId: user.id, ...decision })
+  await notifyModeration(user.id, `Hemos retirado todo lo que habías publicado por ${reasonTexts[decision.reason]}.`)
+  res.status(204).end()
+})
+
+/** Las cifras de arriba del panel. */
+adminRouter.get('/stats', async (_req, res) => {
+  const lastWeek = { gte: new Date(Date.now() - 7 * DAY_MS) }
+  const [pending, resolved, suspended, decisions] = await Promise.all([
+    prisma.contentFlag.groupBy({ by: ['targetType', 'targetId'], where: { resolvedAt: null } }),
+    prisma.contentFlag.groupBy({ by: ['targetType', 'targetId'], where: { resolvedAt: lastWeek } }),
+    prisma.user.count({ where: activeSuspension() }),
+    prisma.moderationLog.count({ where: { createdAt: lastWeek } }),
+  ])
+  res.json({ pending: pending.length, resolvedLastWeek: resolved.length, suspended, decisionsLastWeek: decisions })
+})
 
 /** Borrar una cuenta y todo lo suyo. A diferencia de suspender, su email queda libre para volver a registrarse. */
 adminRouter.delete('/users/:username', async (req, res) => {

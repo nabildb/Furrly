@@ -436,3 +436,129 @@ describe('advertencias y suspensiones temporales', () => {
     expect((await notice(troll.id))?.message).toBe('Hemos suspendido tu cuenta por spam o publicidad.')
   })
 })
+
+describe('ficha de un usuario', () => {
+  const notice = (userId: string) => prisma.notification.findFirst({ where: { userId, type: 'moderation_notice' }, select: { message: true } })
+
+  it('resume la cuenta: lo publicado, las denuncias, las advertencias y su historial', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    const neighbour = await createUser('vecina')
+    const post = await createPost(troll)
+    const neighbourPost = await createPost(neighbour)
+    const comment = await request.post(`/posts/${neighbourPost.id}/comments`).set(troll.auth).send({ body: 'Insulto' })
+    await flag(neighbour, { targetType: 'post', targetId: post.id })
+    await flag(neighbour, { targetType: 'comment', targetId: comment.body.id })
+    await flag(neighbour, { targetType: 'user', username: 'troll' })
+    await request.post('/admin/users/troll/warn').set(admin.auth).send(decision)
+
+    const res = await request.get('/admin/users/Troll').set(admin.auth)
+    expect(res.body).toMatchObject({
+      username: 'troll',
+      isAdmin: false,
+      suspendedAt: null,
+      counts: { pets: 1, posts: 1, reports: 0, comments: 1, sightings: 0 },
+      flags: 3,
+      warnings: 1,
+    })
+    expect(res.body.history).toEqual([expect.objectContaining({ action: 'warn', moderator: { username: 'nabil' } })])
+    expect(res.body.id).toBeUndefined()
+  })
+
+  it('la ficha es solo para moderadores', async () => {
+    const admin = await createAdmin()
+    const user = await createUser('vecina')
+    expect((await request.get('/admin/users/nabil')).status).toBe(401)
+    expect((await request.get('/admin/users/nabil').set(user.auth)).status).toBe(403)
+    expect((await request.get('/admin/users/nadie').set(admin.auth)).status).toBe(404)
+  })
+
+  it('limpiar un perfil quita lo elegido y le explica qué y por qué', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    await prisma.user.update({ where: { id: troll.id }, data: { bio: 'Insultos', avatarUrl: mediaUrl(troll.id), displayName: 'Palabrota' } })
+
+    const res = await request.post('/admin/users/troll/clean').set(admin.auth).send({ ...decision, fields: ['avatar', 'bio'] })
+
+    expect(res.body).toEqual({ username: 'troll' })
+    const after = await prisma.user.findUniqueOrThrow({ where: { id: troll.id } })
+    expect(after).toMatchObject({ bio: null, avatarUrl: null, displayName: 'Palabrota' })
+    expect((await notice(troll.id))?.message).toBe('Hemos retirado tu foto de perfil y tu biografía por spam o publicidad.')
+    expect((await request.get('/me').set(troll.auth)).status).toBe(200)
+  })
+
+  it('al quitar el nombre de usuario se le pone uno provisional y debe elegir otro', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('palabrota')
+
+    const res = await request.post('/admin/users/palabrota/clean').set(admin.auth).send({ ...decision, fields: ['username', 'displayName'] })
+
+    expect(res.body.username).toMatch(/^usuario_[0-9a-f]{12}$/)
+    const me = await request.get('/me').set(troll.auth)
+    expect(me.body).toMatchObject({ username: res.body.username, displayName: res.body.username, usernameConfirmed: false })
+    expect((await request.get('/users/palabrota')).status).toBe(404)
+  })
+
+  it('limpiar: hay que elegir algo, y nunca a uno mismo ni a otro moderador', async () => {
+    const admin = await createAdmin()
+    await createAdmin('moderadora')
+    await createUser('vecina')
+    const clean = (username: string, fields: string[]) => request.post(`/admin/users/${username}/clean`).set(admin.auth).send({ ...decision, fields })
+
+    expect((await clean('vecina', [])).status).toBe(400)
+    expect((await clean('vecina', ['email'])).status).toBe(400)
+    expect((await clean('nabil', ['bio'])).status).toBe(400)
+    expect((await clean('moderadora', ['bio'])).status).toBe(400)
+  })
+
+  it('vaciar borra todo lo publicado pero la cuenta sigue', async () => {
+    const admin = await createAdmin()
+    const troll = await createUser('troll')
+    const neighbour = await createUser('vecina')
+    const post = await createPost(troll)
+    const pet = await createPet(troll, { name: 'Toby' })
+    const report = await createLostReport(troll, pet.id)
+    const neighbourPost = await createPost(neighbour)
+    await request.post(`/posts/${neighbourPost.id}/comments`).set(troll.auth).send({ body: 'Insulto' })
+    await flag(neighbour, { targetType: 'post', targetId: post.id })
+
+    expect((await request.post('/admin/users/troll/purge').set(admin.auth).send(decision)).status).toBe(204)
+
+    expect((await request.get(`/posts/${post.id}`)).status).toBe(404)
+    expect((await request.get(`/pets/${pet.id}`)).status).toBe(404)
+    expect((await request.get(`/reports/${report.id}`)).status).toBe(404)
+    expect((await request.get(`/posts/${neighbourPost.id}/comments`)).body).toEqual([])
+    expect((await request.get(`/posts/${neighbourPost.id}`)).status).toBe(200)
+    expect((await request.get('/users/troll')).status).toBe(200)
+    expect((await request.get('/admin/flags').set(admin.auth)).body).toEqual([])
+    expect((await notice(troll.id))?.message).toMatch(/todo lo que habías publicado/)
+  })
+
+  it('vaciar: solo moderadores, y nunca a uno mismo ni a otro moderador', async () => {
+    const admin = await createAdmin()
+    await createAdmin('moderadora')
+    const user = await createUser('vecina')
+
+    expect((await request.post('/admin/users/vecina/purge').set(user.auth).send(decision)).status).toBe(403)
+    expect((await request.post('/admin/users/nabil/purge').set(admin.auth).send(decision)).status).toBe(400)
+    expect((await request.post('/admin/users/moderadora/purge').set(admin.auth).send(decision)).status).toBe(400)
+  })
+
+  it('las cifras del panel y el filtro del historial', async () => {
+    const admin = await createAdmin()
+    const author = await createUser('autora')
+    const reporter = await createUser('vecina')
+    const flagged = await createPost(author)
+    const removed = await createPost(author)
+    await flag(reporter, { targetType: 'post', targetId: flagged.id })
+    await flag(reporter, { targetType: 'post', targetId: removed.id })
+    await request.post('/admin/flags/resolve').set(admin.auth).send({ targetType: 'post', targetId: removed.id, action: 'remove' })
+    await request.put('/admin/suspended/autora').set(admin.auth).send(decision)
+
+    expect((await request.get('/admin/stats').set(admin.auth)).body).toEqual({ pending: 1, resolvedLastWeek: 1, suspended: 1, decisionsLastWeek: 2 })
+
+    const onlyRemovals = (await request.get('/admin/log?action=remove').set(admin.auth)).body.entries
+    expect(onlyRemovals.map((e: { action: string }) => e.action)).toEqual(['remove'])
+    expect((await request.get('/admin/log?action=nada').set(admin.auth)).status).toBe(400)
+  })
+})

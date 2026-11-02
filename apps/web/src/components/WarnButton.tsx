@@ -4,7 +4,7 @@ import type { Decision } from '../lib/moderation'
 import { DecisionSheet } from './DecisionSheet'
 
 /** Advertir a alguien desde su perfil: recibe un aviso con el motivo. Solo para moderadores. */
-export function WarnButton({ username }: { username: string }) {
+export function WarnButton({ username, onDone }: { username: string; onDone?: () => void }) {
   const [open, setOpen] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -12,6 +12,7 @@ export function WarnButton({ username }: { username: string }) {
     await api(`/admin/users/${username}/warn`, { method: 'POST', body: JSON.stringify(decision) })
     setSent(true)
     setOpen(false)
+    onDone?.()
   }
 
   return (

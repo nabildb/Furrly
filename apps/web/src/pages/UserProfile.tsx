@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { useMe } from '../auth/useMe'
 import { Avatar } from '../components/Avatar'
@@ -88,6 +88,9 @@ export function UserProfile() {
                 <WarnButton key={`warn-${profile.username}`} username={profile.username} />
                 <SuspendButton key={profile.username} username={profile.username} />
                 <DeleteProfileButton username={profile.username} onDeleted={() => navigate('/comunidad', { replace: true })} />
+                <Link to={`/moderacion/usuarios/${profile.username}`} className="text-[13px] font-extrabold text-ink hover:underline">
+                  Ver ficha
+                </Link>
               </div>
             )}
           </div>

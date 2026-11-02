@@ -5,7 +5,7 @@ import { DecisionSheet } from './DecisionSheet'
 import { ErrorText, SelectField } from './Field'
 
 /** Suspender o readmitir una cuenta desde su perfil, sin esperar a una denuncia. Solo para moderadores. */
-export function SuspendButton({ username }: { username: string }) {
+export function SuspendButton({ username, onDone }: { username: string; onDone?: () => void }) {
   // null = aún no se sabe: sale de la misma lista que el panel de moderación.
   const [suspended, setSuspended] = useState<boolean | null>(null)
   const [open, setOpen] = useState(false)
@@ -21,6 +21,7 @@ export function SuspendButton({ username }: { username: string }) {
     await api(`/admin/suspended/${username}`, { method: 'PUT', body: JSON.stringify({ ...decision, days: Number(form.get('days')) || null }) })
     setSuspended(true)
     setOpen(false)
+    onDone?.()
   }
 
   async function lift() {
@@ -29,6 +30,7 @@ export function SuspendButton({ username }: { username: string }) {
     try {
       await api(`/admin/suspended/${username}`, { method: 'DELETE' })
       setSuspended(false)
+      onDone?.()
     } catch (e) {
       setError((e as Error).message)
     }
